@@ -23,7 +23,7 @@ export default function LoginPage(){
       <form onSubmit={handleLogin} className="space-y-3">
         <input className="w-full p-2 border rounded" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
         <input type="password" className="w-full p-2 border rounded" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
-        <button className="px-4 py-2 bg-resortify-500 text-white rounded" disabled={loading}>{loading ? 'Signing in...' : 'Sign in'}</button>
+        <button className="px-4 py-2 bg-resort-500 text-white rounded" disabled={loading}>{loading ? 'Signing in...' : 'Sign in'}</button>
       </form>
     </div>
   )

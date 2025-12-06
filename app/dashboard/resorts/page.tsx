@@ -5,11 +5,14 @@ import { supabase } from '../../../lib/supabaseClient'
 
 export default function MyResorts(){
   const [resorts, setResorts] = useState<any[]>([])
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
     async function load(){
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user) return
+      const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', session.user.id).single()
+      setIsAdmin(profile?.is_admin || false)
       const { data } = await supabase.from('resorts').select('*').eq('owner_id', session.user.id)
       setResorts(data || [])
     }
@@ -18,7 +21,7 @@ export default function MyResorts(){
 
   return (
     <div className="grid md:grid-cols-4 gap-6">
-      <DashboardSidebar />
+      <DashboardSidebar isAdmin={isAdmin} />
       <div className="md:col-span-3">
         <h2 className="text-2xl font-semibold mb-4">My Resorts</h2>
         <div className="grid md:grid-cols-2 gap-4">

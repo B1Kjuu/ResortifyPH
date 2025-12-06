@@ -41,7 +41,7 @@ export default function RegisterPage(){
           <label className="flex items-center gap-2"><input type="radio" name="role" checked={role==='guest'} onChange={()=>setRole('guest')} /> Guest</label>
           <label className="flex items-center gap-2"><input type="radio" name="role" checked={role==='owner'} onChange={()=>setRole('owner')} /> Owner</label>
         </div>
-        <button className="px-4 py-2 bg-resortify-500 text-white rounded">Create account</button>
+        <button className="px-4 py-2 bg-resort-500 text-white rounded">Create account</button>
       </form>
     </div>
   )

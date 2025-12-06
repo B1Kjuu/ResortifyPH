@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import ImageUploader from '../../../components/ImageUploader'
 import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
@@ -12,18 +12,31 @@ export default function CreateResort(){
   const [capacity, setCapacity] = useState<number | ''>('')
   const [amenities, setAmenities] = useState('')
   const [images, setImages] = useState<string[]>([])
+  const [userId, setUserId] = useState<string | null>(null)
   const router = useRouter()
+
+  useEffect(() => {
+    async function getUser(){
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        setUserId(session.user.id)
+      } else {
+        router.push('/auth/login')
+      }
+    }
+    getUser()
+  }, [router])
 
   async function handleCreate(e: React.FormEvent){
     e.preventDefault()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    if (!session || sessionError) { alert('Not signed in'); return }
-    const ownerId = session.user.id
-    const { error } = await supabase.from('resorts').insert([{ owner_id: ownerId, name, description, location, price: Number(price), capacity: Number(capacity), amenities: amenities.split(',').map(s => s.trim()), images, status: 'pending', created_at: new Date() }])
+    if (!userId) { alert('Not signed in'); return }
+    const { error } = await supabase.from('resorts').insert([{ owner_id: userId, name, description, location, price: Number(price), capacity: Number(capacity), amenities: amenities.split(',').map(s => s.trim()), images, status: 'pending', created_at: new Date() }])
     if (error) { alert(error.message); return }
     alert('Resort created and pending approval')
     router.push('/dashboard/resorts')
   }
+
+  if (!userId) return <div className="max-w-2xl">Loading...</div>
 
   return (
     <div className="max-w-2xl">
@@ -41,7 +54,7 @@ export default function CreateResort(){
           <div className="text-sm text-slate-500 mt-2">Uploaded {images.length} images</div>
         </div>
 
-        <button className="px-4 py-2 bg-resortify-500 text-white rounded">Create</button>
+        <button className="px-4 py-2 bg-resort-500 text-white rounded">Create</button>
       </form>
     </div>
   )

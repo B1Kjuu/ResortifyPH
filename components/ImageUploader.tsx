@@ -10,6 +10,7 @@ type Props = {
 export default function ImageUploader({ bucket = 'resort-images', onUpload }: Props){
   const [files, setFiles] = useState<FileList | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [uploadedUrls, setUploadedUrls] = useState<string[]>([])
 
   async function handleUpload(){
     if (!files) return
@@ -27,13 +28,24 @@ export default function ImageUploader({ bucket = 'resort-images', onUpload }: Pr
       urls.push(publicData.publicUrl)
     }
     setUploading(false)
+    setUploadedUrls(urls)
     onUpload?.(urls)
   }
 
   return (
     <div className="space-y-2">
       <input type="file" multiple onChange={(e) => setFiles(e.target.files)} />
-      <button onClick={handleUpload} className="px-4 py-2 bg-resortify-500 text-white rounded" disabled={uploading}>{uploading ? 'Uploading...' : 'Upload'}</button>
+      <button onClick={handleUpload} className="px-4 py-2 bg-resort-500 text-white rounded" disabled={uploading}>{uploading ? 'Uploading...' : 'Upload'}</button>
+      {uploadedUrls.length > 0 && (
+        <div className="space-y-1">
+          <div className="text-sm text-slate-600">Uploaded images:</div>
+          <div className="grid grid-cols-3 gap-2">
+            {uploadedUrls.map((url) => (
+              <img key={url} src={url} alt="Uploaded" className="w-full h-24 object-cover rounded border" />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

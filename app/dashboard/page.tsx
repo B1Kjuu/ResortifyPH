@@ -18,7 +18,7 @@ export default function Dashboard(){
 
   return (
     <div className="grid md:grid-cols-4 gap-6">
-      <DashboardSidebar />
+      <DashboardSidebar isAdmin={profile?.is_admin || false} />
       <div className="md:col-span-3">
         <h2 className="text-2xl font-semibold">Dashboard</h2>
         <p className="text-slate-600 mt-2">Welcome{profile ? `, ${profile.full_name}` : ''}</p>

@@ -18,7 +18,7 @@ export default function ResortCard({ resort }: Props){
         <p className="text-sm text-slate-500 mt-1">{resort.location}</p>
         <div className="flex items-center justify-between mt-3">
           <span className="font-semibold">₱{resort.price}</span>
-          <Link href={`/resorts/${resort.id}`} className="text-sm text-resortify-500">View</Link>
+          <Link href={`/resorts/${resort.id}`} className="text-sm text-resort-500">View</Link>
         </div>
       </div>
     </article>
