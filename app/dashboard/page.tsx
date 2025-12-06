@@ -8,10 +8,9 @@ export default function Dashboard(){
 
   useEffect(() => {
     async function load(){
-      const user = supabase.auth.getUser().then(r => r.data.user)
-      const u = await user
-      if (!u) return
-      const { data } = await supabase.from('profiles').select('*').eq('id', u.id).single()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
+      const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
       setProfile(data)
     }
     load()

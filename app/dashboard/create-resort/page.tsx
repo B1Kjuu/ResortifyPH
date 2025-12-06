@@ -16,9 +16,9 @@ export default function CreateResort(){
 
   async function handleCreate(e: React.FormEvent){
     e.preventDefault()
-    const user = (await supabase.auth.getUser()).data.user
-    if (!user) { alert('Not signed in'); return }
-    const ownerId = user.id
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    if (!session || sessionError) { alert('Not signed in'); return }
+    const ownerId = session.user.id
     const { error } = await supabase.from('resorts').insert([{ owner_id: ownerId, name, description, location, price: Number(price), capacity: Number(capacity), amenities: amenities.split(',').map(s => s.trim()), images, status: 'pending', created_at: new Date() }])
     if (error) { alert(error.message); return }
     alert('Resort created and pending approval')

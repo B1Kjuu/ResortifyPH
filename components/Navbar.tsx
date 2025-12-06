@@ -14,7 +14,8 @@ export default function Navbar(){
         <nav className="flex items-center gap-4">
           <Link href="/resorts" className="text-sm text-slate-700">Resorts</Link>
           <Link href="/bookings" className="text-sm text-slate-700">Bookings</Link>
-          <Link href="/auth/login" className="text-sm text-white bg-resortify-500 px-3 py-1 rounded">Sign in</Link>
+          <Link href="/auth/login" className="text-sm text-slate-700">Sign in</Link>
+          <Link href="/auth/register" className="text-sm text-white bg-resortify-500 px-3 py-1 rounded">Sign up</Link>
         </nav>
       </div>
     </header>

@@ -7,9 +7,9 @@ export default function BookingsPage(){
 
   useEffect(() => {
     async function load(){
-      const user = (await supabase.auth.getUser()).data.user
-      if (!user) return
-      const { data } = await supabase.from('bookings').select('*').eq('guest_id', user.id)
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
+      const { data } = await supabase.from('bookings').select('*').eq('guest_id', session.user.id)
       setBookings(data || [])
     }
     load()

@@ -8,9 +8,9 @@ export default function MyResorts(){
 
   useEffect(() => {
     async function load(){
-      const user = (await supabase.auth.getUser()).data.user
-      if (!user) return
-      const { data } = await supabase.from('resorts').select('*').eq('owner_id', user.id)
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
+      const { data } = await supabase.from('resorts').select('*').eq('owner_id', session.user.id)
       setResorts(data || [])
     }
     load()
