@@ -1,8 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["DOM", "ES2022"],
-    "jsx": "react-jsx",
+    "lib": [
+      "DOM",
+      "ES2022"
+    ],
+    "jsx": "preserve",
     "module": "ESNext",
     "moduleResolution": "Node",
     "isolatedModules": true,
@@ -11,8 +14,23 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "baseUrl": "."
+    "baseUrl": ".",
+    "allowJs": true,
+    "incremental": true,
+    "resolveJsonModule": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
