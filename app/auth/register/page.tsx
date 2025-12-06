@@ -12,14 +12,19 @@ export default function RegisterPage(){
 
   async function handleRegister(e: React.FormEvent){
     e.preventDefault()
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    
+    // Store role and fullName in auth metadata so the trigger can use it
+    const { data, error } = await supabase.auth.signUp({ 
+      email, 
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+          role: role
+        }
+      }
+    })
     if (error){ alert(error.message); return }
-
-    // create profile row (server should do this via webhook in production)
-    const user = data.user
-    if (user){
-      await supabase.from('profiles').upsert({ id: user.id, full_name: fullName, role, created_at: new Date() })
-    }
 
     if (role === 'owner') router.push('/dashboard')
     else router.push('/')
