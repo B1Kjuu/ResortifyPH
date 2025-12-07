@@ -1,9 +1,10 @@
 'use client'
 import React, { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 
-export default function AdminResortsPage(){
+export default function ApprovalsPage(){
   const [pendingResorts, setPendingResorts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -28,7 +29,7 @@ export default function AdminResortsPage(){
   useEffect(() => {
     async function checkAdminAndLoad(){
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) { router.push('/auth/login'); return }
+      if (!session?.user) { router.push('/auth/signin'); return }
 
       // Check if user is admin
       const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', session.user.id).single()
@@ -77,11 +78,13 @@ export default function AdminResortsPage(){
     setToast({ message: 'Resort rejected.', type: 'success' })
   }
 
-  if (loading) return <div className="w-full px-4 sm:px-6 lg:px-8 py-10 text-center text-slate-600">Loading approvals...</div>
+  if (loading) return <div className="w-full px-4 sm:px-6 lg:px-8 py-10 text-center text-slate-600">Loading submissions...</div>
   if (!isAdmin) return <div className="w-full px-4 sm:px-6 lg:px-8 py-10 text-center text-slate-600">Unauthorized</div>
 
   return (
     <div className="w-full px-4 sm:px-6 lg:px-8 py-10 bg-gradient-to-br from-resort-50 to-resort-100 min-h-[80vh]">
+      <Link href="/admin/command-center" className="text-sm text-resort-500 font-semibold mb-6 inline-block">← Back to Command Center</Link>
+      
       {toast.message && (
         <div className={`mb-4 max-w-5xl mx-auto rounded-lg px-4 py-3 text-sm font-semibold ${toast.type === 'success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
           {toast.message}
@@ -91,22 +94,22 @@ export default function AdminResortsPage(){
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <p className="text-sm font-semibold text-resort-500">Moderation</p>
-            <h1 className="text-3xl font-bold text-resort-900">Resort Approvals</h1>
+            <p className="text-sm font-semibold text-resort-500">Review Queue</p>
+            <h1 className="text-3xl font-bold text-resort-900">Pending Submissions</h1>
           </div>
-          <span className="text-sm bg-yellow-100 text-yellow-800 px-3 py-1 rounded-lg font-semibold">Pending: {pendingResorts.length}</span>
+          <span className="text-sm bg-yellow-100 text-yellow-800 px-3 py-1 rounded-lg font-semibold">Queue: {pendingResorts.length}</span>
         </div>
 
         <section className="space-y-4">
           {pendingResorts.length === 0 ? (
             <div className="bg-white border border-dashed border-slate-200 rounded-xl p-8 text-center text-slate-600">
-              <p className="font-semibold text-resort-900 mb-1">No pending resorts</p>
-              <p className="text-sm">New submissions will appear here for approval.</p>
+              <p className="font-semibold text-resort-900 mb-1">All caught up! ✓</p>
+              <p className="text-sm">No pending submissions to review</p>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 gap-4">
               {pendingResorts.map(resort => (
-                <div key={resort.id} className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                <div key={resort.id} className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition">
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <h3 className="text-xl font-semibold text-resort-900">{resort.name}</h3>

@@ -2,11 +2,14 @@
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { supabase } from '../lib/supabaseClient'
 
 export default function Navbar(){
   const [user, setUser] = useState<any>(null)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [authChecked, setAuthChecked] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
     async function checkAuth(){
@@ -19,6 +22,7 @@ export default function Navbar(){
         setUser(null)
         setIsAdmin(false)
       }
+      setAuthChecked(true)
     }
 
     checkAuth()
@@ -32,6 +36,7 @@ export default function Navbar(){
         setUser(null)
         setIsAdmin(false)
       }
+      setAuthChecked(true)
     })
 
     return () => subscription?.unsubscribe()
@@ -41,6 +46,7 @@ export default function Navbar(){
     await supabase.auth.signOut()
     setUser(null)
     setIsAdmin(false)
+    router.push('/')
   }
 
   return (
@@ -59,21 +65,24 @@ export default function Navbar(){
 
         <nav className="flex items-center gap-4">
           <Link href="/resorts" className="text-sm text-slate-700">Resorts</Link>
-          {user && !isAdmin && <Link href="/bookings" className="text-sm text-slate-700">My Bookings</Link>}
-          {user && !isAdmin && <Link href="/dashboard" className="text-sm text-slate-700">Dashboard</Link>}
-          {isAdmin && <Link href="/dashboard" className="text-sm text-slate-700">Dashboard</Link>}
-          {isAdmin && <Link href="/admin/resorts" className="text-sm text-resort-teal font-semibold">Moderation</Link>}
+          {authChecked && user && !isAdmin && <Link href="/guest/trips" className="text-sm text-slate-700">My Trips</Link>}
+          {authChecked && user && !isAdmin && <Link href="/guest/adventure-hub" className="text-sm text-slate-700">Hub</Link>}
+          {authChecked && isAdmin && <Link href="/admin/command-center" className="text-sm text-slate-700">Dashboard</Link>}
+          {authChecked && isAdmin && <Link href="/admin/approvals" className="text-sm text-resort-teal font-semibold">Approvals</Link>}
+          {authChecked && isAdmin && <Link href="/admin/bookings-control" className="text-sm text-resort-teal font-semibold">Bookings</Link>}
           
-          {user ? (
+          {authChecked && user ? (
             <>
               <span className="text-sm text-slate-600">{user.email}</span>
               <button onClick={handleLogout} className="text-sm text-white bg-resort-teal px-3 py-1 rounded hover:bg-resort-teal-dark transition">Sign out</button>
             </>
-          ) : (
+          ) : authChecked ? (
             <>
-              <Link href="/auth/login" className="text-sm text-slate-700 hover:text-slate-900">Sign in</Link>
-              <Link href="/auth/register" className="text-sm text-white bg-resort-500 px-3 py-1 rounded hover:bg-resort-600 transition">Sign up</Link>
+              <Link href="/auth/signin" className="text-sm text-slate-700 hover:text-slate-900">Sign in</Link>
+              <Link href="/auth/signup" className="text-sm text-white bg-resort-500 px-3 py-1 rounded hover:bg-resort-600 transition">Sign up</Link>
             </>
+          ) : (
+            <span className="text-sm text-slate-400">Checking...</span>
           )}
         </nav>
       </div>

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 
-export default function RegisterPage(){
+export default function SignUpPage(){
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
@@ -12,7 +12,7 @@ export default function RegisterPage(){
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  async function handleRegister(e: React.FormEvent){
+  async function handleSignUp(e: React.FormEvent){
     e.preventDefault()
     setLoading(true)
     const { error } = await supabase.auth.signUp({ 
@@ -28,7 +28,7 @@ export default function RegisterPage(){
     setLoading(false)
     if (error){ alert(error.message); return }
 
-    if (role === 'owner') router.push('/dashboard')
+    if (role === 'owner') router.push('/owner/empire')
     else router.push('/')
   }
 
@@ -41,7 +41,7 @@ export default function RegisterPage(){
           <p className="text-slate-600 text-sm mt-2">Book resorts as a guest or manage listings as an owner.</p>
         </div>
 
-        <form onSubmit={handleRegister} className="space-y-4">
+        <form onSubmit={handleSignUp} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Full name</label>
             <input
@@ -108,7 +108,7 @@ export default function RegisterPage(){
 
         <div className="mt-4 text-sm text-center text-slate-600">
           Already have an account?{' '}
-          <Link href="/auth/login" className="text-resort-600 font-semibold hover:underline">Sign in</Link>
+          <Link href="/auth/signin" className="text-resort-600 font-semibold hover:underline">Sign in</Link>
         </div>
       </div>
     </div>

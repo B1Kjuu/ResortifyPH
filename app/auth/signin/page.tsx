@@ -4,13 +4,13 @@ import Link from 'next/link'
 import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 
-export default function LoginPage(){
+export default function SignInPage(){
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  async function handleLogin(e: React.FormEvent){
+  async function handleSignIn(e: React.FormEvent){
     e.preventDefault()
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
@@ -28,7 +28,7 @@ export default function LoginPage(){
           <p className="text-slate-600 text-sm mt-2">Access your bookings, resorts, and approvals.</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleSignIn} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
             <input
@@ -64,7 +64,7 @@ export default function LoginPage(){
 
         <div className="mt-4 text-sm text-center text-slate-600">
           Don&apos;t have an account?{' '}
-          <Link href="/auth/register" className="text-resort-600 font-semibold hover:underline">Sign up</Link>
+          <Link href="/auth/signup" className="text-resort-600 font-semibold hover:underline">Sign up</Link>
         </div>
       </div>
     </div>

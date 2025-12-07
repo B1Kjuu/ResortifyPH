@@ -2,17 +2,19 @@
 import React, { useEffect, useState } from 'react'
 import DashboardSidebar from '../../../components/DashboardSidebar'
 import { supabase } from '../../../lib/supabaseClient'
+import { useRouter } from 'next/navigation'
 
 export default function BookingsManagementPage(){
   const [pendingBookings, setPendingBookings] = useState<any[]>([])
   const [confirmedBookings, setConfirmedBookings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
     async function load(){
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) return
+      if (!session?.user) { router.push('/auth/login'); return }
       
       const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', session.user.id).single()
       setIsAdmin(profile?.is_admin || false)
@@ -31,7 +33,7 @@ export default function BookingsManagementPage(){
       setLoading(false)
     }
     load()
-  }, [])
+  }, [router])
 
   async function confirmBooking(id: string){
     const { error } = await supabase

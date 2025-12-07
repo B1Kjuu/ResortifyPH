@@ -2,21 +2,47 @@
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { supabase } from '../lib/supabaseClient'
 
 export default function Home(){
   const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
     async function checkAuth(){
       const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user || null)
+      if (session?.user) {
+        setUser(session.user)
+        // Check if admin
+        const { data: profile } = await supabase.from('profiles').select('is_admin, role').eq('id', session.user.id).single()
+        if (profile?.is_admin) {
+          router.push('/admin/dashboard')
+          return
+        }
+        // Redirect by role
+        if (profile?.role === 'owner') {
+          router.push('/owner/dashboard')
+          return
+        }
+        // Guest
+        router.push('/guest/dashboard')
+        return
+      }
+      setLoading(false)
     }
     checkAuth()
-  }, [])
+  }, [router])
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-resort-50 to-resort-100">
+      {loading ? (
+        <div className="w-full min-h-screen flex items-center justify-center">
+          <p className="text-slate-600">Redirecting...</p>
+        </div>
+      ) : (
+      <>
       {/* Hero Section */}
       <section className="w-full px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
         <div className="text-center max-w-2xl mx-auto">
@@ -33,17 +59,7 @@ export default function Home(){
           <h1 className="text-4xl sm:text-5xl font-bold text-resort-900 mb-4 sm:mb-6">Welcome to ResortifyPH</h1>
           <p className="text-lg sm:text-xl text-slate-700 mb-6 sm:mb-8">Discover and book the perfect resort in Manila, Antipolo, and Rizal. Connect with resort owners and create unforgettable experiences.</p>
           
-          {user ? (
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-              <Link href="/resorts" className="px-6 py-3 bg-resort-500 text-white rounded-lg font-semibold hover:bg-resort-600 transition">
-                Browse Resorts
-              </Link>
-              <Link href="/dashboard" className="px-6 py-3 bg-resort-teal text-white rounded-lg font-semibold hover:bg-resort-teal-dark transition">
-                Dashboard
-              </Link>
-            </div>
-          ) : (
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
               <Link href="/auth/login" className="px-6 py-3 bg-resort-500 text-white rounded-lg font-semibold hover:bg-resort-600 transition">
                 Sign In
               </Link>
@@ -142,6 +158,8 @@ export default function Home(){
           </div>
         </div>
       </section>
+    </>
+    )}
     </div>
   )
 }
