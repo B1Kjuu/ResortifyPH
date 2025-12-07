@@ -4,11 +4,12 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../lib/supabaseClient'
+import type { User } from '@supabase/supabase-js'
 
 export default function Navbar(){
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [userRole, setUserRole] = useState<string>('')
+  const [userRole, setUserRole] = useState<'guest' | 'owner' | ''>('')
   const [authChecked, setAuthChecked] = useState(false)
   const authCompletedRef = useRef(false)
   const router = useRouter()

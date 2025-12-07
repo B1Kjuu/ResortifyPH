@@ -1,7 +1,14 @@
 /** @type {import('next').NextConfig} */
-// Next.js 14 enables the App Router (`app/`) by default. Remove deprecated experimental flags.
 const nextConfig = {
-  // add any Next.js options you need here
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
+  },
 }
 
 module.exports = nextConfig
