@@ -12,8 +12,14 @@ export function validatePassword(password: string): { valid: boolean; message?: 
   return { valid: true }
 }
 
+/**
+ * Basic sanitization for user input to prevent XSS attacks
+ * WARNING: This provides basic protection for plain text contexts.
+ * For HTML content rendering, consider using a more robust library like DOMPurify.
+ * Always validate and sanitize user input on both client and server side.
+ */
 export function sanitizeString(input: string): string {
-  // Remove potential XSS characters
+  // Remove potential XSS characters for plain text contexts
   return input
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')

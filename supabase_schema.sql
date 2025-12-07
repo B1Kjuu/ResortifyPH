@@ -44,8 +44,85 @@ create index if not exists idx_bookings_resort_id on bookings(resort_id);
 create index if not exists idx_bookings_guest_id on bookings(guest_id);
 create index if not exists idx_bookings_status on bookings(status);
 
--- Note: Row Level Security (RLS) policies should be configured in Supabase UI
--- Example policies needed:
--- 1. Profiles: Users can read/update their own profile
--- 2. Resorts: Anyone can read approved resorts, owners can manage their own
--- 3. Bookings: Guests can manage their bookings, owners can see bookings for their resorts
+-- Enable Row Level Security (RLS)
+alter table profiles enable row level security;
+alter table resorts enable row level security;
+alter table bookings enable row level security;
+
+-- RLS Policies for Profiles
+-- Users can view their own profile
+create policy "Users can view own profile"
+  on profiles for select
+  using (auth.uid() = id);
+
+-- Users can update their own profile
+create policy "Users can update own profile"
+  on profiles for update
+  using (auth.uid() = id);
+
+-- Users can insert their own profile (for registration)
+create policy "Users can insert own profile"
+  on profiles for insert
+  with check (auth.uid() = id);
+
+-- RLS Policies for Resorts
+-- Anyone can view approved resorts
+create policy "Anyone can view approved resorts"
+  on resorts for select
+  using (status = 'approved' or owner_id = auth.uid());
+
+-- Owners can insert their own resorts
+create policy "Owners can insert own resorts"
+  on resorts for insert
+  with check (auth.uid() = owner_id);
+
+-- Owners can update their own resorts
+create policy "Owners can update own resorts"
+  on resorts for update
+  using (auth.uid() = owner_id);
+
+-- Owners can delete their own resorts
+create policy "Owners can delete own resorts"
+  on resorts for delete
+  using (auth.uid() = owner_id);
+
+-- RLS Policies for Bookings
+-- Users can view their own bookings (as guest)
+create policy "Guests can view own bookings"
+  on bookings for select
+  using (auth.uid() = guest_id);
+
+-- Resort owners can view bookings for their resorts
+create policy "Owners can view bookings for their resorts"
+  on bookings for select
+  using (
+    exists (
+      select 1 from resorts
+      where resorts.id = bookings.resort_id
+      and resorts.owner_id = auth.uid()
+    )
+  );
+
+-- Guests can create bookings
+create policy "Guests can create bookings"
+  on bookings for insert
+  with check (auth.uid() = guest_id);
+
+-- Guests can update their own bookings (e.g., cancel)
+create policy "Guests can update own bookings"
+  on bookings for update
+  using (auth.uid() = guest_id);
+
+-- Resort owners can update bookings for their resorts (e.g., confirm/reject)
+create policy "Owners can update bookings for their resorts"
+  on bookings for update
+  using (
+    exists (
+      select 1 from resorts
+      where resorts.id = bookings.resort_id
+      and resorts.owner_id = auth.uid()
+    )
+  );
+
+-- Note: Admin users with the is_admin flag can bypass RLS using the service role key
+-- Admin operations should be performed through server-side functions or API routes using the service role key

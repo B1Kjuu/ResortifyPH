@@ -3,6 +3,15 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key'
 
+// Warn in development if credentials are missing
+if (process.env.NODE_ENV === 'development') {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.warn(
+      '⚠️  Supabase credentials are missing! Please configure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local'
+    )
+  }
+}
+
 // Only create client if we're in the browser or have valid credentials
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
