@@ -41,12 +41,12 @@ export default function ApprovalsPage(){
     }
     checkAdminAndLoad()
 
-    // Subscribe to real-time changes
+    // Subscribe to real-time changes on all resorts
     const subscription = supabase
       .channel('pending_resorts')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'resorts', filter: 'status=eq.pending' },
+        { event: '*', schema: 'public', table: 'resorts' },
         () => {
           loadPendingResorts()
         }
@@ -59,23 +59,43 @@ export default function ApprovalsPage(){
   }, [router])
 
   async function approveResort(id: string){
-    const { error } = await supabase
+    console.log('Attempting to approve resort:', id)
+    const { data, error } = await supabase
       .from('resorts')
       .update({ status: 'approved' })
       .eq('id', id)
-    if (error) { setToast({ message: error.message, type: 'error' }); return }
-    setPendingResorts(pendingResorts.filter(r => r.id !== id))
+      .select()
+    
+    console.log('Approve result:', { data, error })
+    
+    if (error) { 
+      console.error('Approve error:', error)
+      setToast({ message: `Error: ${error.message}`, type: 'error' })
+      return 
+    }
+    
     setToast({ message: 'Resort approved!', type: 'success' })
+    await loadPendingResorts()
   }
 
   async function rejectResort(id: string){
-    const { error } = await supabase
+    console.log('Attempting to reject resort:', id)
+    const { data, error } = await supabase
       .from('resorts')
       .update({ status: 'rejected' })
       .eq('id', id)
-    if (error) { setToast({ message: error.message, type: 'error' }); return }
-    setPendingResorts(pendingResorts.filter(r => r.id !== id))
+      .select()
+    
+    console.log('Reject result:', { data, error })
+    
+    if (error) { 
+      console.error('Reject error:', error)
+      setToast({ message: `Error: ${error.message}`, type: 'error' })
+      return 
+    }
+    
     setToast({ message: 'Resort rejected.', type: 'success' })
+    await loadPendingResorts()
   }
 
   if (loading) return <div className="w-full px-4 sm:px-6 lg:px-8 py-10 text-center text-slate-600">Loading submissions...</div>

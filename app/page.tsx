@@ -17,18 +17,18 @@ export default function Home(){
         setUser(session.user)
         // Check if admin
         const { data: profile } = await supabase.from('profiles').select('is_admin, role').eq('id', session.user.id).single()
-        if (profile?.is_admin) {
-          router.push('/admin/dashboard')
+          if (profile?.is_admin) {
+            router.push('/admin/command-center')
+            return
+          }
+          // Redirect by role
+          if (profile?.role === 'owner') {
+            router.push('/owner/empire')
+            return
+          }
+          // Guest
+          router.push('/guest/adventure-hub')
           return
-        }
-        // Redirect by role
-        if (profile?.role === 'owner') {
-          router.push('/owner/dashboard')
-          return
-        }
-        // Guest
-        router.push('/guest/dashboard')
-        return
       }
       setLoading(false)
     }
@@ -67,7 +67,6 @@ export default function Home(){
                 Sign Up
               </Link>
             </div>
-          )}
         </div>
       </section>
 

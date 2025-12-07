@@ -13,6 +13,23 @@ export default function CommandCenter(){
   useEffect(() => {
     let mounted = true
     
+    async function loadStats(){
+      // Get stats
+      const { data: resorts } = await supabase.from('resorts').select('status')
+      const { data: bookings } = await supabase.from('bookings').select('id')
+      
+      const statsData = {
+        pending: resorts?.filter(r => r.status === 'pending').length || 0,
+        approved: resorts?.filter(r => r.status === 'approved').length || 0,
+        rejected: resorts?.filter(r => r.status === 'rejected').length || 0,
+        total_bookings: bookings?.length || 0,
+      }
+      
+      if (mounted) {
+        setStats(statsData)
+      }
+    }
+    
     async function load(){
       try {
         const { data: { session } } = await supabase.auth.getSession()
@@ -33,22 +50,13 @@ export default function CommandCenter(){
           return
         }
 
-        // Get stats
-        const { data: resorts } = await supabase.from('resorts').select('status')
-        const { data: bookings } = await supabase.from('bookings').select('id')
-        
-        const statsData = {
-          pending: resorts?.filter(r => r.status === 'pending').length || 0,
-          approved: resorts?.filter(r => r.status === 'approved').length || 0,
-          rejected: resorts?.filter(r => r.status === 'rejected').length || 0,
-          total_bookings: bookings?.length || 0,
-        }
-        
         if (mounted) {
           setProfile(userProfile)
-          setStats(statsData)
           setLoading(false)
         }
+        
+        // Load initial stats
+        await loadStats()
       } catch (err) {
         console.error('Command center error:', err)
         if (mounted) setLoading(false)
@@ -57,7 +65,35 @@ export default function CommandCenter(){
     
     load()
     
-    return () => { mounted = false }
+    // Subscribe to real-time changes for resorts
+    const resortsSubscription = supabase
+      .channel('admin_resorts_stats')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'resorts' },
+        () => {
+          loadStats()
+        }
+      )
+      .subscribe()
+    
+    // Subscribe to real-time changes for bookings
+    const bookingsSubscription = supabase
+      .channel('admin_bookings_stats')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'bookings' },
+        () => {
+          loadStats()
+        }
+      )
+      .subscribe()
+    
+    return () => { 
+      mounted = false
+      resortsSubscription.unsubscribe()
+      bookingsSubscription.unsubscribe()
+    }
   }, [router])
 
   if (loading) return <div className="w-full px-4 sm:px-6 lg:px-8 py-10 text-center text-slate-600">Loading...</div>
