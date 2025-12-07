@@ -17,7 +17,7 @@ export default function Empire(){
       try {
         const { data: { session } } = await supabase.auth.getSession()
         if (!session?.user) { 
-          router.push('/auth/signin')
+          router.push('/auth/login')
           return 
         }
 

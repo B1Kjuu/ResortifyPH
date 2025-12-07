@@ -88,7 +88,7 @@ export default function OwnerBookingsPage(){
         if (!mounted) return
 
         if (!session?.user) {
-          router.push('/auth/signin')
+          router.push('/auth/login')
           return
         }
 

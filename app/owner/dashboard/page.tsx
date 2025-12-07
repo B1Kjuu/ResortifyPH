@@ -18,7 +18,7 @@ export default function OwnerDashboard(){
       // Verify owner role
       const { data: userProfile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
       if (userProfile?.role !== 'owner') {
-        router.push('/dashboard')
+        router.push('/')
         return
       }
 

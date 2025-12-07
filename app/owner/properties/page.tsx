@@ -12,7 +12,7 @@ export default function Properties(){
   useEffect(() => {
     async function load(){
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) { router.push('/auth/signin'); return }
+      if (!session?.user) { router.push('/auth/login'); return }
 
       // Verify owner role
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single()

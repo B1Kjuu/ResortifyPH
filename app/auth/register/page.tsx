@@ -28,8 +28,8 @@ export default function RegisterPage(){
     setLoading(false)
     if (error){ alert(error.message); return }
 
-    if (role === 'owner') router.push('/dashboard')
-    else router.push('/')
+    if (role === 'owner') router.push('/owner/empire')
+    else router.push('/guest/adventure-hub')
   }
 
   return (

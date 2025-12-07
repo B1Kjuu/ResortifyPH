@@ -17,7 +17,7 @@ export default function GuestBookingsPage(){
       // Verify guest role
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single()
       if (profile?.role !== 'guest') {
-        router.push('/dashboard')
+        router.push('/')
         return
       }
 

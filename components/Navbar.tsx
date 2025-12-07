@@ -145,8 +145,8 @@ export default function Navbar(){
             </>
           ) : authChecked ? (
             <>
-              <Link href="/auth/signin" className="text-sm text-slate-700 hover:text-slate-900 transition">Sign in</Link>
-              <Link href="/auth/signup" className="text-sm text-white bg-resort-500 px-4 py-2 rounded-lg hover:bg-resort-600 transition shadow-sm">Sign up</Link>
+              <Link href="/auth/login" className="text-sm text-slate-700 hover:text-slate-900 transition">Sign in</Link>
+              <Link href="/auth/register" className="text-sm text-white bg-resort-500 px-4 py-2 rounded-lg hover:bg-resort-600 transition shadow-sm">Sign up</Link>
             </>
           ) : (
             <span className="text-sm text-slate-400">Checking...</span>

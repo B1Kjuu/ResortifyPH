@@ -18,7 +18,7 @@ export default function AdventureHub(){
         if (!mounted) return
         
         if (!session?.user) { 
-          router.push('/auth/signin')
+          router.push('/auth/login')
           return 
         }
 

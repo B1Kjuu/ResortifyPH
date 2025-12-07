@@ -23,7 +23,7 @@ export default function LaunchResort(){
     async function getUser(){
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user) {
-        router.push('/auth/signin')
+        router.push('/auth/login')
         setLoading(false)
         return
       }

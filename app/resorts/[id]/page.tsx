@@ -86,7 +86,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
   async function handleBooking(){
     if (!user) {
       setMessage({ text: 'Please sign in to book this resort', type: 'error' })
-      setTimeout(() => router.push('/auth/signin'), 2000)
+      setTimeout(() => router.push('/auth/login'), 2000)
       return
     }
 
@@ -296,7 +296,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
               </button>
 
               <p className="text-xs text-slate-500 mt-3 text-center">
-                You won't be charged yet. The owner will review your request.
+                You won&apos;t be charged yet. The owner will review your request.
               </p>
             </div>
           </div>

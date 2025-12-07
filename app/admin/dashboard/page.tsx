@@ -18,7 +18,7 @@ export default function AdminDashboard(){
       // Check if user is admin
       const { data: userProfile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
       if (!userProfile?.is_admin) {
-        router.push('/dashboard')
+        router.push('/')
         return
       }
 

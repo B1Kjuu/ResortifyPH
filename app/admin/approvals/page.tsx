@@ -29,7 +29,7 @@ export default function ApprovalsPage(){
   useEffect(() => {
     async function checkAdminAndLoad(){
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) { router.push('/auth/signin'); return }
+      if (!session?.user) { router.push('/auth/login'); return }
 
       // Check if user is admin
       const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', session.user.id).single()

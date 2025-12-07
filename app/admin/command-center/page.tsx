@@ -34,7 +34,7 @@ export default function CommandCenter(){
       try {
         const { data: { session } } = await supabase.auth.getSession()
         if (!session?.user) { 
-          router.push('/auth/signin')
+          router.push('/auth/login')
           return 
         }
 
