@@ -56,7 +56,7 @@ export default function Empire(){
     load()
     
     return () => { mounted = false }
-  }, [router])
+  }, [])
 
   if (loading) return <div className="w-full px-4 sm:px-6 lg:px-8 py-10 text-center text-slate-600">Loading...</div>
 
@@ -89,7 +89,7 @@ export default function Empire(){
       </div>
 
       {/* Actions */}
-      <div className="grid md:grid-cols-2 gap-6 mb-8">
+      <div className="grid md:grid-cols-3 gap-6 mb-8">
         <Link href="/owner/launch-resort" className="bg-resort-500 text-white rounded-lg p-6 hover:bg-resort-600 transition">
           <div className="text-4xl mb-3">🏗️</div>
           <h3 className="text-xl font-semibold mb-2">Launch New Resort</h3>
@@ -102,6 +102,13 @@ export default function Empire(){
           <h3 className="text-xl font-semibold mb-2">Manage Properties</h3>
           <p className="mb-4 opacity-90">Edit listings and monitor status</p>
           <span className="text-sm font-semibold">Manage →</span>
+        </Link>
+
+        <Link href="/owner/bookings" className="bg-blue-500 text-white rounded-lg p-6 hover:bg-blue-600 transition">
+          <div className="text-4xl mb-3">📬</div>
+          <h3 className="text-xl font-semibold mb-2">Booking Requests</h3>
+          <p className="mb-4 opacity-90">Review and confirm guest bookings</p>
+          <span className="text-sm font-semibold">View Requests →</span>
         </Link>
       </div>
 

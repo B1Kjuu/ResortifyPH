@@ -11,29 +11,86 @@ export default function Home(){
   const router = useRouter()
 
   useEffect(() => {
+    let mounted = true
+    let timeoutId: NodeJS.Timeout
+
     async function checkAuth(){
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        setUser(session.user)
-        // Check if admin
-        const { data: profile } = await supabase.from('profiles').select('is_admin, role').eq('id', session.user.id).single()
-          if (profile?.is_admin) {
-            router.push('/admin/command-center')
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        
+        if (!mounted) return
+
+        if (session?.user) {
+          setUser(session.user)
+          
+          try {
+            const { data: profile, error } = await supabase
+              .from('profiles')
+              .select('is_admin, role')
+              .eq('id', session.user.id)
+              .single()
+            
+            if (!mounted) return
+
+            // Clear timeout before redirecting
+            clearTimeout(timeoutId)
+
+            if (error) {
+              console.error('Profile fetch error:', error)
+              window.location.href = '/guest/adventure-hub'
+              return
+            }
+
+            if (profile?.is_admin) {
+              window.location.href = '/admin/command-center'
+              return
+            }
+            
+            if (profile?.role === 'owner') {
+              window.location.href = '/owner/empire'
+              return
+            }
+            
+            window.location.href = '/guest/adventure-hub'
+            return
+          } catch (err) {
+            console.error('Profile fetch exception:', err)
+            clearTimeout(timeoutId)
+            if (mounted) {
+              window.location.href = '/guest/adventure-hub'
+            }
             return
           }
-          // Redirect by role
-          if (profile?.role === 'owner') {
-            router.push('/owner/empire')
-            return
-          }
-          // Guest
-          router.push('/guest/adventure-hub')
-          return
+        }
+        
+        if (mounted) {
+          setLoading(false)
+          clearTimeout(timeoutId)
+        }
+      } catch (err) {
+        console.error('Auth check error:', err)
+        if (mounted) {
+          setLoading(false)
+          clearTimeout(timeoutId)
+        }
       }
-      setLoading(false)
     }
+
+    // Safety timeout - if still loading after 5 seconds, show landing page
+    timeoutId = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn('Auth taking too long, showing landing page')
+        setLoading(false)
+      }
+    }, 5000)
+
     checkAuth()
-  }, [router])
+
+    return () => { 
+      mounted = false
+      clearTimeout(timeoutId)
+    }
+  }, [])
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-resort-50 to-resort-100">

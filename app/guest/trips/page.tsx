@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
+import SkeletonTable from '../../../components/SkeletonTable'
 
 export default function TripsPage(){
   const [bookings, setBookings] = useState<any[]>([])
@@ -15,28 +16,46 @@ export default function TripsPage(){
     async function load(){
       try {
         const { data: { session } } = await supabase.auth.getSession()
+        if (!mounted) return
+        
         if (!session?.user) { 
           router.push('/auth/signin')
           return 
         }
 
-        const { data: profile, error } = await supabase.from('profiles').select('role').eq('id', session.user.id).single()
-        if (error || !profile) {
-          console.error('Profile error:', error)
-          router.push('/')
-          return
-        }
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single()
+        
+        if (!mounted) return
 
-        if (profile?.role !== 'guest') {
-          router.push('/')
-          return
-        }
-
-        const { data } = await supabase.from('bookings').select('*').eq('guest_id', session.user.id)
-        if (mounted) {
-          setBookings(data || [])
+        if (profileError) {
+          console.error('Profile error:', profileError)
           setLoading(false)
+          return
         }
+
+        if (!profile || profile?.role !== 'guest') {
+          router.push('/')
+          return
+        }
+
+        const { data: bookingsData, error: bookingsError } = await supabase
+          .from('bookings')
+          .select('*')
+          .eq('guest_id', session.user.id)
+          .order('created_at', { ascending: false })
+
+        if (!mounted) return
+
+        if (bookingsError) {
+          console.error('Bookings error:', bookingsError)
+        }
+
+        setBookings(bookingsData || [])
+        setLoading(false)
       } catch (err) {
         console.error('Trips error:', err)
         if (mounted) setLoading(false)
@@ -46,9 +65,7 @@ export default function TripsPage(){
     load()
     
     return () => { mounted = false }
-  }, [router])
-
-  if (loading) return <div className="w-full px-4 sm:px-6 lg:px-8 py-10 text-center text-slate-600">Loading...</div>
+  }, [])
 
   return (
     <div className="w-full px-4 sm:px-6 lg:px-8 py-10 max-w-6xl mx-auto">
@@ -58,7 +75,10 @@ export default function TripsPage(){
         <p className="text-slate-600">View and manage all your resort bookings</p>
       </div>
 
-      {bookings.length === 0 ? (
+      {loading ? (
+        <SkeletonTable rows={3} />
+      ) : bookings.length === 0 ? (
+
         <div className="bg-white border border-dashed border-slate-200 rounded-lg p-8 text-center">
           <p className="text-slate-600 mb-4">No trips yet</p>
           <Link href="/resorts" className="text-resort-500 font-semibold">Start exploring →</Link>

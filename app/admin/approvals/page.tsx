@@ -56,7 +56,7 @@ export default function ApprovalsPage(){
     return () => {
       subscription.unsubscribe()
     }
-  }, [router])
+  }, [])
 
   async function approveResort(id: string){
     console.log('Attempting to approve resort:', id)

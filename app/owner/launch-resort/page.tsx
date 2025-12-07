@@ -41,7 +41,7 @@ export default function LaunchResort(){
       setLoading(false)
     }
     getUser()
-  }, [router])
+  }, [])
 
   async function handleCreate(e: React.FormEvent){
     e.preventDefault()

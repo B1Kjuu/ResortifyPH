@@ -55,7 +55,7 @@ export default function BookingsControlPage(){
     return () => {
       subscription.unsubscribe()
     }
-  }, [router])
+  }, [])
 
   async function confirmBooking(id: string){
     const { error } = await supabase
@@ -144,7 +144,7 @@ export default function BookingsControlPage(){
           ) : (
             <div className="grid md:grid-cols-2 gap-4">
               {confirmedBookings.map(booking => (
-                <div key={booking.id} className="bg-white border border-green-200 rounded-xl p-5 shadow-sm bg-green-50">
+                <div key={booking.id} className="bg-green-50 border border-green-200 rounded-xl p-5 shadow-sm">
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <h4 className="font-semibold text-resort-900">{booking.resort?.name}</h4>
