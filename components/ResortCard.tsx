@@ -20,9 +20,11 @@ export default function ResortCard({ resort }: Props){
       >
         {/* Image Container with Overlay */}
         <div className="relative overflow-hidden aspect-[4/3] bg-slate-200">
-          <img 
+          <Image 
             src={image} 
-            alt={resort.name} 
+            alt={resort.name}
+            width={400}
+            height={300}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
           <div className={`absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`} />

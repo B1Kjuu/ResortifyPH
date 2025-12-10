@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useRef } from 'react'
+import Image from 'next/image'
 import { supabase } from '../lib/supabaseClient'
 
 type Props = {
@@ -95,9 +96,11 @@ export default function ImageUploader({ bucket = 'resort-images', onUpload }: Pr
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {uploadedUrls.map((url, index) => (
               <div key={url} className="relative group">
-                <img 
+                <Image 
                   src={url} 
                   alt={`Uploaded ${index + 1}`} 
+                  width={200}
+                  height={128}
                   className="w-full h-32 object-cover rounded-lg border-2 border-green-300 shadow-sm group-hover:shadow-md transition-shadow" 
                 />
                 <div className="absolute top-2 left-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded">
