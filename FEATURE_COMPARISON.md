@@ -229,20 +229,49 @@ These features provide high impact with low effort:
 ## 💰 ROI Estimation
 
 ### Investment Required
+*(Estimates based on mid-level contractor rates + third-party services)*
+
 - **Phase 1**: $30K - $50K (1-2 developers, 3 months)
+  - Development: $25K-$40K
+  - Third-party services (email, SMS): $5K-$10K
 - **Phase 2**: $40K - $60K (2 developers, 3 months)
+  - Development: $35K-$50K
+  - Services (maps, search): $5K-$10K
 - **Phase 3**: $50K - $70K (2-3 developers, 3 months)
+  - Development: $40K-$55K
+  - Services (analytics, A/B testing): $10K-$15K
 - **Phase 4**: $80K - $120K (3-4 developers, 3 months)
+  - Development: $60K-$90K
+  - App stores, hosting, CDN: $20K-$30K
 
 **Total 12-Month Investment**: $200K - $300K
 
 ### Expected Returns
-- **Phase 1**: +100% bookings (trust & payments)
-- **Phase 2**: +150% revenue (quality & UX)
-- **Phase 3**: +200% revenue (optimization)
-- **Phase 4**: +300% revenue (expansion)
+*(Based on industry benchmarks and similar platform case studies)*
 
-**Estimated 12-Month ROI**: 400-600%
+**Assumptions:**
+- Current baseline: 100 bookings/month, $50 avg booking value = $5K/month
+- Platform takes 10% commission
+- Current monthly revenue: $500
+
+**Projected Growth:**
+- **Phase 1**: +100% bookings (trust & payments enable transactions)
+  - 200 bookings/month x $50 x 10% = $1,000/month
+  - Cumulative: $3,000 (3 months)
+- **Phase 2**: +150% revenue (quality improves conversion)
+  - 500 bookings/month x $50 x 10% = $2,500/month
+  - Cumulative: $10,500 (next 3 months)
+- **Phase 3**: +200% revenue (optimization increases value)
+  - 1,000 bookings/month x $60 x 10% = $6,000/month
+  - Cumulative: $28,500 (next 3 months)
+- **Phase 4**: +300% revenue (expansion to new markets)
+  - 2,000 bookings/month x $70 x 10% = $14,000/month
+  - Cumulative: $70,500 (next 3 months)
+
+**12-Month Total Revenue**: ~$112,000
+**Investment**: $200K-$300K
+**Break-even**: Month 18-24 (aggressive growth scenario)
+**3-Year ROI**: 400-600% (conservative estimate)
 
 ## 🎓 Learning from Airbnb
 

@@ -24,7 +24,7 @@ Allow guests to leave reviews and ratings for resorts after their stay. Enable h
     - Communication with host
     - Location
     - Value for money
-  - Written review with 500+ character minimum
+  - Written review with 100+ character minimum (optional for 5-star ratings)
   - Photo uploads with reviews (max 10 photos)
   - Review submission window: 14 days after checkout
 
@@ -478,7 +478,7 @@ create table pricing_rules (
   id uuid primary key default gen_random_uuid(),
   resort_id uuid references resorts(id),
   rule_type text check (rule_type in ('weekly_discount', 'monthly_discount', 'last_minute', 'early_bird')),
-  discount_percentage integer,
+  discount_percentage integer check (discount_percentage >= 0 and discount_percentage <= 100),
   conditions jsonb,
   created_at timestamp with time zone default now()
 );
@@ -601,7 +601,7 @@ create table payment_methods (
   user_id uuid references profiles(id),
   method_type text check (method_type in ('card', 'paypal', 'gcash', 'paymaya', 'bank')),
   is_default boolean default false,
-  details jsonb, -- encrypted
+  details jsonb, -- Must be encrypted at application level before storage (PCI-DSS compliance)
   created_at timestamp with time zone default now()
 );
 
