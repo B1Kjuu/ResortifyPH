@@ -102,48 +102,68 @@ export default function ApprovalsPage(){
   if (!isAdmin) return <div className="w-full px-4 sm:px-6 lg:px-8 py-10 text-center text-slate-600">Unauthorized</div>
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 py-10 bg-gradient-to-br from-resort-50 to-resort-100 min-h-[80vh]">
-      <Link href="/admin/command-center" className="text-sm text-resort-500 font-semibold mb-6 inline-block">← Back to Command Center</Link>
-      
-      {toast.message && (
-        <div className={`mb-4 max-w-5xl mx-auto rounded-lg px-4 py-3 text-sm font-semibold ${toast.type === 'success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
-          {toast.message}
-        </div>
-      )}
-
-      <div className="max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <p className="text-sm font-semibold text-resort-500">Review Queue</p>
-            <h1 className="text-3xl font-bold text-resort-900">Pending Submissions</h1>
+    <div className="w-full min-h-screen bg-gradient-to-b from-slate-50 to-white">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-12 max-w-7xl mx-auto">
+        <Link href="/admin/command-center" className="text-sm text-resort-500 font-semibold mb-8 inline-flex items-center gap-2 hover:gap-3 transition-all">← Back to Command Center</Link>
+        
+        {toast.message && (
+          <div className={`mb-6 rounded-2xl px-6 py-4 text-sm font-semibold border-2 ${toast.type === 'success' ? 'bg-green-50 text-green-700 border-green-300' : 'bg-red-50 text-red-700 border-red-300'}`}>
+            {toast.message === 'Resort approved!' ? '✅' : '❌'} {toast.message}
           </div>
-          <span className="text-sm bg-yellow-100 text-yellow-800 px-3 py-1 rounded-lg font-semibold">Queue: {pendingResorts.length}</span>
+        )}
+
+        <div className="mb-8">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <span className="text-5xl">📋</span>
+              <div>
+                <p className="text-sm text-slate-600 font-semibold">Review Queue</p>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Pending Submissions</h1>
+              </div>
+            </div>
+            <span className="text-2xl font-bold bg-yellow-100 text-yellow-800 px-6 py-3 rounded-2xl border-2 border-yellow-300">{pendingResorts.length} submissions</span>
+          </div>
         </div>
 
-        <section className="space-y-4">
+        <section className="space-y-6">
           {pendingResorts.length === 0 ? (
-            <div className="bg-white border border-dashed border-slate-200 rounded-xl p-8 text-center text-slate-600">
-              <p className="font-semibold text-resort-900 mb-1">All caught up! ✓</p>
-              <p className="text-sm">No pending submissions to review</p>
+            <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-12 text-center text-slate-600">
+              <p className="font-bold text-4xl mb-3">✨</p>
+              <p className="font-semibold text-xl text-slate-900 mb-1">All caught up!</p>
+              <p className="text-lg">No pending submissions to review</p>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-2 gap-6">
               {pendingResorts.map(resort => (
-                <div key={resort.id} className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h3 className="text-xl font-semibold text-resort-900">{resort.name}</h3>
-                      <p className="text-sm text-slate-600">Owner: {resort.owner?.full_name || 'Unknown'}</p>
+                <div key={resort.id} className="bg-white border-2 border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-lg hover:border-purple-400 transition-all">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-slate-900">{resort.name}</h3>
+                      <p className="text-sm text-slate-600 mt-1">👤 Owner: {resort.owner?.full_name || 'Unknown'}</p>
                     </div>
-                    <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Pending</span>
+                    <span className="text-xs bg-yellow-100 text-yellow-800 px-3 py-1 rounded-lg font-bold border-2 border-yellow-300">⏳ Pending</span>
                   </div>
-                  <p className="text-sm text-slate-600 mb-1">{resort.location}</p>
-                  <p className="text-sm text-slate-600 mb-1">₱{resort.price}/night · {resort.capacity} guests</p>
-                  {resort.amenities && <p className="text-sm text-slate-600 mb-1">Amenities: {resort.amenities.join(', ')}</p>}
-                  <p className="text-sm text-slate-700 mb-4 line-clamp-3">{resort.description}</p>
-                  <div className="flex gap-2">
-                    <button onClick={() => approveResort(resort.id)} className="flex-1 px-4 py-2 text-sm bg-resort-500 text-white rounded-lg hover:bg-resort-600 transition">Approve</button>
-                    <button onClick={() => rejectResort(resort.id)} className="flex-1 px-4 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition">Reject</button>
+                  
+                  <div className="space-y-2 mb-4 pb-4 border-b border-slate-100">
+                    <p className="text-sm text-slate-700">📍 {resort.location}</p>
+                    <p className="text-sm text-slate-700">💰 ₱{resort.price}/night · 👥 {resort.capacity} guests</p>
+                    {resort.amenities && <p className="text-sm text-slate-700">✨ {resort.amenities.join(', ')}</p>}
+                    <p className="text-sm text-slate-600 line-clamp-3 mt-2 italic">{resort.description}</p>
+                  </div>
+                  
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => approveResort(resort.id)} 
+                      className="flex-1 px-4 py-3 text-sm font-bold bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all border-2 border-green-400"
+                    >
+                      ✅ Approve
+                    </button>
+                    <button 
+                      onClick={() => rejectResort(resort.id)} 
+                      className="flex-1 px-4 py-3 text-sm font-bold bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all border-2 border-red-400"
+                    >
+                      ❌ Reject
+                    </button>
                   </div>
                 </div>
               ))}

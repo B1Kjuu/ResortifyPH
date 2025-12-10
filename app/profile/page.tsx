@@ -83,21 +83,27 @@ export default function ProfilePage(){
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-resort-50 to-resort-100 px-4 sm:px-6 lg:px-8 py-10">
-      <div className="max-w-3xl mx-auto">
-        <Link href={profile.is_admin ? '/admin/command-center' : profile.role === 'owner' ? '/owner/empire' : '/guest/adventure-hub'} className="text-sm text-resort-500 font-semibold mb-6 inline-block hover:text-resort-600">
-          ← Back to Dashboard
+      <div className="max-w-4xl mx-auto">
+        <Link href={profile.is_admin ? '/admin/command-center' : profile.role === 'owner' ? '/owner/empire' : '/guest/adventure-hub'} className="inline-flex items-center gap-2 text-resort-600 hover:text-resort-700 font-semibold mb-8 transition-colors">
+          <span>←</span>
+          <span>Back to Dashboard</span>
         </Link>
 
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="bg-white rounded-3xl shadow-2xl border-2 border-slate-200 overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-resort-500 to-resort-600 px-8 py-12 text-white text-center">
-            <div className="w-24 h-24 bg-white rounded-full mx-auto mb-4 flex items-center justify-center text-4xl shadow-lg">
+          <div className="bg-gradient-to-r from-resort-500 via-blue-500 to-resort-600 px-8 py-16 text-white text-center relative overflow-hidden">
+            <div className="absolute top-4 right-4 text-5xl opacity-20">🏨</div>
+            <div className="w-28 h-28 bg-white/20 backdrop-blur-sm rounded-full mx-auto mb-6 flex items-center justify-center text-6xl shadow-2xl border-4 border-white/30">
               👤
             </div>
-            <h1 className="text-3xl font-bold mb-2">{profile.full_name || 'User'}</h1>
-            <span className={`inline-block px-4 py-1 rounded-full text-sm font-semibold ${getRoleBadgeColor()}`}>
-              {getRoleLabel()}
-            </span>
+            <h1 className="text-4xl font-bold mb-3">{profile.full_name || 'User'}</h1>
+            <div className="flex items-center justify-center gap-3">
+              <span className={`inline-block px-6 py-2 rounded-full text-sm font-bold ${getRoleBadgeColor()} border-2 border-current`}>
+                {getRoleLabel()}
+              </span>
+              <span className="text-white/80 font-semibold">•</span>
+              <span className="text-white/90 font-medium">Member since {new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}</span>
+            </div>
           </div>
 
           {/* Message */}
@@ -108,35 +114,43 @@ export default function ProfilePage(){
           )}
 
           {/* Profile Info */}
-          <div className="px-8 py-8">
-            <h2 className="text-xl font-semibold text-resort-900 mb-6">Profile Information</h2>
+          <div className="px-8 py-10">
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-resort-600 to-blue-600 bg-clip-text text-transparent mb-8 flex items-center gap-2">
+              <span>ℹ️</span>
+              <span>Profile Information</span>
+            </h2>
             
             <div className="space-y-6">
               {/* Email */}
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Email Address</label>
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+                  <span>📧</span>
+                  <span>Email Address</span>
+                </label>
                 <input 
                   type="email" 
                   value={profile.email} 
                   disabled 
-                  className="w-full px-4 py-3 border border-slate-200 rounded-lg bg-slate-50 text-slate-600 cursor-not-allowed"
+                  className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-slate-50 text-slate-600 cursor-not-allowed font-medium"
                 />
-                <p className="text-xs text-slate-500 mt-1">Email cannot be changed</p>
               </div>
 
               {/* Full Name */}
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Full Name</label>
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+                  <span>👤</span>
+                  <span>Full Name</span>
+                </label>
                 {editing ? (
                   <input 
                     type="text" 
                     value={fullName} 
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full px-4 py-3 border border-resort-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-500"
+                    className="w-full px-5 py-3 border-2 border-resort-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm"
                     placeholder="Enter your full name"
                   />
                 ) : (
-                  <div className="w-full px-4 py-3 border border-slate-200 rounded-lg bg-white text-slate-900">
+                  <div className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-900 font-semibold">
                     {profile.full_name || 'Not set'}
                   </div>
                 )}
@@ -144,24 +158,29 @@ export default function ProfilePage(){
 
               {/* Role */}
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Account Type</label>
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+                  <span>🎫</span>
+                  <span>Account Type</span>
+                </label>
                 <input 
                   type="text" 
                   value={getRoleLabel()} 
                   disabled 
-                  className="w-full px-4 py-3 border border-slate-200 rounded-lg bg-slate-50 text-slate-600 cursor-not-allowed"
+                  className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-slate-50 text-slate-600 cursor-not-allowed font-medium"
                 />
-                <p className="text-xs text-slate-500 mt-1">Account type cannot be changed</p>
               </div>
 
               {/* Created Date */}
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Member Since</label>
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+                  <span>📅</span>
+                  <span>Member Since</span>
+                </label>
                 <input 
                   type="text" 
                   value={new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} 
                   disabled 
-                  className="w-full px-4 py-3 border border-slate-200 rounded-lg bg-slate-50 text-slate-600 cursor-not-allowed"
+                  className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-slate-50 text-slate-600 cursor-not-allowed font-medium"
                 />
               </div>
             </div>

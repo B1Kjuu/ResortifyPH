@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { supabase } from '../lib/supabaseClient'
 
 type Props = {
@@ -11,6 +11,7 @@ export default function ImageUploader({ bucket = 'resort-images', onUpload }: Pr
   const [files, setFiles] = useState<FileList | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadedUrls, setUploadedUrls] = useState<string[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   async function handleUpload(){
     if (!files) return
@@ -33,15 +34,76 @@ export default function ImageUploader({ bucket = 'resort-images', onUpload }: Pr
   }
 
   return (
-    <div className="space-y-2">
-      <input type="file" multiple onChange={(e) => setFiles(e.target.files)} />
-      <button onClick={handleUpload} className="px-4 py-2 bg-resort-500 text-white rounded" disabled={uploading}>{uploading ? 'Uploading...' : 'Upload'}</button>
+    <div className="space-y-4">
+      <div className="flex items-center gap-4 flex-wrap">
+        <input 
+          ref={fileInputRef}
+          type="file" 
+          multiple 
+          accept="image/*"
+          onChange={(e) => setFiles(e.target.files)} 
+          className="hidden"
+          id="resort-image-input"
+        />
+        <label 
+          htmlFor="resort-image-input"
+          className="inline-flex items-center gap-2 px-6 py-3 border-2 border-slate-300 rounded-xl font-semibold text-slate-700 hover:border-resort-400 hover:bg-resort-50 transition-all cursor-pointer bg-white shadow-sm"
+        >
+          <span className="text-xl">📁</span>
+          <span>Choose Files</span>
+        </label>
+        
+        {files && (
+          <div className="flex items-center gap-3 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+            <span className="text-blue-600 font-semibold text-sm">
+              {files.length} file{files.length !== 1 ? 's' : ''} selected
+            </span>
+          </div>
+        )}
+        
+        <button 
+          onClick={handleUpload} 
+          disabled={uploading || !files}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-resort-500 to-blue-500 text-white rounded-xl font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+        >
+          {uploading ? (
+            <>
+              <span className="animate-spin">⏳</span>
+              <span>Uploading...</span>
+            </>
+          ) : (
+            <>
+              <span>📤</span>
+              <span>Upload Images</span>
+            </>
+          )}
+        </button>
+      </div>
+      
+      <div className="text-xs text-slate-500">
+        <p>💡 <strong>Tip:</strong> Upload high-quality photos showing pool, rooms, amenities, and outdoor areas. Maximum 10 images recommended.</p>
+      </div>
+      
       {uploadedUrls.length > 0 && (
-        <div className="space-y-1">
-          <div className="text-sm text-slate-600">Uploaded images:</div>
-          <div className="grid grid-cols-3 gap-2">
-            {uploadedUrls.map((url) => (
-              <img key={url} src={url} alt="Uploaded" className="w-full h-24 object-cover rounded border" />
+        <div className="space-y-3 p-4 bg-green-50 border-2 border-green-200 rounded-xl">
+          <div className="flex items-center gap-2">
+            <span className="text-green-600 font-bold text-xl">✓</span>
+            <div className="text-sm font-semibold text-green-800">
+              Successfully uploaded {uploadedUrls.length} image{uploadedUrls.length !== 1 ? 's' : ''}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {uploadedUrls.map((url, index) => (
+              <div key={url} className="relative group">
+                <img 
+                  src={url} 
+                  alt={`Uploaded ${index + 1}`} 
+                  className="w-full h-32 object-cover rounded-lg border-2 border-green-300 shadow-sm group-hover:shadow-md transition-shadow" 
+                />
+                <div className="absolute top-2 left-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded">
+                  {index + 1}
+                </div>
+              </div>
             ))}
           </div>
         </div>

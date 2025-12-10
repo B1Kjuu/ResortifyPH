@@ -75,107 +75,143 @@ export default function LaunchResort(){
   if (!isAuthorized) return null
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 py-10 max-w-2xl mx-auto">
-      <Link href="/owner/empire" className="text-sm text-resort-500 font-semibold mb-4 inline-block">← Back to Empire</Link>
-      
-      <h1 className="text-3xl font-bold text-resort-900 mb-2">Launch Your Resort</h1>
-      <p className="text-slate-600 mb-8">Submit your property for approval. Fill in all details carefully to increase approval chances.</p>
-
-      <form onSubmit={handleCreate} className="bg-white border border-slate-200 rounded-lg p-6 space-y-4">
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-1">Resort Name *</label>
-          <input 
-            type="text"
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-500" 
-            placeholder="e.g., Paradise Beach Resort" 
-            value={name} 
-            onChange={e => setName(e.target.value)}
-            required
-          />
+    <div className="w-full min-h-screen bg-gradient-to-b from-slate-50 to-white px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-3xl mx-auto">
+        <Link href="/owner/empire" className="text-sm text-resort-500 font-semibold mb-8 inline-flex items-center gap-2 hover:gap-3 transition-all">← Back to Empire</Link>
+        
+        <div className="mb-10">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-5xl">🏗️</span>
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-resort-600 to-blue-600 bg-clip-text text-transparent">Launch Your Resort</h1>
+          </div>
+          <p className="text-lg text-slate-600 ml-20">Submit your property for approval. Fill in all details carefully to increase approval chances.</p>
         </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-1">Location *</label>
-          <select 
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-500"
-            value={location}
-            onChange={e => setLocation(e.target.value)}
-            required
-          >
-            <option value="">Select location...</option>
-            <option value="Manila">Manila</option>
-            <option value="Antipolo">Antipolo</option>
-            <option value="Rizal">Rizal</option>
-          </select>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-4">
+        <form onSubmit={handleCreate} className="bg-white border-2 border-slate-200 rounded-3xl shadow-lg p-8 space-y-6">
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Price per Night (₱) *</label>
+            <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+              <span>🏨</span>
+              <span>Resort Name *</span>
+            </label>
             <input 
-              type="number"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-500" 
-              placeholder="0" 
-              value={price as any} 
-              onChange={e => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
+              type="text"
+              className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 bg-slate-50 hover:border-slate-300 transition-colors" 
+              placeholder="e.g., Paradise Beach Resort" 
+              value={name} 
+              onChange={e => setName(e.target.value)}
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Guest Capacity *</label>
-            <input 
-              type="number"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-500" 
-              placeholder="0" 
-              value={capacity as any} 
-              onChange={e => setCapacity(e.target.value === '' ? '' : Number(e.target.value))}
+            <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+              <span>📍</span>
+              <span>Location *</span>
+            </label>
+            <select
+              className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 bg-white shadow-sm hover:border-slate-300 transition-colors cursor-pointer"
+              value={location}
+              onChange={e => setLocation(e.target.value)}
               required
+            >
+              <option value="">Select province...</option>
+              <option value="Metro Manila">Metro Manila</option>
+              <option value="Cavite">Cavite</option>
+              <option value="Laguna">Laguna</option>
+              <option value="Batangas">Batangas</option>
+              <option value="Cebu">Cebu</option>
+              <option value="Iloilo">Iloilo</option>
+              <option value="Davao">Davao</option>
+              <option value="Cagayan de Oro">Cagayan de Oro</option>
+              <option value="Palawan">Palawan</option>
+              <option value="Boracay">Boracay</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+                <span>💰</span>
+                <span>Price per Night (₱) *</span>
+              </label>
+              <input 
+                type="number"
+                className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 bg-slate-50 hover:border-slate-300 transition-colors" 
+                placeholder="0" 
+                value={price as any} 
+                onChange={e => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+                <span>👥</span>
+                <span>Guest Capacity *</span>
+              </label>
+              <input 
+                type="number"
+                className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 bg-slate-50 hover:border-slate-300 transition-colors" 
+                placeholder="0" 
+                value={capacity as any} 
+                onChange={e => setCapacity(e.target.value === '' ? '' : Number(e.target.value))}
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+              <span>✨</span>
+              <span>Amenities (comma separated)</span>
+            </label>
+            <input 
+              type="text"
+              className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 bg-slate-50 hover:border-slate-300 transition-colors" 
+              placeholder="Pool, WiFi, Air Conditioning, Restaurant" 
+              value={amenities} 
+              onChange={e => setAmenities(e.target.value)}
             />
           </div>
-        </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-1">Amenities (comma separated)</label>
-          <input 
-            type="text"
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-500" 
-            placeholder="Pool, WiFi, Air Conditioning, Restaurant" 
-            value={amenities} 
-            onChange={e => setAmenities(e.target.value)}
-          />
-        </div>
+          <div>
+            <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+              <span>📝</span>
+              <span>Description</span>
+            </label>
+            <textarea 
+              className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 bg-slate-50 hover:border-slate-300 transition-colors resize-none" 
+              placeholder="Describe your resort, amenities, and what makes it special" 
+              value={description} 
+              onChange={e => setDescription(e.target.value)}
+              rows={4}
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-1">Description</label>
-          <textarea 
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-500 resize-none" 
-            placeholder="Describe your resort, amenities, and what makes it special" 
-            value={description} 
-            onChange={e => setDescription(e.target.value)}
-            rows={4}
-          />
-        </div>
+          <div>
+            <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
+              <span>📸</span>
+              <span>Resort Images</span>
+            </label>
+            <ImageUploader onUpload={(urls) => setImages(urls)} />
+            {images.length > 0 && <p className="text-xs text-slate-600 mt-2 font-semibold">✅ {images.length} image(s) uploaded</p>}
+          </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">Resort Images</label>
-          <ImageUploader onUpload={(urls) => setImages(urls)} />
-          {images.length > 0 && <p className="text-xs text-slate-500 mt-2">✓ {images.length} image(s) uploaded</p>}
-        </div>
-
-        <div className="flex gap-3 pt-4">
-          <button 
-            type="submit"
-            disabled={submitting}
-            className="flex-1 px-4 py-2 bg-resort-500 text-white rounded-lg font-semibold hover:bg-resort-600 transition disabled:opacity-50"
-          >
-            {submitting ? 'Launching...' : 'Launch Resort'}
-          </button>
-          <Link href="/owner/empire" className="flex-1 px-4 py-2 border border-slate-300 rounded-lg font-semibold text-center hover:bg-slate-50 transition">
-            Cancel
-          </Link>
-        </div>
-      </form>
+          <div className="flex gap-3 pt-6">
+            <button 
+              type="submit"
+              disabled={submitting}
+              className="flex-1 px-6 py-4 bg-gradient-to-r from-resort-500 to-blue-500 text-white rounded-xl font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed border-2 border-resort-400"
+            >
+              {submitting ? '⏳ Launching...' : '🚀 Launch Resort'}
+            </button>
+            <Link href="/owner/empire" className="flex-1 px-6 py-4 border-2 border-slate-300 rounded-xl font-bold text-center hover:bg-slate-50 hover:border-slate-400 transition-all">
+              ✕ Cancel
+            </Link>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

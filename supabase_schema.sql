@@ -16,6 +16,7 @@ create table if not exists resorts (
   name text,
   description text,
   location text,
+  type text check (type in ('beach','mountain','nature','city','countryside')) default 'city',
   price int,
   capacity int,
   amenities text[],

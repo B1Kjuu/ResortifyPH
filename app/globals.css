@@ -12,6 +12,7 @@ body,
 #root {
   height: 100%;
 }
+
 body {
   @apply bg-white text-slate-900 antialiased;
 }
@@ -21,4 +22,49 @@ body {
   margin-left: auto;
   margin-right: auto;
   padding: 0 1rem;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Smooth transitions */
+* {
+  @apply transition-colors duration-200;
+}
+
+/* Button hover states */
+button,
+a {
+  @apply transition-all duration-300;
+}
+
+/* Link underline animation */
+a:not([class]) {
+  @apply relative;
+}
+
+/* Custom gradient text */
+.gradient-text {
+  @apply bg-gradient-to-r from-resort-500 to-resort-600 bg-clip-text text-transparent;
 }

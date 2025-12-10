@@ -183,22 +183,25 @@ export default function OwnerBookingsPage(){
   const rejectedBookings = bookings.filter(b => b.status === 'rejected')
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-resort-50 to-white px-4 sm:px-6 lg:px-8 py-10">
-      <div className="max-w-6xl mx-auto">
-        <Link href="/owner/empire" className="text-sm text-resort-500 font-semibold mb-6 inline-block hover:text-resort-600 transition">
+    <div className="w-full min-h-screen bg-gradient-to-b from-slate-50 to-white px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-7xl mx-auto">
+        <Link href="/owner/empire" className="text-sm text-resort-500 font-semibold mb-8 inline-flex items-center gap-2 hover:gap-3 transition-all">
           ← Back to Empire
         </Link>
 
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-resort-900 mb-2">Booking Requests</h1>
-          <p className="text-slate-600">Manage all booking requests for your resorts</p>
+        <div className="mb-10">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-5xl">📬</span>
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-resort-600 to-blue-600 bg-clip-text text-transparent">Booking Requests</h1>
+          </div>
+          <p className="text-lg text-slate-600 ml-20">Manage all booking requests for your resorts</p>
         </div>
 
         {toast.message && (
-          <div className={`mb-6 px-6 py-4 rounded-lg font-semibold ${
-            toast.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+          <div className={`mb-6 px-6 py-4 rounded-2xl font-semibold border-2 ${
+            toast.type === 'success' ? 'bg-green-50 text-green-700 border-green-300' : 'bg-red-50 text-red-700 border-red-300'
           }`}>
-            {toast.message}
+            {toast.type === 'success' ? '✅' : '❌'} {toast.message}
           </div>
         )}
 
@@ -210,129 +213,131 @@ export default function OwnerBookingsPage(){
           <>
             {/* Pending Bookings */}
             <section className="mb-12">
-              <h2 className="text-2xl font-bold text-resort-900 mb-4 flex items-center gap-2">
-                <span className="text-2xl">⏳</span>
-                Pending Requests ({pendingBookings.length})
-              </h2>
+              <div className="flex items-center gap-3 mb-6">
+                <span className="text-3xl">⏳</span>
+                <h2 className="text-3xl font-bold text-slate-900">Pending Requests ({pendingBookings.length})</h2>
+              </div>
 
               {pendingBookings.length === 0 ? (
-            <div className="bg-white border border-dashed border-slate-200 rounded-xl p-8 text-center">
-              <p className="text-slate-600">No pending booking requests</p>
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 gap-4">
-              {pendingBookings.map(booking => (
-                <div key={booking.id} className="bg-white border border-yellow-200 rounded-xl p-6 shadow-lg">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-lg font-bold text-resort-900">{booking.resort?.name}</h3>
-                      <p className="text-sm text-slate-600">Guest: {booking.guest?.full_name}</p>
-                      <p className="text-sm text-slate-600">📧 {booking.guest?.email}</p>
-                    </div>
-                    <span className="text-xs bg-yellow-500 text-white px-3 py-1 rounded-full font-semibold">Pending</span>
-                  </div>
-
-                  <div className="bg-yellow-50 rounded-lg p-4 mb-4">
-                    <p className="text-sm text-slate-700 mb-2">
-                      📅 <span className="font-semibold">{booking.date_from}</span> → <span className="font-semibold">{booking.date_to}</span>
-                    </p>
-                    <p className="text-sm text-slate-700">
-                      👥 <span className="font-semibold">{booking.guest_count} {booking.guest_count === 1 ? 'guest' : 'guests'}</span>
-                    </p>
-                    <p className="text-sm text-slate-700 mt-2">
-                      📆 Requested: {new Date(booking.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => confirmBooking(booking.id)}
-                      className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition"
-                    >
-                      ✓ Confirm
-                    </button>
-                    <button
-                      onClick={() => rejectBooking(booking.id)}
-                      className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition"
-                    >
-                      ✗ Reject
-                    </button>
-                  </div>
+                <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center">
+                  <p className="text-lg font-bold text-slate-900 mb-2">No pending requests</p>
+                  <p className="text-slate-600">Your pending booking queue is empty</p>
                 </div>
-              ))}
-            </div>
-          )}
-        </section>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-6">
+                  {pendingBookings.map(booking => (
+                    <div key={booking.id} className="bg-white border-2 border-yellow-300 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="text-lg font-bold text-slate-900">{booking.resort?.name}</h3>
+                          <p className="text-sm text-slate-600 mt-1">👤 {booking.guest?.full_name}</p>
+                          <p className="text-sm text-slate-600">📧 {booking.guest?.email}</p>
+                        </div>
+                        <span className="text-xs bg-yellow-100 text-yellow-800 px-3 py-1 rounded-lg font-bold border-2 border-yellow-300">⏳ Pending</span>
+                      </div>
 
-        {/* Confirmed Bookings */}
-        <section className="mb-12">
-          <h2 className="text-2xl font-bold text-resort-900 mb-4 flex items-center gap-2">
-            <span className="text-2xl">✓</span>
-            Confirmed Bookings ({confirmedBookings.length})
-          </h2>
+                      <div className="bg-yellow-50 rounded-xl p-4 mb-4 border border-yellow-100">
+                        <p className="text-sm text-slate-700 mb-2">
+                          📅 <span className="font-bold">{booking.date_from}</span> → <span className="font-bold">{booking.date_to}</span>
+                        </p>
+                        <p className="text-sm text-slate-700">
+                          👥 <span className="font-bold">{booking.guest_count} {booking.guest_count === 1 ? 'guest' : 'guests'}</span>
+                        </p>
+                        <p className="text-sm text-slate-600 mt-2 italic">
+                          Requested: {new Date(booking.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
 
-          {confirmedBookings.length === 0 ? (
-            <div className="bg-white border border-dashed border-slate-200 rounded-xl p-8 text-center">
-              <p className="text-slate-600">No confirmed bookings yet</p>
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 gap-4">
-              {confirmedBookings.map(booking => (
-                <div key={booking.id} className="bg-green-50 border border-green-200 rounded-xl p-6 shadow-lg">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-lg font-bold text-resort-900">{booking.resort?.name}</h3>
-                      <p className="text-sm text-slate-600">Guest: {booking.guest?.full_name}</p>
-                      <p className="text-sm text-slate-600">📧 {booking.guest?.email}</p>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => confirmBooking(booking.id)}
+                          className="flex-1 px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all border-2 border-green-400"
+                        >
+                          ✅ Confirm
+                        </button>
+                        <button
+                          onClick={() => rejectBooking(booking.id)}
+                          className="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all border-2 border-red-400"
+                        >
+                          ❌ Reject
+                        </button>
+                      </div>
                     </div>
-                    <span className="text-xs bg-green-500 text-white px-3 py-1 rounded-full font-semibold">Confirmed</span>
-                  </div>
-
-                  <div className="bg-white rounded-lg p-4">
-                    <p className="text-sm text-slate-700 mb-2">
-                      📅 <span className="font-semibold">{booking.date_from}</span> → <span className="font-semibold">{booking.date_to}</span>
-                    </p>
-                    <p className="text-sm text-slate-700">
-                      👥 <span className="font-semibold">{booking.guest_count} {booking.guest_count === 1 ? 'guest' : 'guests'}</span>
-                    </p>
-                    <p className="text-sm text-slate-700 mt-2">
-                      ✓ Confirmed: {new Date(booking.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </section>
+              )}
+            </section>
 
-        {/* Rejected Bookings */}
-        {rejectedBookings.length > 0 && (
-          <section>
-            <h2 className="text-2xl font-bold text-resort-900 mb-4 flex items-center gap-2">
-              <span className="text-2xl">✗</span>
-              Rejected Bookings ({rejectedBookings.length})
-            </h2>
+            {/* Confirmed Bookings */}
+            <section className="mb-12">
+              <div className="flex items-center gap-3 mb-6">
+                <span className="text-3xl">✅</span>
+                <h2 className="text-3xl font-bold text-slate-900">Confirmed Bookings ({confirmedBookings.length})</h2>
+              </div>
 
-            <div className="grid md:grid-cols-2 gap-4">
-              {rejectedBookings.map(booking => (
-                <div key={booking.id} className="bg-red-50 border border-red-200 rounded-xl p-6 shadow-lg opacity-75">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-lg font-bold text-resort-900">{booking.resort?.name}</h3>
-                      <p className="text-sm text-slate-600">Guest: {booking.guest?.full_name}</p>
+              {confirmedBookings.length === 0 ? (
+                <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center">
+                  <p className="text-lg font-bold text-slate-900 mb-2">No confirmed bookings</p>
+                  <p className="text-slate-600">Your confirmed bookings will appear here</p>
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-6">
+                  {confirmedBookings.map(booking => (
+                    <div key={booking.id} className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="text-lg font-bold text-slate-900">{booking.resort?.name}</h3>
+                          <p className="text-sm text-slate-600 mt-1">👤 {booking.guest?.full_name}</p>
+                          <p className="text-sm text-slate-600">📧 {booking.guest?.email}</p>
+                        </div>
+                        <span className="text-xs bg-green-100 text-green-800 px-3 py-1 rounded-lg font-bold border-2 border-green-300">✅ Confirmed</span>
+                      </div>
+
+                      <div className="bg-white rounded-xl p-4 border border-green-100">
+                        <p className="text-sm text-slate-700 mb-2">
+                          📅 <span className="font-bold">{booking.date_from}</span> → <span className="font-bold">{booking.date_to}</span>
+                        </p>
+                        <p className="text-sm text-slate-700">
+                          👥 <span className="font-bold">{booking.guest_count} {booking.guest_count === 1 ? 'guest' : 'guests'}</span>
+                        </p>
+                        <p className="text-sm text-slate-600 mt-2 italic">
+                          ✓ Confirmed: {new Date(booking.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
-                    <span className="text-xs bg-red-500 text-white px-3 py-1 rounded-full font-semibold">Rejected</span>
-                  </div>
-
-                  <p className="text-sm text-slate-700">
-                    📅 {booking.date_from} → {booking.date_to}
-                  </p>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </section>
-        )}
-        </>
+              )}
+            </section>
+
+            {/* Rejected Bookings */}
+            {rejectedBookings.length > 0 && (
+              <section>
+                <div className="flex items-center gap-3 mb-6">
+                  <span className="text-3xl">❌</span>
+                  <h2 className="text-3xl font-bold text-slate-900">Rejected Bookings ({rejectedBookings.length})</h2>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  {rejectedBookings.map(booking => (
+                    <div key={booking.id} className="bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-300 rounded-2xl p-6 shadow-sm opacity-80">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="text-lg font-bold text-slate-900">{booking.resort?.name}</h3>
+                          <p className="text-sm text-slate-600 mt-1">👤 {booking.guest?.full_name}</p>
+                        </div>
+                        <span className="text-xs bg-red-100 text-red-800 px-3 py-1 rounded-lg font-bold border-2 border-red-300">❌ Rejected</span>
+                      </div>
+
+                      <p className="text-sm text-slate-700">
+                        📅 {booking.date_from} → {booking.date_to}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
         )}
       </div>
     </div>

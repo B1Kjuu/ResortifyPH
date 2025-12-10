@@ -114,44 +114,88 @@ export default function Navbar(){
   }
 
   return (
-    <header className="bg-white border-b w-full shadow-sm">
+    <header className="bg-white/95 backdrop-blur-sm border-b-2 border-slate-200 w-full sticky top-0 z-50 shadow-md">
       <div className="w-full px-4 sm:px-6 lg:px-8 flex items-center justify-between py-4 max-w-7xl mx-auto">
-        <Link href={getHomeLink()} className="flex items-center gap-3 hover:opacity-80 transition">
-          <Image 
-            src="/assets/ResortifyPH_Logo.png" 
-            alt="ResortifyPH Logo" 
-            width={40} 
-            height={40}
-            className="w-10 h-10"
-          />
-          <span className="font-semibold text-resort-900 hidden sm:inline">ResortifyPH</span>
+        {/* Logo */}
+        <Link href={getHomeLink()} className="flex items-center gap-2 hover:scale-105 transition-transform flex-shrink-0 group">
+          <div className="relative">
+            <Image 
+              src="/assets/ResortifyPH_Logo.png" 
+              alt="ResortifyPH Logo" 
+              width={40} 
+              height={40}
+              className="w-10 h-10 sm:w-11 sm:h-11 drop-shadow-md"
+            />
+          </div>
+          <span className="font-bold text-lg sm:text-xl bg-gradient-to-r from-resort-600 to-blue-600 bg-clip-text text-transparent">ResortifyPH</span>
         </Link>
 
-        <nav className="flex items-center gap-4">
-          <Link href="/resorts" className="text-sm text-slate-700 hover:text-resort-500 transition">Resorts</Link>
-          {authChecked && user && userRole === 'guest' && <Link href="/guest/trips" className="text-sm text-slate-700 hover:text-resort-500 transition">My Trips</Link>}
-          {authChecked && user && userRole === 'owner' && <Link href="/owner/properties" className="text-sm text-slate-700 hover:text-resort-500 transition">My Properties</Link>}
-          {authChecked && user && userRole === 'owner' && <Link href="/owner/bookings" className="text-sm text-slate-700 hover:text-resort-500 transition">Bookings</Link>}
-          {authChecked && isAdmin && <Link href="/admin/approvals" className="text-sm text-slate-700 hover:text-resort-500 transition">Approvals</Link>}
-          {authChecked && isAdmin && <Link href="/admin/bookings-control" className="text-sm text-slate-700 hover:text-resort-500 transition">Bookings</Link>}
-          
+        {/* Center Navigation */}
+        <nav className="hidden md:flex items-center gap-8 flex-1 justify-center">
+          <Link href="/resorts" className="text-sm font-semibold text-slate-700 hover:text-resort-600 transition-all relative group px-2 py-1">
+            🏝️ Explore
+            <span className="absolute -bottom-1 left-0 w-0 h-1 bg-gradient-to-r from-resort-500 to-blue-500 rounded-full group-hover:w-full transition-all"></span>
+          </Link>
+          {authChecked && user && userRole === 'guest' && (
+            <Link href="/guest/trips" className="text-sm font-semibold text-slate-700 hover:text-resort-600 transition-all relative group px-2 py-1">
+              ✈️ My Trips
+              <span className="absolute -bottom-1 left-0 w-0 h-1 bg-gradient-to-r from-resort-500 to-blue-500 rounded-full group-hover:w-full transition-all"></span>
+            </Link>
+          )}
+          {authChecked && user && userRole === 'owner' && (
+            <>
+              <Link href="/owner/my-resorts" className="text-sm font-semibold text-slate-700 hover:text-resort-600 transition-all relative group px-2 py-1">
+                🏢 My Properties
+                <span className="absolute -bottom-1 left-0 w-0 h-1 bg-gradient-to-r from-resort-500 to-blue-500 rounded-full group-hover:w-full transition-all"></span>
+              </Link>
+              <Link href="/owner/bookings" className="text-sm font-semibold text-slate-700 hover:text-resort-600 transition-all relative group px-2 py-1">
+                💼 Bookings
+                <span className="absolute -bottom-1 left-0 w-0 h-1 bg-gradient-to-r from-resort-500 to-blue-500 rounded-full group-hover:w-full transition-all"></span>
+              </Link>
+            </>
+          )}
+          {authChecked && isAdmin && (
+            <>
+              <Link href="/admin/approvals" className="text-sm font-semibold text-slate-700 hover:text-resort-600 transition-all relative group px-2 py-1">
+                ✔️ Approvals
+                <span className="absolute -bottom-1 left-0 w-0 h-1 bg-gradient-to-r from-resort-500 to-blue-500 rounded-full group-hover:w-full transition-all"></span>
+              </Link>
+              <Link href="/admin/command-center" className="text-sm font-semibold text-slate-700 hover:text-resort-600 transition-all relative group px-2 py-1">
+                ⚙️ Control Center
+                <span className="absolute -bottom-1 left-0 w-0 h-1 bg-gradient-to-r from-resort-500 to-blue-500 rounded-full group-hover:w-full transition-all"></span>
+              </Link>
+            </>
+          )}
+        </nav>
+
+        {/* Right Section - Auth */}
+        <div className="flex items-center gap-3">
           {authChecked && user ? (
             <>
-              <Link href="/profile" className="text-sm text-slate-700 hover:text-resort-500 transition flex items-center gap-1">
-                <span>👤</span>
-                <span className="hidden md:inline">Profile</span>
+              <Link href="/profile" className="hidden sm:flex items-center gap-2 px-4 py-2.5 text-slate-700 hover:bg-gradient-to-r hover:from-slate-100 hover:to-slate-50 rounded-xl transition-all border border-transparent hover:border-slate-200">
+                <span className="text-xl">👤</span>
+                <span className="text-sm font-semibold hidden md:inline">Profile</span>
               </Link>
-              <button onClick={handleLogout} className="text-sm text-white bg-resort-teal px-4 py-2 rounded-lg hover:bg-resort-600 transition shadow-sm">Sign out</button>
+              <button 
+                onClick={handleLogout} 
+                className="px-5 py-2.5 text-sm font-semibold text-slate-700 border-2 border-slate-300 rounded-xl hover:bg-slate-50 hover:border-slate-400 transition-all shadow-sm"
+              >
+                Sign out
+              </button>
             </>
           ) : authChecked ? (
             <>
-              <Link href="/auth/signin" className="text-sm text-slate-700 hover:text-slate-900 transition">Sign in</Link>
-              <Link href="/auth/signup" className="text-sm text-white bg-resort-500 px-4 py-2 rounded-lg hover:bg-resort-600 transition shadow-sm">Sign up</Link>
+              <Link href="/auth/signin" className="px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-all rounded-xl border-2 border-transparent hover:border-slate-200">
+                Sign in
+              </Link>
+              <Link href="/auth/signup" className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-resort-500 to-blue-500 rounded-xl hover:shadow-lg transition-all">
+                Sign up
+              </Link>
             </>
           ) : (
-            <span className="text-sm text-slate-400">Checking...</span>
+            <div className="px-3 py-2 text-xs text-slate-400">Loading...</div>
           )}
-        </nav>
+        </div>
       </div>
     </header>
   )

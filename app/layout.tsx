@@ -5,7 +5,7 @@ import Footer from '../components/Footer'
 
 export const metadata = {
   title: 'ResortifyPH',
-  description: 'Book private resorts in Manila, Antipolo and Rizal.'
+  description: 'Book private resorts across the Philippines. Connect with resort owners and create unforgettable experiences.'
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
