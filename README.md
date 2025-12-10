@@ -29,8 +29,40 @@ Features implemented
 - Bookings page (guest bookings view)
 - Components: `Navbar`, `Footer`, `ResortCard`, `ImageUploader`, `DashboardSidebar`
 
-Notes & next steps
+## 📚 Documentation
+
+### Feature Enhancement Guides
+- **[RECOMMENDATIONS.md](./RECOMMENDATIONS.md)** - Comprehensive feature specifications for 20+ Airbnb-inspired features with database schemas and implementation details
+- **[FEATURE_COMPARISON.md](./FEATURE_COMPARISON.md)** - Strategic roadmap, ROI analysis, and feature parity comparison with Airbnb (currently 43%)
+- **[QUICK_START_GUIDE.md](./QUICK_START_GUIDE.md)** - Practical implementation guide with code templates and step-by-step instructions
+
+### Recent Updates
+- **[IMPROVEMENTS_SUMMARY.md](./IMPROVEMENTS_SUMMARY.md)** - Summary of recent feature additions
+- **[DESIGN_SYSTEM_GUIDE.md](./DESIGN_SYSTEM_GUIDE.md)** - Design system documentation
+
+## 🚀 Next Steps
+
+### Quick Wins (1-2 weeks)
+Start with high-impact, low-effort features:
+1. Wishlist/Favorites system (2 days)
+2. Social proof badges (3 days)
+3. Email notifications (1 week)
+4. Recently viewed properties (2 days)
+5. Verified user badges (3 days)
+
+See [QUICK_START_GUIDE.md](./QUICK_START_GUIDE.md) for implementation details.
+
+### Foundation Features (3 months)
+Build platform trust and enable transactions:
+1. Reviews & Ratings system
+2. Messaging between guests and hosts
+3. Payment integration (Stripe, GCash, PayMaya)
+4. Calendar & availability management
+5. Trust & safety features
+
+See [RECOMMENDATIONS.md](./RECOMMENDATIONS.md) for complete specifications.
+
+## Notes
 
 - In production, create a server-side function or Supabase Auth hook to create `profiles` rows when users sign up instead of client-side upsert.
-- Add admin UI to approve resorts.
-- Add payment integrations and calendar availability checks.
+- See [FEATURE_COMPARISON.md](./FEATURE_COMPARISON.md) for 12-month roadmap and ROI projections.
