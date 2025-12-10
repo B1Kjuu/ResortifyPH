@@ -47,6 +47,7 @@ export default function AdventureHub(){
     load()
     
     return () => { mounted = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (loading) return <div className="w-full px-4 sm:px-6 lg:px-8 py-10 text-center text-slate-600">Loading...</div>

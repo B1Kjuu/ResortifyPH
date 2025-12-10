@@ -55,6 +55,7 @@ export default function BookingsControlPage(){
     return () => {
       subscription.unsubscribe()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function confirmBooking(id: string){

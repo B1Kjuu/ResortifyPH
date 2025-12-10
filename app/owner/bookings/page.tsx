@@ -140,6 +140,7 @@ export default function OwnerBookingsPage(){
     return () => {
       subscription.unsubscribe()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId])
 
   async function confirmBooking(bookingId: string){

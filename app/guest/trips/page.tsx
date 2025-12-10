@@ -65,6 +65,7 @@ export default function TripsPage(){
     load()
     
     return () => { mounted = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (

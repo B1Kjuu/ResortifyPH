@@ -86,10 +86,11 @@ export default function Home(){
 
     checkAuth()
 
-    return () => { 
+    return () => {
       mounted = false
       clearTimeout(timeoutId)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (

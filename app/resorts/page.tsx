@@ -105,6 +105,7 @@ export default function ResortsPage(){
       mounted = false
       clearTimeout(timeoutId)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Keep price range aligned with detected bounds

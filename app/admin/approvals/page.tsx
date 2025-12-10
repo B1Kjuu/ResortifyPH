@@ -56,6 +56,7 @@ export default function ApprovalsPage(){
     return () => {
       subscription.unsubscribe()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function approveResort(id: string){

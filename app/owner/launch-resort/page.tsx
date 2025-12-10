@@ -41,6 +41,7 @@ export default function LaunchResort(){
       setLoading(false)
     }
     getUser()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function handleCreate(e: React.FormEvent){

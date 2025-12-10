@@ -45,6 +45,7 @@ export default function ProfilePage(){
     load()
     
     return () => { mounted = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function handleSave(){
