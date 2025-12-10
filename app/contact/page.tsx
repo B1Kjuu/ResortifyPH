@@ -18,7 +18,7 @@ export default function ContactPage() {
       <div className="w-full px-4 sm:px-6 lg:px-8 py-16 sm:py-24 bg-gradient-to-br from-slate-50 to-white border-b border-slate-200">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl sm:text-5xl font-bold text-slate-900 mb-6">Contact Us</h1>
-          <p className="text-xl text-slate-600">We're here to help. Send us a message and we'll respond as soon as possible.</p>
+          <p className="text-xl text-slate-600">We&apos;re here to help. Send us a message and we&apos;ll respond as soon as possible.</p>
         </div>
       </div>
 
@@ -134,7 +134,7 @@ export default function ContactPage() {
 
                 {submitted && (
                   <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-center">
-                    Message sent successfully! We'll get back to you soon.
+                    Message sent successfully! We&apos;ll get back to you soon.
                   </div>
                 )}
               </form>

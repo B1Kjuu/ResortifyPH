@@ -30,7 +30,7 @@ export default function ResourcesPage() {
               <div className="p-6 border border-slate-200 rounded-xl hover:shadow-lg transition">
                 <div className="text-3xl mb-4">📸</div>
                 <h3 className="text-xl font-bold text-slate-900 mb-2">Photography Tips</h3>
-                <p className="text-slate-600 mb-4">Take stunning photos that showcase your property's best features.</p>
+                <p className="text-slate-600 mb-4">Take stunning photos that showcase your property&apos;s best features.</p>
                 <a href="#" className="text-resort-500 font-semibold hover:underline">Read Guide →</a>
               </div>
 

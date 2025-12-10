@@ -296,7 +296,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
               </button>
 
               <p className="text-xs text-slate-500 mt-3 text-center">
-                You won't be charged yet. The owner will review your request.
+                You won&apos;t be charged yet. The owner will review your request.
               </p>
             </div>
           </div>
