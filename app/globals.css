@@ -68,3 +68,121 @@ a:not([class]) {
 .gradient-text {
   @apply bg-gradient-to-r from-resort-500 to-resort-600 bg-clip-text text-transparent;
 }
+
+/* Calendar styling: lightweight, non-invasive overrides to preserve library layout */
+.calendar-custom {
+  width: 100%;
+}
+
+/* Keep the library's month layout; only add gap and let the default display govern structure */
+.calendar-custom .rdp-months {
+  gap: 0.75rem;
+}
+
+@media (min-width: 1024px) {
+  .calendar-custom .rdp-months {
+    gap: 0.75rem;
+  }
+}
+
+.calendar-custom .rdp-month {
+  background: #ffffff;
+  border: 1px solid #e6e8f0;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+}
+
+.calendar-custom .rdp-caption_label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 0.5rem;
+}
+
+.calendar-custom .rdp-nav_button {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: #64748b;
+  border: none;
+  cursor: pointer;
+}
+
+.calendar-custom .rdp-day {
+  border-radius: 0.375rem;
+}
+
+.calendar-custom .rdp-day_selected {
+  background-color: #3b82f6 !important;
+  color: white !important;
+  font-weight: 600;
+}
+
+.calendar-custom .rdp-day_disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Compact two-month layout for narrow booking cards */
+.calendar-custom.two-months {
+  --rdp-day-size: 36px;
+}
+
+.calendar-custom.two-months .rdp-months {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  /* allow months to sit side-by-side even in constrained containers */
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.calendar-custom.two-months .rdp-month {
+  min-width: 220px;
+  padding: 0.5rem;
+}
+
+/* Make day cells slightly smaller so two months fit comfortably */
+.calendar-custom.two-months .rdp-day {
+  width: 36px;
+  height: 36px;
+  font-size: 0.8rem;
+}
+
+/* Keep navigation buttons visually inside the header */
+.calendar-custom .rdp-caption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.calendar-custom .rdp-caption .rdp-nav {
+  display: flex;
+  gap: 0.25rem;
+}
+
+/* Ensure the calendar fits inside the booking card, with nice rounded corners */
+.calendar-custom {
+  box-shadow: none;
+}
+
+/* Constrain calendar so it doesn't create a large empty container inside the booking card */
+.calendar-custom {
+  max-width: 460px; /* two compact months fit here */
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Center months and avoid extra empty space */
+.calendar-custom .rdp-months {
+  justify-content: center;
+}
+
+/* Allow months to compress a little more when needed */
+.calendar-custom.two-months .rdp-month {
+  min-width: 200px;
+}
