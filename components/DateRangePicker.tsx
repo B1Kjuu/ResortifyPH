@@ -75,7 +75,7 @@ export default function DateRangePicker({
   }
 
   return (
-    <div ref={wrapperRef} className="bg-white rounded-lg border border-gray-200 p-2 shadow-sm">
+    <div ref={wrapperRef} className="w-full">
       <DayPicker
         mode="range"
         selected={selectedRange}

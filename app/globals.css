@@ -71,12 +71,24 @@ a:not([class]) {
 
 /* Calendar styling: lightweight, non-invasive overrides to preserve library layout */
 .calendar-custom {
-  width: 100%;
+  /* Keep the calendar compact and softly separated from the booking card */
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0.75rem 1rem;
+  box-sizing: border-box;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
 }
 
-/* Keep the library's month layout; only add gap and let the default display govern structure */
 .calendar-custom .rdp-months {
   gap: 0.75rem;
+  display: flex;
+  flex-direction: column; /* single month default */
+  justify-content: flex-start;
+  align-items: center;
 }
 
 @media (min-width: 1024px) {
@@ -86,15 +98,18 @@ a:not([class]) {
 }
 
 .calendar-custom .rdp-month {
-  background: #ffffff;
-  border: 1px solid #e6e8f0;
-  border-radius: 0.5rem;
-  padding: 0.5rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  width: 100%;
+  max-width: 320px;
+  box-sizing: border-box;
 }
 
 .calendar-custom .rdp-caption_label {
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 700;
   color: #0f172a;
   margin-bottom: 0.5rem;
 }
@@ -113,13 +128,34 @@ a:not([class]) {
 }
 
 .calendar-custom .rdp-day {
-  border-radius: 0.375rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
 }
 
 .calendar-custom .rdp-day_selected {
   background-color: #3b82f6 !important;
   color: white !important;
   font-weight: 600;
+}
+
+.calendar-custom .rdp-day:hover:not(.rdp-day_disabled):not(.rdp-day_selected) {
+  background-color: #e2e8f0;
+  color: #0f172a;
+}
+
+.calendar-custom .rdp-day_range_start,
+.calendar-custom .rdp-day_range_end {
+  background-color: #2563eb !important;
+  color: #fff !important;
+}
+
+.calendar-custom .rdp-day_range_middle {
+  background-color: #dbeafe !important;
+  color: #1d4ed8 !important;
+}
+
+.calendar-custom .rdp-day_today:not(.rdp-day_selected) {
+  border: 1px solid #3b82f6;
 }
 
 .calendar-custom .rdp-day_disabled {
@@ -133,24 +169,23 @@ a:not([class]) {
 }
 
 .calendar-custom.two-months .rdp-months {
-  display: flex;
-  gap: 0.5rem;
+  flex-direction: row;
   align-items: flex-start;
-  /* allow months to sit side-by-side even in constrained containers */
   flex-wrap: nowrap;
-  overflow: hidden;
+  align-items: stretch;
 }
 
 .calendar-custom.two-months .rdp-month {
-  min-width: 220px;
-  padding: 0.5rem;
+  flex: 1 1 0;
+  min-width: 160px; /* allow compact months */
+  padding: 0.25rem;
 }
 
 /* Make day cells slightly smaller so two months fit comfortably */
 .calendar-custom.two-months .rdp-day {
   width: 36px;
   height: 36px;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
 }
 
 /* Keep navigation buttons visually inside the header */
@@ -165,24 +200,20 @@ a:not([class]) {
   gap: 0.25rem;
 }
 
-/* Ensure the calendar fits inside the booking card, with nice rounded corners */
-.calendar-custom {
-  box-shadow: none;
-}
-
-/* Constrain calendar so it doesn't create a large empty container inside the booking card */
-.calendar-custom {
-  max-width: 460px; /* two compact months fit here */
+/* Remove internal spacing from table layout so the grid fills available width */
+.calendar-custom .rdp-table {
   width: 100%;
-  margin: 0 auto;
+  table-layout: fixed;
 }
 
-/* Center months and avoid extra empty space */
-.calendar-custom .rdp-months {
-  justify-content: center;
+.calendar-custom .rdp-head_cell {
+  padding: 0.5rem 0;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
 }
 
-/* Allow months to compress a little more when needed */
-.calendar-custom.two-months .rdp-month {
-  min-width: 200px;
+.calendar-custom .rdp-cell {
+  padding: 0.25rem 0;
 }
