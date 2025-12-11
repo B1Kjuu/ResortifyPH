@@ -92,6 +92,29 @@ export default function Navbar(){
     }
   }, [])
 
+  async function handleRoleSwitch(newRole: string) {
+    if (newRole === userRole) return
+    
+    try {
+      // Update profile with new role
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', user?.id)
+      
+      if (error) throw error
+      
+      setUserRole(newRole)
+      
+      // Redirect to appropriate dashboard
+      if (newRole === 'owner') router.push('/owner/empire')
+      else if (newRole === 'guest') router.push('/guest/adventure-hub')
+    } catch (err) {
+      console.error('Role switch error:', err)
+      alert('Failed to switch role')
+    }
+  }
+
   async function handleLogout(){
     try {
       await supabase.auth.signOut()
@@ -172,9 +195,33 @@ export default function Navbar(){
         <div className="flex items-center gap-3">
           {authChecked && user ? (
             <>
+              {/* Role Switcher */}
+              <div className="hidden sm:flex items-center gap-1 bg-slate-100 rounded-xl p-1">
+                <button
+                  onClick={() => handleRoleSwitch('guest')}
+                  className={`px-3 py-2 text-xs font-semibold rounded-lg transition-all ${
+                    userRole === 'guest' 
+                      ? 'bg-gradient-to-r from-resort-500 to-blue-500 text-white shadow-md' 
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  👤 Guest
+                </button>
+                <button
+                  onClick={() => handleRoleSwitch('owner')}
+                  className={`px-3 py-2 text-xs font-semibold rounded-lg transition-all ${
+                    userRole === 'owner' 
+                      ? 'bg-gradient-to-r from-resort-500 to-blue-500 text-white shadow-md' 
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  🏢 Host
+                </button>
+              </div>
+
               <Link href="/profile" className="hidden sm:flex items-center gap-2 px-4 py-2.5 text-slate-700 hover:bg-gradient-to-r hover:from-slate-100 hover:to-slate-50 rounded-xl transition-all border border-transparent hover:border-slate-200">
-                <span className="text-xl">👤</span>
-                <span className="text-sm font-semibold hidden md:inline">Profile</span>
+                <span className="text-xl">⚙️</span>
+                <span className="text-sm font-semibold hidden md:inline">Settings</span>
               </Link>
               <button 
                 onClick={handleLogout} 

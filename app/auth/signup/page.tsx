@@ -8,7 +8,6 @@ export default function SignUpPage(){
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
-  const [role, setRole] = useState<'guest'|'owner'>('guest')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
@@ -21,15 +20,15 @@ export default function SignUpPage(){
       options: {
         data: {
           full_name: fullName,
-          role: role
+          role: 'guest'  // All new users start as guest
         }
       }
     })
     setLoading(false)
     if (error){ alert(error.message); return }
 
-    if (role === 'owner') router.push('/owner/empire')
-    else router.push('/')
+    // Redirect to profile to optionally become host
+    router.push('/profile?welcome=true')
   }
 
   return (
@@ -38,7 +37,7 @@ export default function SignUpPage(){
         <div className="text-center mb-6">
           <p className="text-sm font-semibold text-resort-500">Join ResortifyPH</p>
           <h1 className="text-2xl font-bold text-resort-900 mt-1">Create your account</h1>
-          <p className="text-slate-600 text-sm mt-2">Book resorts as a guest or manage listings as an owner.</p>
+          <p className="text-slate-600 text-sm mt-2">Book amazing resorts. Become a host anytime.</p>
         </div>
 
         <form onSubmit={handleSignUp} className="space-y-4">
@@ -77,25 +76,7 @@ export default function SignUpPage(){
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Role</label>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setRole('guest')}
-                className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${role === 'guest' ? 'border-resort-500 bg-resort-50 text-resort-700' : 'border-slate-200 text-slate-700 hover:border-slate-300'}`}
-              >
-                Guest
-              </button>
-              <button
-                type="button"
-                onClick={() => setRole('owner')}
-                className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${role === 'owner' ? 'border-resort-500 bg-resort-50 text-resort-700' : 'border-slate-200 text-slate-700 hover:border-slate-300'}`}
-              >
-                Owner
-              </button>
-            </div>
-          </div>
+
 
           <button
             className="w-full py-2.5 rounded-lg bg-resort-500 text-white font-semibold hover:bg-resort-600 transition disabled:opacity-70"
