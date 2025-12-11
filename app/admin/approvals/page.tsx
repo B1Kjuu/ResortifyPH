@@ -3,12 +3,12 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 
 export default function ApprovalsPage(){
   const [pendingResorts, setPendingResorts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | '' }>({ message: '', type: '' })
   const router = useRouter()
 
   async function loadPendingResorts(){
@@ -20,7 +20,7 @@ export default function ApprovalsPage(){
     
     if (error) {
       console.error('Error loading pending resorts:', error)
-      setToast({ message: `Error: ${error.message}`, type: 'error' })
+      toast.error(`Error: ${error.message}`)
     } else {
       setPendingResorts(resorts || [])
     }
@@ -59,42 +59,42 @@ export default function ApprovalsPage(){
   }, [])
 
   async function approveResort(id: string){
-    console.log('Attempting to approve resort:', id)
-    const { data, error } = await supabase
+    toast.loading('Approving resort...')
+    
+    const { error } = await supabase
       .from('resorts')
       .update({ status: 'approved' })
       .eq('id', id)
-      .select()
     
-    console.log('Approve result:', { data, error })
+    toast.dismiss()
     
     if (error) { 
       console.error('Approve error:', error)
-      setToast({ message: `Error: ${error.message}`, type: 'error' })
+      toast.error(`Error: ${error.message}`)
       return 
     }
     
-    setToast({ message: 'Resort approved!', type: 'success' })
+    toast.success('Resort approved!')
     await loadPendingResorts()
   }
 
   async function rejectResort(id: string){
-    console.log('Attempting to reject resort:', id)
-    const { data, error } = await supabase
+    toast.loading('Rejecting resort...')
+    
+    const { error } = await supabase
       .from('resorts')
       .update({ status: 'rejected' })
       .eq('id', id)
-      .select()
     
-    console.log('Reject result:', { data, error })
+    toast.dismiss()
     
     if (error) { 
       console.error('Reject error:', error)
-      setToast({ message: `Error: ${error.message}`, type: 'error' })
+      toast.error(`Error: ${error.message}`)
       return 
     }
     
-    setToast({ message: 'Resort rejected.', type: 'success' })
+    toast.success('Resort rejected')
     await loadPendingResorts()
   }
 

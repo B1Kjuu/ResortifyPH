@@ -3,19 +3,33 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { signInSchema, type SignInInput } from '../../../lib/validations'
+import { toast } from 'sonner'
 
 export default function SignInPage(){
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  
+  const { register, handleSubmit, formState: { errors } } = useForm<SignInInput>({
+    resolver: zodResolver(signInSchema)
+  })
 
-  async function handleSignIn(e: React.FormEvent){
-    e.preventDefault()
+  async function onSubmit(data: SignInInput){
     setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.signInWithPassword({ 
+      email: data.email, 
+      password: data.password 
+    })
     setLoading(false)
-    if (error){ alert(error.message); return }
+    
+    if (error){ 
+      toast.error(error.message)
+      return 
+    }
+    
+    toast.success('Welcome back!')
     router.push('/')
   }
 
@@ -28,29 +42,31 @@ export default function SignInPage(){
           <p className="text-slate-600 text-sm mt-2">Access your bookings, resorts, and approvals.</p>
         </div>
 
-        <form onSubmit={handleSignIn} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
             <input
+              {...register('email')}
               className="w-full rounded-lg border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-resort-500"
               placeholder="you@example.com"
               type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
             />
+            {errors.email && (
+              <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
+            )}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
             <input
+              {...register('password')}
               className="w-full rounded-lg border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-resort-500"
               placeholder="••••••••"
               type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
             />
+            {errors.password && (
+              <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>
+            )}
           </div>
 
           <button

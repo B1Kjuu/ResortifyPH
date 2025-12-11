@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 
 export default function ResortDetail({ params }: { params: { id: string } }){
   const [resort, setResort] = useState<any>(null)
@@ -85,28 +86,33 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
   async function handleBooking(){
     if (!user) {
-      setMessage({ text: 'Please sign in to book this resort', type: 'error' })
+      toast.error('Please sign in to book this resort')
       setTimeout(() => router.push('/auth/signin'), 2000)
       return
     }
 
     if (!dateFrom || !dateTo) {
-      setMessage({ text: 'Please select check-in and check-out dates', type: 'error' })
+      toast.error('Please select check-in and check-out dates')
       return
     }
 
     if (new Date(dateFrom) >= new Date(dateTo)) {
-      setMessage({ text: 'Check-out date must be after check-in date', type: 'error' })
+      toast.error('Check-out date must be after check-in date')
+      return
+    }
+
+    if (guests < 1) {
+      toast.error('At least 1 guest required')
       return
     }
 
     if (guests > resort.capacity) {
-      setMessage({ text: `Maximum capacity is ${resort.capacity} guests`, type: 'error' })
+      toast.error(`Maximum capacity is ${resort.capacity} guests`)
       return
     }
 
     setBooking(true)
-    setMessage(null)
+    toast.loading('Creating booking...')
 
     const { error } = await supabase.from('bookings').insert({
       resort_id: resort.id,
@@ -117,16 +123,17 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       status: 'pending'
     })
 
+    setBooking(false)
+    toast.dismiss()
+
     if (error) {
-      setMessage({ text: `Error: ${error.message}`, type: 'error' })
+      toast.error(`Error: ${error.message}`)
     } else {
-      setMessage({ text: 'Booking request sent! The owner will review your request.', type: 'success' })
+      toast.success('Booking request sent! The owner will review your request.')
       setDateFrom('')
       setDateTo('')
       setGuests(1)
     }
-
-    setBooking(false)
   }
 
   if (loading) return <div className="w-full px-4 sm:px-6 lg:px-8 py-10 text-center">Loading resort...</div>

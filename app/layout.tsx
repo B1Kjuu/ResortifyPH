@@ -2,6 +2,7 @@ import './globals.css'
 import React from 'react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import { Toaster } from 'sonner'
 
 export const metadata = {
   title: 'ResortifyPH',
@@ -15,6 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Navbar />
         <main className="w-full">{children}</main>
         <Footer />
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   )

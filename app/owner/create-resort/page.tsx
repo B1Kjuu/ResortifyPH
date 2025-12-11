@@ -4,6 +4,7 @@ import Link from 'next/link'
 import ImageUploader from '../../../components/ImageUploader'
 import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 
 export default function CreateResort(){
   const [name, setName] = useState('')
@@ -64,12 +65,35 @@ export default function CreateResort(){
 
   async function handleCreate(e: React.FormEvent){
     e.preventDefault()
-    if (!userId || !name || !location || !price || !capacity || !contactNumber) { 
-      alert('Please fill all required fields'); 
-      return 
+    
+    // Validation
+    if (!name || name.length < 5) {
+      toast.error('Resort name must be at least 5 characters')
+      return
+    }
+    if (!description || description.length < 20) {
+      toast.error('Description must be at least 20 characters')
+      return
+    }
+    if (!location || location.length < 5) {
+      toast.error('Location must be at least 5 characters')
+      return
+    }
+    if (!price || price < 500) {
+      toast.error('Price must be at least ₱500')
+      return
+    }
+    if (!capacity || capacity < 1) {
+      toast.error('Capacity must be at least 1')
+      return
+    }
+    if (!contactNumber || !/^(\+63|0)?9\d{9}$/.test(contactNumber)) {
+      toast.error('Invalid Philippine mobile number (e.g., 09171234567)')
+      return
     }
     
     setSubmitting(true)
+    toast.loading('Creating resort...')
     const { error } = await supabase.from('resorts').insert([{ 
       owner_id: userId, 
       name, 
@@ -102,13 +126,15 @@ export default function CreateResort(){
       created_at: new Date() 
     }])
     
+    setSubmitting(false)
+    toast.dismiss()
+    
     if (error) { 
-      alert('Error: ' + error.message)
-      setSubmitting(false)
+      toast.error('Error: ' + error.message)
       return 
     }
     
-    alert('Resort created and pending approval!')
+    toast.success('Resort created! Pending admin approval.')
     router.push('/owner/my-resorts')
   }
 

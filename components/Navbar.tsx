@@ -137,110 +137,106 @@ export default function Navbar(){
   }
 
   return (
-    <header className="bg-white/95 backdrop-blur-sm border-b-2 border-slate-200 w-full sticky top-0 z-50 shadow-md">
-      <div className="w-full px-4 sm:px-6 lg:px-8 flex items-center justify-between py-4 max-w-7xl mx-auto">
+    <header className="bg-white border-b border-slate-200 w-full sticky top-0 z-50 shadow-sm">
+      <div className="w-full px-4 sm:px-6 lg:px-8 flex items-center py-3 max-w-7xl mx-auto">
         {/* Logo */}
-        <Link href={getHomeLink()} className="flex items-center gap-2 hover:scale-105 transition-transform flex-shrink-0 group">
+        <Link href={getHomeLink()} className="flex items-center gap-2 flex-shrink-0">
           <div className="relative">
             <Image 
               src="/assets/ResortifyPH_Logo.png" 
               alt="ResortifyPH Logo" 
-              width={40} 
-              height={40}
-              className="w-10 h-10 sm:w-11 sm:h-11 drop-shadow-md"
+              width={36} 
+              height={36}
+              className="w-9 h-9"
             />
           </div>
-          <span className="font-bold text-lg sm:text-xl bg-gradient-to-r from-resort-600 to-blue-600 bg-clip-text text-transparent">ResortifyPH</span>
+          <span className="font-bold text-base sm:text-lg text-resort-600">ResortifyPH</span>
         </Link>
 
-        {/* Center Navigation */}
-        <nav className="hidden md:flex items-center gap-8 flex-1 justify-center">
-          <Link href="/resorts" className="text-sm font-semibold text-slate-700 hover:text-resort-600 transition-all relative group px-2 py-1">
-            🏝️ Explore
-            <span className="absolute -bottom-1 left-0 w-0 h-1 bg-gradient-to-r from-resort-500 to-blue-500 rounded-full group-hover:w-full transition-all"></span>
+        {/* Navigation - Desktop Only */}
+        <nav className="hidden lg:flex items-center gap-6 ml-8">
+          <Link href="/resorts" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
+            Explore
           </Link>
           {authChecked && user && userRole === 'guest' && (
-            <Link href="/guest/trips" className="text-sm font-semibold text-slate-700 hover:text-resort-600 transition-all relative group px-2 py-1">
-              ✈️ My Trips
-              <span className="absolute -bottom-1 left-0 w-0 h-1 bg-gradient-to-r from-resort-500 to-blue-500 rounded-full group-hover:w-full transition-all"></span>
+            <Link href="/guest/trips" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
+              My Trips
             </Link>
           )}
           {authChecked && user && userRole === 'owner' && (
             <>
-              <Link href="/owner/my-resorts" className="text-sm font-semibold text-slate-700 hover:text-resort-600 transition-all relative group px-2 py-1">
-                🏢 My Properties
-                <span className="absolute -bottom-1 left-0 w-0 h-1 bg-gradient-to-r from-resort-500 to-blue-500 rounded-full group-hover:w-full transition-all"></span>
+              <Link href="/owner/my-resorts" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
+                My Properties
               </Link>
-              <Link href="/owner/bookings" className="text-sm font-semibold text-slate-700 hover:text-resort-600 transition-all relative group px-2 py-1">
-                💼 Bookings
-                <span className="absolute -bottom-1 left-0 w-0 h-1 bg-gradient-to-r from-resort-500 to-blue-500 rounded-full group-hover:w-full transition-all"></span>
+              <Link href="/owner/bookings" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
+                Bookings
               </Link>
             </>
           )}
           {authChecked && isAdmin && (
             <>
-              <Link href="/admin/approvals" className="text-sm font-semibold text-slate-700 hover:text-resort-600 transition-all relative group px-2 py-1">
-                ✔️ Approvals
-                <span className="absolute -bottom-1 left-0 w-0 h-1 bg-gradient-to-r from-resort-500 to-blue-500 rounded-full group-hover:w-full transition-all"></span>
+              <Link href="/admin/approvals" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
+                Approvals
               </Link>
-              <Link href="/admin/command-center" className="text-sm font-semibold text-slate-700 hover:text-resort-600 transition-all relative group px-2 py-1">
-                ⚙️ Control Center
-                <span className="absolute -bottom-1 left-0 w-0 h-1 bg-gradient-to-r from-resort-500 to-blue-500 rounded-full group-hover:w-full transition-all"></span>
+              <Link href="/admin/command-center" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
+                Admin
               </Link>
             </>
           )}
         </nav>
 
         {/* Right Section - Auth */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 ml-auto">
           {authChecked && user ? (
             <>
-              {/* Role Switcher */}
-              <div className="hidden sm:flex items-center gap-1 bg-slate-100 rounded-xl p-1">
+              {/* Role Switcher - Simplified */}
+              <div className="flex items-center gap-0.5 bg-slate-100 rounded-lg p-0.5">
                 <button
                   onClick={() => handleRoleSwitch('guest')}
-                  className={`px-3 py-2 text-xs font-semibold rounded-lg transition-all ${
+                  className={`px-2 py-1.5 text-xs font-medium rounded-md transition ${
                     userRole === 'guest' 
-                      ? 'bg-gradient-to-r from-resort-500 to-blue-500 text-white shadow-md' 
+                      ? 'bg-resort-600 text-white' 
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  👤 Guest
+                  Guest
                 </button>
                 <button
                   onClick={() => handleRoleSwitch('owner')}
-                  className={`px-3 py-2 text-xs font-semibold rounded-lg transition-all ${
+                  className={`px-2 py-1.5 text-xs font-medium rounded-md transition ${
                     userRole === 'owner' 
-                      ? 'bg-gradient-to-r from-resort-500 to-blue-500 text-white shadow-md' 
+                      ? 'bg-resort-600 text-white' 
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  🏢 Host
+                  Host
                 </button>
               </div>
 
-              <Link href="/profile" className="hidden sm:flex items-center gap-2 px-4 py-2.5 text-slate-700 hover:bg-gradient-to-r hover:from-slate-100 hover:to-slate-50 rounded-xl transition-all border border-transparent hover:border-slate-200">
-                <span className="text-xl">⚙️</span>
-                <span className="text-sm font-semibold hidden md:inline">Settings</span>
+              <Link href="/profile" className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
               </Link>
+              
               <button 
                 onClick={handleLogout} 
-                className="px-5 py-2.5 text-sm font-semibold text-slate-700 border-2 border-slate-300 rounded-xl hover:bg-slate-50 hover:border-slate-400 transition-all shadow-sm"
+                className="hidden sm:block px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition"
               >
                 Sign out
               </button>
             </>
           ) : authChecked ? (
             <>
-              <Link href="/auth/signin" className="px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-all rounded-xl border-2 border-transparent hover:border-slate-200">
+              <Link href="/auth/signin" className="px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition">
                 Sign in
               </Link>
-              <Link href="/auth/signup" className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-resort-500 to-blue-500 rounded-xl hover:shadow-lg transition-all">
+              <Link href="/auth/signup" className="px-3 py-1.5 text-sm font-medium text-white bg-resort-600 hover:bg-resort-700 rounded-lg transition">
                 Sign up
               </Link>
             </>
           ) : (
-            <div className="px-3 py-2 text-xs text-slate-400">Loading...</div>
+            <div className="text-xs text-slate-400">Loading...</div>
           )}
         </div>
       </div>

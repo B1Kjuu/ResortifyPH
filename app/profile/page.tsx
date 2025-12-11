@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 
 export default function ProfilePage(){
   const [profile, setProfile] = useState<any>(null)
@@ -48,23 +49,29 @@ export default function ProfilePage(){
   }, [])
 
   async function handleSave(){
+    if (!fullName || fullName.length < 2) {
+      toast.error('Full name must be at least 2 characters')
+      return
+    }
+
     setSaving(true)
-    setMessage(null)
+    toast.loading('Saving profile...')
     
     const { error } = await supabase
       .from('profiles')
       .update({ full_name: fullName })
       .eq('id', profile.id)
     
+    setSaving(false)
+    toast.dismiss()
+    
     if (error) {
-      setMessage({ text: `Error: ${error.message}`, type: 'error' })
+      toast.error(`Error: ${error.message}`)
     } else {
       setProfile({ ...profile, full_name: fullName })
-      setMessage({ text: 'Profile updated successfully!', type: 'success' })
+      toast.success('Profile updated successfully!')
       setEditing(false)
     }
-    
-    setSaving(false)
   }
 
   if (loading) return <div className="w-full px-4 sm:px-6 lg:px-8 py-10 text-center text-slate-600">Loading profile...</div>
