@@ -3,9 +3,11 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { supabase } from '../../../lib/supabaseClient'
+import { getProvinceInfo } from '../../../lib/locations'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import DateRangePicker from '../../../components/DateRangePicker'
+import LocationCombobox from '../../../components/LocationCombobox'
 import { format } from 'date-fns'
 
 export default function ResortDetail({ params }: { params: { id: string } }){
@@ -19,6 +21,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
   const [guests, setGuests] = useState(1)
   const [booking, setBooking] = useState(false)
   const [message, setMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null)
+  const [quickExploreProvince, setQuickExploreProvince] = useState('')
   const router = useRouter()
 
   useEffect(() => {
@@ -110,6 +113,13 @@ export default function ResortDetail({ params }: { params: { id: string } }){
     return () => { mounted = false }
   }, [params.id])
 
+  function handleQuickExplore(province: string | null) {
+    const selectedProvince = province || ''
+    setQuickExploreProvince(selectedProvince)
+    const query = selectedProvince ? `?location=${encodeURIComponent(selectedProvince)}` : ''
+    router.push(`/resorts${query}`)
+  }
+
   async function handleBooking(){
     if (!user) {
       toast.error('Please sign in to book this resort')
@@ -135,13 +145,18 @@ export default function ResortDetail({ params }: { params: { id: string } }){
     setBooking(true)
     toast.loading('Creating booking...')
 
+    const provinceInfo = getProvinceInfo(resort?.location)
+
     const { error } = await supabase.from('bookings').insert({
       resort_id: resort.id,
       guest_id: user.id,
       date_from: format(selectedRange.from, 'yyyy-MM-dd'),
       date_to: format(selectedRange.to, 'yyyy-MM-dd'),
       guest_count: guests,
-      status: 'pending'
+      status: 'pending',
+      resort_province: resort.location ?? null,
+      resort_region_code: resort.region_code ?? provinceInfo?.regionCode ?? null,
+      resort_region_name: resort.region_name ?? provinceInfo?.regionName ?? null,
     })
 
     setBooking(false)
@@ -376,6 +391,18 @@ export default function ResortDetail({ params }: { params: { id: string } }){
               <p className="text-xs text-slate-500 text-center">
                 You won't be charged yet. The owner will review your request.
               </p>
+
+              <div className="border-t border-slate-100 pt-4 mt-2">
+                <p className="text-sm font-semibold text-slate-700 mb-2">Explore another province</p>
+                <LocationCombobox
+                  value={quickExploreProvince}
+                  onChange={handleQuickExplore}
+                  placeholder="Search or pick a province"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  We'll open the Explore page with this province filter so you can compare stays before booking.
+                </p>
+              </div>
             </div>
           </div>
         </div>

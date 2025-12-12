@@ -1,6 +1,8 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import ImageUploader from '../../../components/ImageUploader'
+import LocationCombobox from '../../../components/LocationCombobox'
+import { getProvinceInfo } from '../../../lib/locations'
 import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 
@@ -48,7 +50,24 @@ export default function CreateResort(){
   async function handleCreate(e: React.FormEvent){
     e.preventDefault()
     if (!userId) { alert('Not signed in'); return }
-    const { error } = await supabase.from('resorts').insert([{ owner_id: userId, name, description, location, price: Number(price), capacity: Number(capacity), amenities: amenities.split(',').map(s => s.trim()), images, status: 'pending', created_at: new Date() }])
+    if (!location) { alert('Please pick a province'); return }
+
+    const provinceInfo = getProvinceInfo(location)
+
+    const { error } = await supabase.from('resorts').insert([{ 
+      owner_id: userId, 
+      name, 
+      description, 
+      location, 
+      region_code: provinceInfo?.regionCode ?? null,
+      region_name: provinceInfo?.regionName ?? null,
+      price: Number(price), 
+      capacity: Number(capacity), 
+      amenities: amenities.split(',').map(s => s.trim()), 
+      images, 
+      status: 'pending', 
+      created_at: new Date() 
+    }])
     if (error) { alert(error.message); return }
     alert('Resort created and pending approval')
     router.push('/dashboard/resorts')
@@ -62,7 +81,8 @@ export default function CreateResort(){
       <h2 className="text-2xl font-semibold mb-4">Create Resort</h2>
       <form onSubmit={handleCreate} className="space-y-3">
         <input className="w-full p-2 border rounded" placeholder="Name" value={name} onChange={e => setName(e.target.value)} />
-        <input className="w-full p-2 border rounded" placeholder="Location" value={location} onChange={e => setLocation(e.target.value)} />
+        <LocationCombobox value={location} onChange={setLocation} placeholder="Search or pick a province" />
+        {!location && <p className="text-xs text-slate-500">Guests use this to filter listings, so choose carefully.</p>}
         <input className="w-full p-2 border rounded" placeholder="Price" value={price as any} onChange={e => setPrice(e.target.value === '' ? '' : Number(e.target.value))} />
         <input className="w-full p-2 border rounded" placeholder="Capacity" value={capacity as any} onChange={e => setCapacity(e.target.value === '' ? '' : Number(e.target.value))} />
         <input className="w-full p-2 border rounded" placeholder="Amenities (comma separated)" value={amenities} onChange={e => setAmenities(e.target.value)} />

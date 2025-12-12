@@ -40,20 +40,20 @@ Notes & next steps
 Playwright now powers smoke coverage for the public experience.
 
 1. Install browsers (once per machine):
-	```bash
-	npx playwright install
-	```
+   ```bash
+   npx playwright install
+   ```
 2. Run the suite (automatically boots `npm run dev` on port 3000):
-	```bash
-	npm run test:e2e
-	```
+   ```bash
+   npm run test:e2e
+   ```
 3. Debug interactively:
-	```bash
-	npm run test:e2e:headed
-	```
+   ```bash
+   npm run test:e2e:headed
+   ```
 4. Inspect the latest HTML report:
-	```bash
-	npm run test:e2e:report
-	```
+   ```bash
+   npm run test:e2e:report
+   ```
 
 Set `PLAYWRIGHT_BASE_URL`, `PLAYWRIGHT_HOST`, or `PLAYWRIGHT_PORT` to point at another environment, and `PLAYWRIGHT_SKIP_WEB_SERVER=1` if you already have `npm run dev` running locally.

@@ -7,6 +7,7 @@ import Slider from 'rc-slider'
 import 'rc-slider/assets/index.css'
 import ResortCard from '../../components/ResortCard'
 import SkeletonCard from '../../components/SkeletonCard'
+import LocationCombobox from '../../components/LocationCombobox'
 import { supabase } from '../../lib/supabaseClient'
 
 
@@ -190,8 +191,6 @@ export default function ResortsPage(){
     return [...result].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   }, [resorts, searchTerm, selectedLocation, selectedType, priceRange, priceBounds, guestCount, selectedAmenities, sortBy, availableResortIds])
 
-  const locations = useMemo(() => [...new Set(resorts.map(r => r.location))].sort(), [resorts])
-
   return (
     <div className="w-full min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* Header */}
@@ -262,17 +261,12 @@ export default function ResortsPage(){
 
             {/* Location Filter */}
             <div>
-              <select 
-                value={selectedLocation}
-                onChange={(e) => setSelectedLocation(e.target.value)}
-                aria-label="Filter by location"
-                className="w-full px-4 py-3.5 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 bg-white shadow-sm hover:border-slate-300 transition-colors cursor-pointer"
-              >
-                <option value="all">All Locations</option>
-                {locations.map(location => (
-                  <option key={location} value={location}>{location}</option>
-                ))}
-              </select>
+              <LocationCombobox
+                value={selectedLocation === 'all' ? '' : selectedLocation}
+                onChange={(province) => setSelectedLocation(province || 'all')}
+                placeholder={selectedLocation === 'all' ? 'All locations' : 'Search or pick a province'}
+              />
+              <p className="text-xs text-slate-500 mt-1">Search any province or clear to view all locations.</p>
             </div>
           </div>
 

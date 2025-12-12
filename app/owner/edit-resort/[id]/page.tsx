@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import ImageUploader from '../../../../components/ImageUploader'
+import LocationCombobox from '../../../../components/LocationCombobox'
+import { getProvinceInfo } from '../../../../lib/locations'
 import { supabase } from '../../../../lib/supabaseClient'
 import { useRouter, useParams } from 'next/navigation'
 
@@ -122,12 +124,16 @@ export default function EditResort(){
     }
     
     setSubmitting(true)
+    const provinceInfo = getProvinceInfo(location)
+
     const { error } = await supabase
       .from('resorts')
       .update({ 
         name, 
         description, 
         location, 
+        region_code: provinceInfo?.regionCode ?? null,
+        region_name: provinceInfo?.regionName ?? null,
         type,
         price: Number(price),
         day_tour_price: dayTourPrice ? Number(dayTourPrice) : null,
@@ -222,25 +228,11 @@ export default function EditResort(){
 
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-2">Location *</label>
-          <select
-            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors cursor-pointer"
+          <LocationCombobox
             value={location}
-            onChange={e => setLocation(e.target.value)}
-            required
-          >
-            <option value="">Select province...</option>
-            <option value="Metro Manila">Metro Manila</option>
-            <option value="Cavite">Cavite</option>
-            <option value="Laguna">Laguna</option>
-            <option value="Batangas">Batangas</option>
-            <option value="Cebu">Cebu</option>
-            <option value="Iloilo">Iloilo</option>
-            <option value="Davao">Davao</option>
-            <option value="Cagayan de Oro">Cagayan de Oro</option>
-            <option value="Palawan">Palawan</option>
-            <option value="Boracay">Boracay</option>
-            <option value="Other">Other</option>
-          </select>
+            onChange={setLocation}
+            placeholder="Search or pick a province"
+          />
         </div>
 
         <div>
