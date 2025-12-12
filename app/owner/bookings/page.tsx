@@ -60,7 +60,7 @@ export default function OwnerBookingsPage(){
 
           const { data: guest } = await supabase
             .from('profiles')
-            .select('full_name, email')
+            .select('id, email, full_name, role, is_admin')
             .eq('id', booking.guest_id)
             .single()
 
@@ -95,7 +95,7 @@ export default function OwnerBookingsPage(){
         // Check if user is owner
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role')
+          .select('id, email, full_name, role, is_admin')
           .eq('id', session.user.id)
           .single()
 

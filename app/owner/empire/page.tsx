@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 
 export default function Empire(){
   const [profile, setProfile] = useState<any>(null)
-  const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 })
+  const [stats, setStats] = useState({ totalBookings: 0, pending: 0, confirmed: 0, rejected: 0 })
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
@@ -21,7 +21,11 @@ export default function Empire(){
           return 
         }
 
-        const { data: userProfile, error } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
+        const { data: userProfile, error } = await supabase
+          .from('profiles')
+          .select('id, email, full_name, role, is_admin')
+          .eq('id', session.user.id)
+          .single()
         if (error || !userProfile) {
           console.error('Profile error:', error)
           router.push('/')
@@ -33,13 +37,34 @@ export default function Empire(){
           return
         }
 
-        // Get resort stats
-        const { data: resorts } = await supabase.from('resorts').select('status').eq('owner_id', session.user.id)
-        const statsData = {
-          total: resorts?.length || 0,
-          pending: resorts?.filter(r => r.status === 'pending').length || 0,
-          approved: resorts?.filter(r => r.status === 'approved').length || 0,
-          rejected: resorts?.filter(r => r.status === 'rejected').length || 0,
+        // Get all resort IDs owned by the user
+        const { data: resorts } = await supabase
+          .from('resorts')
+          .select('id')
+          .eq('owner_id', session.user.id)
+
+        let statsData = { totalBookings: 0, pending: 0, confirmed: 0, rejected: 0 }
+
+        if (resorts && resorts.length > 0) {
+          const resortIds = resorts.map(r => r.id)
+
+          const { data: bookings } = await supabase
+            .from('bookings')
+            .select('status')
+            .in('resort_id', resortIds)
+
+          if (bookings && bookings.length > 0) {
+            const pending = bookings.filter(b => b.status === 'pending').length
+            const confirmed = bookings.filter(b => b.status === 'confirmed').length
+            const rejected = bookings.filter(b => ['rejected', 'cancelled', 'canceled'].includes((b.status || '').toLowerCase())).length
+
+            statsData = {
+              totalBookings: bookings.length,
+              pending,
+              confirmed,
+              rejected
+            }
+          }
         }
         
         if (mounted) {
@@ -76,16 +101,16 @@ export default function Empire(){
           <div className="bg-white border-2 border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-lg hover:border-resort-400 transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-600 text-sm font-semibold mb-2">Total Resorts</p>
-                <div className="text-4xl font-bold bg-gradient-to-r from-resort-600 to-blue-600 bg-clip-text text-transparent">{stats.total}</div>
+                <p className="text-slate-600 text-sm font-semibold mb-2">Total Bookings</p>
+                <div className="text-4xl font-bold bg-gradient-to-r from-resort-600 to-blue-600 bg-clip-text text-transparent">{stats.totalBookings}</div>
               </div>
-              <span className="text-5xl opacity-30">🏨</span>
+              <span className="text-5xl opacity-30">📊</span>
             </div>
           </div>
           <div className="bg-white border-2 border-yellow-300 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-600 text-sm font-semibold mb-2">Pending Review</p>
+                <p className="text-slate-600 text-sm font-semibold mb-2">Pending Requests</p>
                 <div className="text-4xl font-bold text-yellow-600">{stats.pending}</div>
               </div>
               <span className="text-5xl opacity-30">⏳</span>
@@ -94,8 +119,8 @@ export default function Empire(){
           <div className="bg-white border-2 border-green-300 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-600 text-sm font-semibold mb-2">Live Listings</p>
-                <div className="text-4xl font-bold text-green-600">{stats.approved}</div>
+                <p className="text-slate-600 text-sm font-semibold mb-2">Confirmed Stays</p>
+                <div className="text-4xl font-bold text-green-600">{stats.confirmed}</div>
               </div>
               <span className="text-5xl opacity-30">✅</span>
             </div>
@@ -103,7 +128,7 @@ export default function Empire(){
           <div className="bg-white border-2 border-red-300 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-600 text-sm font-semibold mb-2">Rejected</p>
+                <p className="text-slate-600 text-sm font-semibold mb-2">Rejected / Cancelled</p>
                 <div className="text-4xl font-bold text-red-600">{stats.rejected}</div>
               </div>
               <span className="text-5xl opacity-30">❌</span>

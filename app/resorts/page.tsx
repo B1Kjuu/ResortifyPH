@@ -218,6 +218,7 @@ export default function ResortsPage(){
                 <input 
                   type="text" 
                   placeholder="Search by name, location, or description" 
+                  aria-label="Search resorts"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-12 pr-4 py-3.5 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 bg-white shadow-sm hover:border-slate-300 transition-colors"
@@ -230,6 +231,7 @@ export default function ResortsPage(){
               <select 
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value)}
+                aria-label="Filter by resort type"
                 className="w-full px-4 py-3.5 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 bg-white shadow-sm hover:border-slate-300 transition-colors cursor-pointer"
               >
                 <option value="all">All Types</option>
@@ -246,6 +248,7 @@ export default function ResortsPage(){
               <select 
                 value={guestCount}
                 onChange={(e) => setGuestCount(e.target.value)}
+                aria-label="Filter by guest count"
                 className="w-full px-4 py-3.5 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 bg-white shadow-sm hover:border-slate-300 transition-colors cursor-pointer"
               >
                 <option value="all">Any guests</option>
@@ -262,6 +265,7 @@ export default function ResortsPage(){
               <select 
                 value={selectedLocation}
                 onChange={(e) => setSelectedLocation(e.target.value)}
+                aria-label="Filter by location"
                 className="w-full px-4 py-3.5 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 bg-white shadow-sm hover:border-slate-300 transition-colors cursor-pointer"
               >
                 <option value="all">All Locations</option>
@@ -345,6 +349,7 @@ export default function ResortsPage(){
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
+                aria-label="Sort resorts"
                 className="w-full px-4 py-3.5 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 bg-white shadow-sm hover:border-slate-300 transition-colors cursor-pointer"
               >
                 <option value="newest">Newest</option>

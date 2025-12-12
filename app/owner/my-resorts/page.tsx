@@ -15,7 +15,11 @@ export default function MyResorts(){
       if (!session?.user) { router.push('/auth/login'); return }
 
       // Verify owner role
-      const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single()
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, role, is_admin')
+        .eq('id', session.user.id)
+        .single()
       if (profile?.role !== 'owner') {
         router.push('/owner/dashboard')
         return

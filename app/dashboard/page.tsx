@@ -13,7 +13,11 @@ export default function Dashboard(){
     async function load(){
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user) { router.push('/auth/login'); return }
-      const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, role, is_admin')
+        .eq('id', session.user.id)
+        .single()
       setProfile(data)
       setLoading(false)
     }

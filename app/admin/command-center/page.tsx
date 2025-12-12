@@ -38,7 +38,11 @@ export default function CommandCenter(){
           return 
         }
 
-        const { data: userProfile, error } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
+        const { data: userProfile, error } = await supabase
+          .from('profiles')
+          .select('id, email, full_name, role, is_admin')
+          .eq('id', session.user.id)
+          .single()
         if (error || !userProfile) {
           console.error('Profile error:', error)
           router.push('/')

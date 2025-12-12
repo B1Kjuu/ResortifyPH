@@ -22,7 +22,11 @@ export default function AdventureHub(){
           return 
         }
 
-        const { data: userProfile, error } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
+        const { data: userProfile, error } = await supabase
+          .from('profiles')
+          .select('id, email, full_name, role, is_admin')
+          .eq('id', session.user.id)
+          .single()
         if (!mounted) return
         
         if (error || !userProfile) {

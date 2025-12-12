@@ -49,7 +49,11 @@ export default function CreateResort(){
       }
 
       // Check if user is owner
-      const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single()
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, role, is_admin')
+        .eq('id', session.user.id)
+        .single()
       if (profile?.role !== 'owner') {
         router.push('/owner/dashboard')
         setLoading(false)

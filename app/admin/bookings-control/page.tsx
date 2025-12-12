@@ -31,7 +31,11 @@ export default function BookingsControlPage(){
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user) { router.push('/auth/signin'); return }
       
-      const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', session.user.id).single()
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, role, is_admin')
+        .eq('id', session.user.id)
+        .single()
       if (!profile?.is_admin) { router.push('/'); return }
 
       setIsAdmin(true)

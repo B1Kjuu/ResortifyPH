@@ -25,7 +25,7 @@ export default function TripsPage(){
 
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('role')
+          .select('id, email, full_name, role, is_admin')
           .eq('id', session.user.id)
           .single()
         

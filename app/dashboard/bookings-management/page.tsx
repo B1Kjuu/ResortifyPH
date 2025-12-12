@@ -16,7 +16,11 @@ export default function BookingsManagementPage(){
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user) { router.push('/auth/login'); return }
       
-      const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', session.user.id).single()
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, role, is_admin')
+        .eq('id', session.user.id)
+        .single()
       setIsAdmin(profile?.is_admin || false)
 
       // Get all bookings for this owner's resorts

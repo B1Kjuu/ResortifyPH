@@ -52,7 +52,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
         if (resortData.owner_id) {
           const { data: ownerData, error: ownerError } = await supabase
             .from('profiles')
-            .select('full_name')
+            .select('id, email, full_name, role, is_admin')
             .eq('id', resortData.owner_id)
             .single()
           

@@ -31,7 +31,11 @@ export default function AdminResortsPage(){
       if (!session?.user) { router.push('/auth/login'); return }
 
       // Check if user is admin
-      const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', session.user.id).single()
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, role, is_admin')
+        .eq('id', session.user.id)
+        .single()
       if (!profile?.is_admin) { router.push('/'); return }
 
       setIsAdmin(true)

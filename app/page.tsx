@@ -26,7 +26,7 @@ export default function Home(){
           try {
             const { data: profile, error } = await supabase
               .from('profiles')
-              .select('is_admin, role')
+              .select('id, email, is_admin, role')
               .eq('id', session.user.id)
               .single()
             

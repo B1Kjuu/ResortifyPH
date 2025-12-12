@@ -15,7 +15,11 @@ export default function GuestDashboard(){
       if (!session?.user) { router.push('/auth/login'); return }
 
       // Verify guest role
-      const { data: userProfile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, role, is_admin')
+        .eq('id', session.user.id)
+        .single()
       if (userProfile?.role !== 'guest') {
         router.push('/dashboard')
         return

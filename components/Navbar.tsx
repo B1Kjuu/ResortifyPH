@@ -9,6 +9,7 @@ export default function Navbar(){
   const [user, setUser] = useState<any>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [userRole, setUserRole] = useState<string>('')
+  const [profileEmail, setProfileEmail] = useState<string | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
   const authCompletedRef = useRef(false)
   const router = useRouter()
@@ -28,7 +29,7 @@ export default function Navbar(){
           try {
             const { data: profile, error } = await supabase
               .from('profiles')
-              .select('is_admin, role')
+              .select('id, email, is_admin, role')
               .eq('id', session.user.id)
               .single()
             
@@ -41,9 +42,11 @@ export default function Navbar(){
             } else if (profile) {
               setIsAdmin(profile.is_admin || false)
               setUserRole(profile.role || 'guest')
+              setProfileEmail(profile.email || session.user.email || null)
             } else {
               setIsAdmin(false)
               setUserRole('guest')
+              setProfileEmail(session.user.email || null)
             }
             
             authCompletedRef.current = true
@@ -54,6 +57,7 @@ export default function Navbar(){
             console.error('Profile fetch exception:', err)
             setIsAdmin(false)
             setUserRole('guest')
+            setProfileEmail(session.user.email || null)
             authCompletedRef.current = true
             clearTimeout(timeoutId)
             setAuthChecked(true)
@@ -62,6 +66,7 @@ export default function Navbar(){
           setUser(null)
           setIsAdmin(false)
           setUserRole('')
+          setProfileEmail(null)
           authCompletedRef.current = true
           clearTimeout(timeoutId)
           setAuthChecked(true)
@@ -121,6 +126,7 @@ export default function Navbar(){
       setUser(null)
       setIsAdmin(false)
       setUserRole('')
+      setProfileEmail(null)
       // Force full page reload to clear cache and reset state
       window.location.href = '/'
     } catch (err) {
@@ -213,7 +219,11 @@ export default function Navbar(){
                 </button>
               </div>
 
-              <Link href="/profile" className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition">
+              <Link
+                href="/profile"
+                aria-label={profileEmail ? `Open profile for ${profileEmail}` : 'Open profile'}
+                className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition"
+              >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
