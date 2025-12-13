@@ -35,7 +35,6 @@ The create resort page (`/owner/create-resort`) now includes:
 - Enhanced placeholder text with suggestions for what to include
 - Encourages owners to mention nearby attractions and unique features
 
-
 ### 2. Map-Based Location Picker & Address Cleaning 🗺️
 
 - Added interactive map-based location picker to create/edit resort pages

@@ -18,7 +18,6 @@
 
 ---
 
-
 ## 📊 Completeness Scorecard
 
 ```

@@ -13,7 +13,6 @@
 
 ResortifyPH is a **sophisticated resort booking platform** inspired by Airbnb. The system has strong foundations with modern architecture but requires significant development in payment processing, advanced filtering, messaging, and analytics to reach production parity with industry leaders.
 
-
 **What's Working Well:**
 
 - ✅ Solid authentication system with role-based access (guest/owner/admin)

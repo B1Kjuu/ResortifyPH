@@ -17,14 +17,13 @@
 - [x] Footer.tsx - Gradient background with colored social icons
 - [x] ResortCard.tsx - Type badges, frosted heart button, guest capacity
 
-
 ### ✅ Phase 2: Public Pages (6/6)
 
 - [x] Landing Page (app/page.tsx) - Verified, already modern
 - [x] Resort Browse Page (app/resorts/page.tsx) - Advanced filters with modern styling
 - [x] Resort Create Page (app/owner/create-resort/page.tsx) - Modern form with gradient header
-   - [x] Interactive map-based location picker (search, pin, drag, auto-clean address)
-   - [x] Address search with Nominatim, "No results found" feedback, map zoom/pan
+  - [x] Interactive map-based location picker (search, pin, drag, auto-clean address)
+  - [x] Address search with Nominatim, "No results found" feedback, map zoom/pan
 - [x] User Profile Page (app/profile/page.tsx) - Gradient header with frosted circle
 - [x] Guest Dashboard (app/guest/adventure-hub/page.tsx) - Enhanced modern dashboard
 

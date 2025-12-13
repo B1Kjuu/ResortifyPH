@@ -21,7 +21,6 @@ npm run dev
 
 3. Run the SQL in `supabase_schema.sql` from the Supabase SQL editor to create required tables.
 
-
 Features implemented
 
 - Landing page, resorts list, resort detail

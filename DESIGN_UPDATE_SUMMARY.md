@@ -22,7 +22,6 @@ This document summarizes the complete design overhaul of ResortifyPH to achieve 
 - Border-2 styling on interactive elements
 - Smooth hover states with scale and translate effects
 
-
 ### Phase 2: User-Facing Pages ✅
 
 **Files Updated:**
@@ -30,8 +29,10 @@ This document summarizes the complete design overhaul of ResortifyPH to achieve 
 1. `app/page.tsx` (Landing) - Already modern, no changes needed
 2. `app/resorts/page.tsx` (Browse & Filter) - Comprehensive modern filter interface
 3. `app/owner/create-resort/page.tsx` - Modern card-based form design
-  - Interactive map-based location picker (search, pin, drag, auto-clean address)
-  - Address search with Nominatim, "No results found" feedback, map zoom/pan
+
+- Interactive map-based location picker (search, pin, drag, auto-clean address)
+- Address search with Nominatim, "No results found" feedback, map zoom/pan
+
 4. `app/profile/page.tsx` - Gradient headers with frosted circles
 5. `app/guest/adventure-hub/page.tsx` - Enhanced modern dashboard
 

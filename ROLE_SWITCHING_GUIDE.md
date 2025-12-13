@@ -57,7 +57,6 @@ Changed "Profile" → "Settings" (more accurate)
 
 ---
 
-
 ## How Users Experience It
 
 ### Location Picker & Address Cleaning
