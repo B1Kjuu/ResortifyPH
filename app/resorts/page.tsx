@@ -8,7 +8,10 @@ import 'rc-slider/assets/index.css'
 import ResortCard from '../../components/ResortCard'
 import SkeletonCard from '../../components/SkeletonCard'
 import LocationCombobox from '../../components/LocationCombobox'
+import ResortMap from '../../components/ResortMap'
 import { supabase } from '../../lib/supabaseClient'
+import { getProvinceCoordinates } from '../../lib/locations'
+import { useGeolocation, calculateDistance, formatDistance } from '../../hooks/useGeolocation'
 
 
 
@@ -16,6 +19,32 @@ export default function ResortsPage(){
   const searchParams = useSearchParams()
   const router = useRouter()
   const typeParam = searchParams.get('type')
+  
+  // Hydration-safe mounting state
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+  
+  // Geolocation for "Near You" feature
+  const { position, loading: geoLoading, error: geoError, requestLocation, supported: geoSupported } = useGeolocation()
+  const [showNearby, setShowNearby] = useState(false)
+  const [viewMode, setViewMode] = useState<'grid' | 'map' | 'split'>('grid')
+  const [selectedMapResort, setSelectedMapResort] = useState<string | null>(null)
+  const [showTotalPrice, setShowTotalPrice] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  
+  // Airbnb-style categories
+  const categories = [
+    { id: 'beach', icon: '🏖️', label: 'Beachfront' },
+    { id: 'mountain', icon: '🏔️', label: 'Mountains' },
+    { id: 'nature', icon: '🌿', label: 'Nature' },
+    { id: 'city', icon: '🏙️', label: 'City' },
+    { id: 'countryside', icon: '🌾', label: 'Countryside' },
+    { id: 'pool', icon: '🏊', label: 'Amazing Pools' },
+    { id: 'trending', icon: '🔥', label: 'Trending' },
+    { id: 'new', icon: '✨', label: 'New' },
+    { id: 'luxury', icon: '💎', label: 'Luxe' },
+    { id: 'family', icon: '👨‍👩‍👧‍👦', label: 'Family' },
+  ]
   
   const [resorts, setResorts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -156,11 +185,37 @@ export default function ResortsPage(){
     checkAvailability()
   }, [dateFrom, dateTo, resorts])
 
+  // Calculate distance for all resorts when position is available
+  const resortsWithDistance = useMemo(() => {
+    if (!position) return resorts.map(r => ({ ...r, distance: null }))
+    
+    return resorts.map(resort => {
+      let lat: number | null = null
+      let lng: number | null = null
+      
+      if (resort.latitude && resort.longitude) {
+        lat = resort.latitude
+        lng = resort.longitude
+      } else {
+        const coords = getProvinceCoordinates(resort.location)
+        if (coords) {
+          lat = coords.lat
+          lng = coords.lng
+        }
+      }
+      
+      if (lat === null || lng === null) return { ...resort, distance: null }
+      
+      const distance = calculateDistance(position.latitude, position.longitude, lat, lng)
+      return { ...resort, distance }
+    })
+  }, [resorts, position])
+
   const filteredResorts = useMemo(() => {
     const minPrice = priceRange[0]
     const maxPrice = priceRange[1]
 
-    const result = resorts.filter(resort => {
+    const result = resortsWithDistance.filter(resort => {
       const searchText = `${resort.name || ''} ${resort.location || ''} ${resort.description || ''}`.toLowerCase()
       const matchesSearch = searchText.includes(searchTerm.toLowerCase())
 
@@ -182,6 +237,15 @@ export default function ResortsPage(){
       return matchesSearch && matchesLocation && matchesType && matchesPrice && matchesGuests && matchesAmenities && matchesAvailability
     })
 
+    // Sort by distance if "Near Me" is active
+    if (showNearby && position) {
+      return [...result].sort((a, b) => {
+        if (a.distance === null) return 1
+        if (b.distance === null) return -1
+        return a.distance - b.distance
+      })
+    }
+    
     if (sortBy === 'price-asc') {
       return [...result].sort((a, b) => (a.price || 0) - (b.price || 0))
     }
@@ -189,171 +253,278 @@ export default function ResortsPage(){
       return [...result].sort((a, b) => (b.price || 0) - (a.price || 0))
     }
     return [...result].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-  }, [resorts, searchTerm, selectedLocation, selectedType, priceRange, priceBounds, guestCount, selectedAmenities, sortBy, availableResortIds])
+  }, [resortsWithDistance, searchTerm, selectedLocation, selectedType, priceRange, priceBounds, guestCount, selectedAmenities, sortBy, availableResortIds, showNearby, position])
+
+  // Nearby resorts based on user's GPS location (for display purposes)
+  const nearbyResorts = useMemo(() => {
+    if (!position || !showNearby) return []
+    
+    const resortsWithDist = resorts
+      .map(resort => {
+        // Prefer exact coordinates if available
+        let lat: number | null = null
+        let lng: number | null = null
+        
+        if (resort.latitude && resort.longitude) {
+          lat = resort.latitude
+          lng = resort.longitude
+        } else {
+          const coords = getProvinceCoordinates(resort.location)
+          if (coords) {
+            lat = coords.lat
+            lng = coords.lng
+          }
+        }
+        
+        if (lat === null || lng === null) return null
+        
+        const distance = calculateDistance(
+          position.latitude,
+          position.longitude,
+          lat,
+          lng
+        )
+        
+        return { ...resort, distance, hasExactLocation: !!(resort.latitude && resort.longitude) }
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== null)
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, 8) // Show top 8 nearest
+    
+    return resortsWithDistance
+  }, [resorts, position, showNearby])
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      {/* Header */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-16 sm:py-20 bg-gradient-to-br from-resort-50 via-blue-50 to-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-4xl">🏝️</span>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-resort-600 to-blue-600 bg-clip-text text-transparent">Explore Resorts</h1>
+    <div className="w-full min-h-screen bg-white">
+      {/* Compact Header */}
+      <div className="w-full border-b border-slate-200 bg-white sticky top-0 z-40">
+        <div className="px-6 sm:px-10 lg:px-20 py-3">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Explore Resorts</h1>
+              <p className="text-sm text-slate-500 mt-0.5">Discover amazing stays across the Philippines</p>
+            </div>
+            
+            {/* View Mode Toggle - Desktop */}
+            <div className="hidden md:flex items-center gap-1 bg-slate-100 rounded-xl p-1">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  viewMode === 'grid'
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+                Grid
+              </button>
+              <button
+                onClick={() => setViewMode('split')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  viewMode === 'split'
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7" />
+                </svg>
+                Split
+              </button>
+              <button
+                onClick={() => setViewMode('map')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  viewMode === 'map'
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+                Map
+              </button>
+            </div>
           </div>
-          <p className="text-lg sm:text-xl text-slate-600 max-w-2xl">Discover amazing places to stay across the Philippines</p>
+        </div>
+        
+        {/* Category Chips - Airbnb Style */}
+        <div className="border-t border-slate-100">
+          <div className="px-6 sm:px-10 lg:px-20">
+            <div className="flex items-center gap-2 py-3 overflow-x-auto scrollbar-hide">
+              <button
+                onClick={() => {
+                  setSelectedCategory(null)
+                  setSelectedType('all')
+                }}
+                className={`flex-shrink-0 flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all ${
+                  !selectedCategory
+                    ? 'border-b-2 border-slate-900 text-slate-900'
+                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                }`}
+              >
+                <span className="text-xl">🏝️</span>
+                <span className="text-xs font-medium whitespace-nowrap">All</span>
+              </button>
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => {
+                    setSelectedCategory(cat.id)
+                    if (['beach', 'mountain', 'nature', 'city', 'countryside'].includes(cat.id)) {
+                      setSelectedType(cat.id)
+                    } else {
+                      setSelectedType('all')
+                    }
+                  }}
+                  className={`flex-shrink-0 flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all ${
+                    selectedCategory === cat.id
+                      ? 'border-b-2 border-slate-900 text-slate-900'
+                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  <span className="text-xl">{cat.icon}</span>
+                  <span className="text-xs font-medium whitespace-nowrap">{cat.label}</span>
+                </button>
+              ))}
+              
+              {/* Filters Button */}
+              <div className="flex-shrink-0 pl-4 border-l border-slate-200 ml-auto">
+                <button
+                  onClick={() => {
+                    const details = document.querySelector('details')
+                    if (details) details.open = !details.open
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-xl hover:border-slate-900 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                  </svg>
+                  <span className="text-sm font-medium">Filters</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        <div className="max-w-7xl mx-auto">
-          {/* Search and Filters */}
-          <div className="grid md:grid-cols-4 lg:grid-cols-5 gap-4 mb-6">
+      <div className="w-full px-6 sm:px-10 lg:px-20 py-4">
+        <div>
+          {/* Location Error Message - only show if there's an error */}
+          {mounted && geoSupported && geoError && showNearby && (
+            <div className="mb-4 flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+              <span>⚠️</span>
+              <span>{geoError}. Please enable location in your browser.</span>
+              <button onClick={() => requestLocation()} className="ml-auto text-amber-600 hover:text-amber-800 underline text-xs">
+                Retry
+              </button>
+            </div>
+          )}
+
+          {/* Compact Filters Bar */}
+          <div className="flex flex-wrap items-center gap-3 mb-6">
+            {/* Near Me Button - Subtle toggle */}
+            {mounted && geoSupported && (
+              <button
+                onClick={() => {
+                  if (!showNearby) {
+                    setShowNearby(true)
+                    requestLocation()
+                  } else {
+                    setShowNearby(false)
+                  }
+                }}
+                disabled={geoLoading}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
+                  showNearby && position
+                    ? 'bg-emerald-500 text-white border-emerald-500'
+                    : geoLoading
+                    ? 'bg-slate-100 text-slate-400 border-slate-200'
+                    : 'bg-white text-slate-700 border-slate-300 hover:border-emerald-400 hover:text-emerald-600'
+                }`}
+              >
+                {geoLoading ? (
+                  <div className="w-4 h-4 border-2 border-slate-300 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                  </svg>
+                )}
+                {geoLoading ? 'Locating...' : showNearby && position ? 'Near Me ✓' : 'Near Me'}
+              </button>
+            )}
+            
             {/* Search Bar */}
-            <div className="md:col-span-2">
-              <div className="relative">
-                <svg className="absolute left-4 top-3.5 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input 
-                  type="text" 
-                  placeholder="Search by name, location, or description" 
-                  aria-label="Search resorts"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3.5 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 bg-white shadow-sm hover:border-slate-300 transition-colors"
-                />
-              </div>
+            <div className="relative flex-1 min-w-[200px] max-w-md">
+              <svg className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input 
+                type="text" 
+                placeholder="Search resorts..." 
+                aria-label="Search resorts"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 bg-white"
+              />
             </div>
 
-            {/* Type Filter */}
-            <div>
-              <select 
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
-                aria-label="Filter by resort type"
-                className="w-full px-4 py-3.5 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 bg-white shadow-sm hover:border-slate-300 transition-colors cursor-pointer"
-              >
-                <option value="all">All Types</option>
-                <option value="beach">🏖️ Beach</option>
-                <option value="mountain">🏔️ Mountain</option>
-                <option value="nature">🌿 Nature</option>
-                <option value="city">🏙️ City</option>
-                <option value="countryside">🌾 Countryside</option>
-              </select>
-            </div>
-
-            {/* Guests Filter */}
-            <div>
-              <select 
-                value={guestCount}
-                onChange={(e) => setGuestCount(e.target.value)}
-                aria-label="Filter by guest count"
-                className="w-full px-4 py-3.5 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 bg-white shadow-sm hover:border-slate-300 transition-colors cursor-pointer"
-              >
-                <option value="all">Any guests</option>
-                <option value="2">2+ guests</option>
-                <option value="4">4+ guests</option>
-                <option value="6">6+ guests</option>
-                <option value="8">8+ guests</option>
-                <option value="10">10+ guests</option>
-              </select>
-            </div>
-
-            {/* Location Filter */}
-            <div>
+            {/* Location */}
+            <div className="w-40">
               <LocationCombobox
                 value={selectedLocation === 'all' ? '' : selectedLocation}
                 onChange={(province) => setSelectedLocation(province || 'all')}
-                placeholder={selectedLocation === 'all' ? 'All locations' : 'Search or pick a province'}
+                placeholder="Location"
+                variant="hero"
               />
-              <p className="text-xs text-slate-500 mt-1">Search any province or clear to view all locations.</p>
             </div>
-          </div>
 
-          {/* Date Range */}
-          <div className="bg-white border-2 border-slate-200 rounded-2xl p-6 shadow-sm mb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-xl">📅</span>
-              <h3 className="text-lg font-bold text-slate-900">Travel Dates</h3>
-            </div>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Check-in</label>
-                <DatePicker
-                  selected={dateFrom}
-                  onChange={(date) => setDateFrom(date)}
-                  selectsStart
-                  startDate={dateFrom}
-                  endDate={dateTo}
-                  minDate={new Date()}
-                  dateFormat="MMM d, yyyy"
-                  placeholderText="Select check-in"
-                  className="w-full px-4 py-3.5 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Check-out</label>
-                <DatePicker
-                  selected={dateTo}
-                  onChange={(date) => setDateTo(date)}
-                  selectsEnd
-                  startDate={dateFrom}
-                  endDate={dateTo}
-                  minDate={dateFrom || new Date()}
-                  dateFormat="MMM d, yyyy"
-                  placeholderText="Select check-out"
-                  className="w-full px-4 py-3.5 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors"
-                />
-              </div>
-            </div>
-          </div>
+            {/* Type Filter */}
+            <select 
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+              aria-label="Filter by resort type"
+              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white cursor-pointer"
+            >
+              <option value="all">All Types</option>
+              <option value="beach">🏖️ Beach</option>
+              <option value="mountain">🏔️ Mountain</option>
+              <option value="nature">🌿 Nature</option>
+              <option value="city">🏙️ City</option>
+              <option value="countryside">🌾 Countryside</option>
+            </select>
 
-          {/* Secondary filters */}
-          <div className="grid md:grid-cols-4 lg:grid-cols-5 gap-4 mb-6 items-end">
-            {/* Price Range */}
-            <div className="md:col-span-2">
-              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-3">
-                <span>💰</span>
-                <span>Price range per night</span>
-              </label>
-              <div className="bg-white border-2 border-slate-200 rounded-xl p-4 shadow-sm">
-                <Slider
-                  range
-                  min={priceBounds[0]}
-                  max={priceBounds[1]}
-                  value={priceRange}
-                  onChange={(value) => setPriceRange(value as [number, number])}
-                  trackStyle={[{ backgroundColor: '#0ea5e9', height: 6 }]}
-                  handleStyle={[{ borderColor: '#0ea5e9', height: 20, width: 20, marginTop: -7, backgroundColor: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }, { borderColor: '#0ea5e9', height: 20, width: 20, marginTop: -7, backgroundColor: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }]}
-                  railStyle={{ backgroundColor: '#e2e8f0', height: 6 }}
-                />
-                <div className="flex justify-between mt-4 text-sm font-semibold">
-                  <span className="px-3 py-1 bg-resort-100 text-resort-700 rounded-lg">₱{priceRange[0].toLocaleString()}</span>
-                  <span className="px-3 py-1 bg-resort-100 text-resort-700 rounded-lg">₱{priceRange[1].toLocaleString()}</span>
-                </div>
-              </div>
-            </div>
+            {/* Guests Filter */}
+            <select 
+              value={guestCount}
+              onChange={(e) => setGuestCount(e.target.value)}
+              aria-label="Filter by guest count"
+              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white cursor-pointer"
+            >
+              <option value="all">Guests</option>
+              <option value="2">2+</option>
+              <option value="4">4+</option>
+              <option value="6">6+</option>
+              <option value="8">8+</option>
+              <option value="10">10+</option>
+            </select>
 
             {/* Sort */}
-            <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-3">
-                <span>⬆️</span>
-                <span>Sort by</span>
-              </label>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                aria-label="Sort resorts"
-                className="w-full px-4 py-3.5 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 bg-white shadow-sm hover:border-slate-300 transition-colors cursor-pointer"
-              >
-                <option value="newest">Newest</option>
-                <option value="price-asc">Price: Low to High</option>
-                <option value="price-desc">Price: High to Low</option>
-              </select>
-            </div>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              aria-label="Sort resorts"
+              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white cursor-pointer"
+            >
+              <option value="newest">Newest</option>
+              <option value="price-asc">Price ↑</option>
+              <option value="price-desc">Price ↓</option>
+            </select>
 
             {/* Clear Filters */}
-            <div className="flex md:justify-end lg:col-span-2">
+            {(searchTerm || selectedType !== 'all' || selectedLocation !== 'all' || guestCount !== 'all' || selectedAmenities.length > 0) && (
               <button
                 type="button"
                 onClick={() => {
@@ -367,57 +538,137 @@ export default function ResortsPage(){
                   setDateFrom(null)
                   setDateTo(null)
                 }}
-                className="w-full md:w-auto px-6 py-3.5 bg-gradient-to-r from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 rounded-xl font-semibold transition-all shadow-sm border-2 border-slate-200 hover:border-slate-300 flex items-center justify-center gap-2"
+                className="px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors"
               >
-                <span>✕</span>
-                <span>Clear All</span>
+                Clear
+              </button>
+            )}
+          </div>
+
+          {/* Expandable Filters */}
+          <details className="mb-6 group">
+            <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-600 hover:text-slate-900 select-none">
+              <svg className="w-4 h-4 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              More filters (dates, price, amenities)
+            </summary>
+            
+            <div className="mt-4 p-4 bg-slate-50 rounded-xl space-y-4">
+              {/* Date Range */}
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">Check-in</label>
+                  <DatePicker
+                    selected={dateFrom}
+                    onChange={(date) => setDateFrom(date)}
+                    selectsStart
+                    startDate={dateFrom}
+                    endDate={dateTo}
+                    minDate={new Date()}
+                    dateFormat="MMM d, yyyy"
+                    placeholderText="Select date"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">Check-out</label>
+                  <DatePicker
+                    selected={dateTo}
+                    onChange={(date) => setDateTo(date)}
+                    selectsEnd
+                    startDate={dateFrom}
+                    endDate={dateTo}
+                    minDate={dateFrom || new Date()}
+                    dateFormat="MMM d, yyyy"
+                    placeholderText="Select date"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400"
+                  />
+                </div>
+              </div>
+
+              {/* Price Range */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-2">
+                  Price: ₱{priceRange[0].toLocaleString()} - ₱{priceRange[1].toLocaleString()}
+                </label>
+                <Slider
+                  range
+                  min={priceBounds[0]}
+                  max={priceBounds[1]}
+                  value={priceRange}
+                  onChange={(value) => setPriceRange(value as [number, number])}
+                  trackStyle={[{ backgroundColor: '#0ea5e9', height: 4 }]}
+                  handleStyle={[
+                    { borderColor: '#0ea5e9', height: 16, width: 16, marginTop: -6, backgroundColor: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' },
+                    { borderColor: '#0ea5e9', height: 16, width: 16, marginTop: -6, backgroundColor: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }
+                  ]}
+                  railStyle={{ backgroundColor: '#e2e8f0', height: 4 }}
+                />
+              </div>
+
+              {/* Amenities */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-2">Amenities</label>
+                <div className="flex flex-wrap gap-2">
+                  {amenityOptions.map((amenity) => {
+                    const active = selectedAmenities.includes(amenity)
+                    return (
+                      <button
+                        key={amenity}
+                        type="button"
+                        onClick={() => {
+                          if (active) {
+                            setSelectedAmenities(selectedAmenities.filter(a => a !== amenity))
+                          } else {
+                            setSelectedAmenities([...selectedAmenities, amenity])
+                          }
+                        }}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                          active 
+                            ? 'bg-resort-500 border-resort-500 text-white' 
+                            : 'bg-white border-slate-300 text-slate-700 hover:border-resort-400'
+                        }`}
+                      >
+                        {amenity}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          </details>
+
+          {/* Results Count */}
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm text-slate-600">
+              <span className="font-semibold text-slate-900">{filteredResorts.length}</span> resort{filteredResorts.length !== 1 ? 's' : ''} found
+            </p>
+            
+            {/* Mobile View Toggle */}
+            <div className="flex md:hidden items-center gap-1 bg-slate-100 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-white shadow-sm' : ''}`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setViewMode('map')}
+                className={`p-1.5 rounded ${viewMode === 'map' ? 'bg-white shadow-sm' : ''}`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
               </button>
             </div>
           </div>
 
-          {/* Amenities */}
-          <div className="mb-8 bg-white border-2 border-slate-200 rounded-2xl p-6 shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-xl">✨</span>
-              <h3 className="text-lg font-bold text-slate-900">Filter by Amenities</h3>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              {amenityOptions.map((amenity) => {
-                const active = selectedAmenities.includes(amenity)
-                return (
-                  <button
-                    key={amenity}
-                    type="button"
-                    onClick={() => {
-                      if (active) {
-                        setSelectedAmenities(selectedAmenities.filter(a => a !== amenity))
-                      } else {
-                        setSelectedAmenities([...selectedAmenities, amenity])
-                      }
-                    }}
-                    className={`px-5 py-2.5 rounded-full text-sm font-semibold border-2 transition-all shadow-sm ${
-                      active 
-                        ? 'bg-gradient-to-r from-resort-500 to-blue-500 border-resort-500 text-white shadow-md scale-105' 
-                        : 'bg-white border-slate-200 text-slate-700 hover:border-resort-400 hover:text-resort-600 hover:shadow-md'
-                    }`}
-                  >
-                    {amenity}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Results Count */}
-          <div className="mb-8">
-            <p className="text-slate-600">
-              Showing <span className="font-semibold text-slate-900">{filteredResorts.length}</span> resort{filteredResorts.length !== 1 ? 's' : ''}
-            </p>
-          </div>
-
-          {/* Resorts Grid */}
+          {/* Resorts Display */}
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
               {[...Array(12)].map((_, i) => <SkeletonCard key={i} />)}
             </div>
           ) : filteredResorts.length === 0 ? (
@@ -426,15 +677,106 @@ export default function ResortsPage(){
               <h3 className="text-2xl font-bold text-slate-900 mb-2">No resorts found</h3>
               <p className="text-slate-600 mb-6">Try adjusting your search or filters</p>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          ) : viewMode === 'grid' ? (
+            /* Grid View */
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
               {filteredResorts.map((resort) => (
-                <ResortCard key={resort.id} resort={resort} />
+                <div key={resort.id} className="relative">
+                  {/* Distance Badge when Near Me is active */}
+                  {showNearby && position && resort.distance !== null && (
+                    <div className="absolute top-3 left-3 z-10 px-2 py-1 bg-white/95 backdrop-blur-sm rounded-full shadow-md flex items-center gap-1">
+                      <svg className="w-3 h-3 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-xs font-semibold text-emerald-700">{formatDistance(resort.distance)}</span>
+                    </div>
+                  )}
+                  <ResortCard resort={resort} />
+                </div>
               ))}
+            </div>
+          ) : viewMode === 'map' ? (
+            /* Full Map View */
+            <div className="h-[70vh] min-h-[500px]">
+              <ResortMap
+                resorts={filteredResorts}
+                userPosition={position}
+                selectedResortId={selectedMapResort}
+                onResortClick={(id) => setSelectedMapResort(id === selectedMapResort ? null : id)}
+                className="h-full"
+              />
+            </div>
+          ) : (
+            /* Split View - Airbnb Style */
+            <div className="flex gap-0 -mx-6 sm:-mx-10 lg:-mx-20">
+              {/* List Side */}
+              <div className="w-full lg:w-1/2 px-6 sm:px-10 lg:px-10 max-h-[calc(100vh-200px)] overflow-y-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-6">
+                  {filteredResorts.map((resort) => (
+                    <div 
+                      key={resort.id}
+                      className={`relative transition-all cursor-pointer ${selectedMapResort === resort.id ? 'ring-2 ring-slate-900 rounded-2xl scale-[1.02]' : ''}`}
+                      onClick={() => setSelectedMapResort(resort.id)}
+                    >
+                      {/* Distance Badge when Near Me is active */}
+                      {showNearby && position && resort.distance !== null && (
+                        <div className="absolute top-3 left-3 z-10 px-2 py-1 bg-white/95 backdrop-blur-sm rounded-full shadow-md flex items-center gap-1">
+                          <svg className="w-3 h-3 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                          </svg>
+                          <span className="text-xs font-semibold text-emerald-700">{formatDistance(resort.distance)}</span>
+                        </div>
+                      )}
+                      <ResortCard resort={resort} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Map Side - Sticky */}
+              <div className="hidden lg:block w-1/2 sticky top-[180px] h-[calc(100vh-200px)]">
+                <ResortMap
+                  resorts={filteredResorts}
+                  userPosition={position}
+                  selectedResortId={selectedMapResort}
+                  onResortClick={(id) => setSelectedMapResort(id === selectedMapResort ? null : id)}
+                  className="h-full rounded-none"
+                />
+              </div>
             </div>
           )}
         </div>
       </div>
+      
+      {/* Floating Show Map Button - Mobile Only (Airbnb Style) */}
+      {mounted && viewMode === 'grid' && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 md:hidden">
+          <button
+            onClick={() => setViewMode('map')}
+            className="flex items-center gap-2 px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-full shadow-xl hover:shadow-2xl transition-all font-medium"
+          >
+            <span>Show map</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+            </svg>
+          </button>
+        </div>
+      )}
+      
+      {/* Back to List Button - Mobile Map View */}
+      {mounted && viewMode === 'map' && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 md:hidden">
+          <button
+            onClick={() => setViewMode('grid')}
+            className="flex items-center gap-2 px-5 py-3 bg-white hover:bg-slate-50 text-slate-900 rounded-full shadow-xl border border-slate-200 transition-all font-medium"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+            <span>Show list</span>
+          </button>
+        </div>
+      )}
     </div>
   )
 }

@@ -49,6 +49,9 @@ export const resortSchema = z.object({
   name: z.string().min(5, 'Resort name must be at least 5 characters'),
   description: z.string().min(20, 'Description must be at least 20 characters'),
   location: z.string().min(3, 'Location must be at least 3 characters'),
+  latitude: z.number().min(-90).max(90).optional().nullable(),
+  longitude: z.number().min(-180).max(180).optional().nullable(),
+  address: z.string().max(500, 'Address must be under 500 characters').optional().nullable(),
   type: z.enum(['beach', 'mountain', 'nature', 'city', 'countryside'], {
     message: 'Please select a resort type',
   }),

@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 
 import ImageUploader from '../../../components/ImageUploader'
 import LocationCombobox from '../../../components/LocationCombobox'
+import LocationPicker from '../../../components/LocationPicker'
 import { getProvinceInfo } from '../../../lib/locations'
 import { supabase } from '../../../lib/supabaseClient'
 import { resortSchema, type ResortInput } from '../../../lib/validations'
@@ -43,6 +44,9 @@ const defaultResortValues: Partial<ResortInput> = {
   name: '',
   description: '',
   location: '',
+  latitude: null,
+  longitude: null,
+  address: '',
   type: 'city',
   price: undefined,
   day_tour_price: null,
@@ -164,6 +168,9 @@ export default function CreateResort() {
       name: values.name,
       description: values.description,
       location: values.location,
+      latitude: values.latitude ?? null,
+      longitude: values.longitude ?? null,
+      address: values.address?.trim() || null,
       region_code: provinceInfo?.regionCode ?? null,
       region_name: provinceInfo?.regionName ?? null,
       type: values.type,
@@ -254,7 +261,7 @@ export default function CreateResort() {
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">Location *</label>
+            <label className="block text-sm font-bold text-slate-700 mb-2">Province/Region *</label>
             <Controller
               name="location"
               control={control}
@@ -269,6 +276,29 @@ export default function CreateResort() {
                   placeholder="Search or pick a province"
                 />
               )}
+            />
+          </div>
+
+          {/* Exact Location Map Picker */}
+          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-xl p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl">📍</span>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Pin Your Exact Location</h3>
+                <p className="text-sm text-slate-600">Help guests find your resort easily on the map</p>
+              </div>
+            </div>
+            <LocationPicker
+              latitude={watch('latitude') ?? null}
+              longitude={watch('longitude') ?? null}
+              address={watch('address') ?? ''}
+              onLocationChange={(lat, lng) => {
+                setValue('latitude', lat, { shouldValidate: true })
+                setValue('longitude', lng, { shouldValidate: true })
+              }}
+              onAddressChange={(addr) => {
+                setValue('address', addr, { shouldValidate: true })
+              }}
             />
           </div>
 
