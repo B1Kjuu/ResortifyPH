@@ -265,14 +265,15 @@ export default function CreateResort() {
             <Controller
               name="location"
               control={control}
+              rules={{ required: 'Location is required' }}
               render={({ field }) => (
                 <LocationCombobox
-                  value={field.value ?? ''}
+                  value={typeof field.value === 'string' ? field.value : ''}
                   onChange={(province) => {
-                    field.onChange(province)
+                    field.onChange(province || '')
                     field.onBlur()
                   }}
-                  error={errors.location?.message}
+                  error={errors.location?.message || (!field.value ? 'Location is required' : undefined)}
                   placeholder="Search or pick a province"
                 />
               )}

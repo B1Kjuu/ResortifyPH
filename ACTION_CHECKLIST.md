@@ -56,6 +56,15 @@ npm install react-hook-form zod @hookform/resolvers sonner stripe
 
 ### CODE (Day 3-5)
 
+- [x] Implement interactive map-based location picker for resort creation/editing
+  - [x] Click map or drag marker to set location
+  - [x] Address search with Nominatim (OpenStreetMap)
+  - [x] Reverse geocoding for pinning resort location
+  - [x] Map zooms/pans to selected search or pin
+  - [x] Address field auto-fills and cleans non-Latin characters
+  - [x] "No results found" feedback in search dropdown
+  - [x] Improved UX for location selection (search, click, drag, or use current location)
+- [x] All changes applied to both create and edit resort flows
 - [ ] Follow IMPLEMENTATION_GUIDE.md Task 1 (Form Validation)
   - [ ] Update `/owner/create-resort/page.tsx`
   - [ ] Add Zod validation schema

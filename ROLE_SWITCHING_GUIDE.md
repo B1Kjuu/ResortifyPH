@@ -57,7 +57,14 @@ Changed "Profile" → "Settings" (more accurate)
 
 ---
 
+
 ## How Users Experience It
+
+### Location Picker & Address Cleaning
+
+- Both guests and owners now benefit from an interactive map-based location picker
+- Address search and cleaning is consistent across all roles
+- Improved UX for location selection and resort management
 
 ### Day 1: Sign Up
 

@@ -35,7 +35,16 @@ The create resort page (`/owner/create-resort`) now includes:
 - Enhanced placeholder text with suggestions for what to include
 - Encourages owners to mention nearby attractions and unique features
 
-### 2. Edit/Manage Resort Functionality ✏️
+
+### 2. Map-Based Location Picker & Address Cleaning 🗺️
+
+- Added interactive map-based location picker to create/edit resort pages
+- Address search now uses Nominatim (OpenStreetMap) and cleans non-Latin characters
+- Map zooms/pans to selected search or pin
+- "No results found" feedback in search dropdown
+- Improved UX: click map, drag marker, or use current location
+
+### 3. Edit/Manage Resort Functionality ✏️
 
 #### New Edit Page Created:
 

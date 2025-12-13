@@ -21,6 +21,7 @@ npm run dev
 
 3. Run the SQL in `supabase_schema.sql` from the Supabase SQL editor to create required tables.
 
+
 Features implemented
 
 - Landing page, resorts list, resort detail
@@ -28,6 +29,8 @@ Features implemented
 - Owner dashboard to create resorts and upload images to Supabase Storage
 - Bookings page (guest bookings view)
 - Components: `Navbar`, `Footer`, `ResortCard`, `ImageUploader`, `DashboardSidebar`
+- Interactive map-based location picker for resorts (search, pin, drag, auto-clean address)
+- Address search with Nominatim, "No results found" feedback, map zoom/pan
 
 Notes & next steps
 

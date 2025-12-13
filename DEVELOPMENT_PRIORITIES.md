@@ -8,6 +8,8 @@ HIGH IMPACT, LOW EFFORT (Do First!)
 │ ✅ Form Validation (3 days)                          │
 │ ✅ Error Toast Notifications (2 days)                │
 │ ✅ Loading States on Buttons (1 day)                 │
+│ ✅ Interactive Map-Based Location Picker (3 days)    │
+│ ✅ Address Cleaning & Search UX (2 days)             │
 └─────────────────────────────────────────────────────┘
         ↓
 HIGH IMPACT, MEDIUM EFFORT (Do Second!)
@@ -26,6 +28,7 @@ HIGH IMPACT, HIGH EFFORT (Do Third!)
 NICE TO HAVE (Do Last!)
 ┌─────────────────────────────────────────────────────┐
 │ 🔍 Advanced Search Algorithm (1 week)               │
+│ ✅ Resort Location Picker & Address Cleaning         │
 │ 📱 Mobile App (6+ weeks)                            │
 │ 🌙 Dark Mode (3 days)                               │
 └─────────────────────────────────────────────────────┘

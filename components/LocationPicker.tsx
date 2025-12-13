@@ -98,39 +98,40 @@ function DraggableMarker({ position, onDragEnd }: { position: [number, number]; 
 }
 
 // Interactive map with click-to-place functionality
-function InteractiveMap({ 
-  position, 
-  onLocationSelect 
-}: { 
+function InteractiveMap({
+  position,
+  onLocationSelect,
+  mapRef,
+}: {
   position: [number, number] | null
-  onLocationSelect: (lat: number, lng: number) => void 
+  onLocationSelect: (lat: number, lng: number) => void
+  mapRef: React.RefObject<any>
 }) {
   const [isClient, setIsClient] = useState(false)
-  const [mapInstance, setMapInstance] = useState<any>(null)
-  
-  useEffect(() => {
-    setIsClient(true)
-  }, [])
-  
+  useEffect(() => { setIsClient(true) }, [])
   // Default center: Philippines
   const defaultCenter: [number, number] = [12.8797, 121.7740]
   const center = position || defaultCenter
   const zoom = position ? 15 : 6
-  
+  // Use a key to force remount when position changes
+  const mapKey = position ? `${position[0]},${position[1]}` : 'default';
+  // Use a custom component to handle map click events
+  const MapEventHandler = () => {
+    if (!isClient) return null;
+    const { useMapEvents } = require('react-leaflet');
+    useMapEvents({
+      click: (e: any) => {
+        onLocationSelect(e.latlng.lat, e.latlng.lng);
+      },
+    });
+    return null;
+  };
+  // Effect: zoom/pan map when position changes (after search or pin)
   useEffect(() => {
-    if (!isClient || !mapInstance) return
-    
-    const handleClick = (e: any) => {
-      onLocationSelect(e.latlng.lat, e.latlng.lng)
+    if (mapRef.current && position) {
+      mapRef.current.flyTo(position, 17, { animate: true, duration: 1.2 });
     }
-    
-    mapInstance.on('click', handleClick)
-    
-    return () => {
-      mapInstance.off('click', handleClick)
-    }
-  }, [isClient, mapInstance, onLocationSelect])
-  
+  }, [position, mapRef]);
   if (!isClient) {
     return (
       <div className="h-[300px] bg-slate-100 rounded-xl flex items-center justify-center">
@@ -141,22 +142,23 @@ function InteractiveMap({
       </div>
     )
   }
-  
   return (
     <MapContainer
+      key={mapKey}
       center={center}
       zoom={zoom}
       style={{ height: '300px', width: '100%' }}
       scrollWheelZoom={true}
-      ref={setMapInstance}
+      whenCreated={(mapInstance) => { if (mapRef) mapRef.current = mapInstance; }}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+      <MapEventHandler />
       {position && (
-        <DraggableMarker 
-          position={position} 
+        <DraggableMarker
+          position={position}
           onDragEnd={onLocationSelect}
         />
       )}
@@ -172,21 +174,46 @@ export default function LocationPicker({
   onAddressChange,
   error,
 }: LocationPickerProps) {
+  // ...existing code...
+  // All logic and hooks should be inside the function body
   const [isLocating, setIsLocating] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [isSearching, setIsSearching] = useState(false)
-  
-  const position: [number, number] | null = 
-    latitude && longitude ? [latitude, longitude] : null
-  
+  const position: [number, number] | null = latitude && longitude ? [latitude, longitude] : null
+  // Ref for map instance
+  const mapRef = React.useRef<any>(null);
+  // (Removed: zoom/pan logic now handled in InteractiveMap)
+
+  // Utility: Clean address to remove non-Latin characters
+  const cleanAddress = (address: string) => {
+    // Allow: Latin, numbers, common punctuation, spaces, commas, dashes, periods
+    return address.replace(/[^\p{Script=Latin}0-9.,\-()'"\s]/gu, '').replace(/\s+/g, ' ').trim()
+  }
+
+  // Reverse geocode to get address from coordinates using Nominatim
+  const reverseGeocode = async (lat: number, lng: number) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
+        { headers: { 'User-Agent': 'ResortifyPH' } }
+      );
+      const data = await response.json();
+      if (data.display_name) {
+        const cleaned = cleanAddress(data.display_name);
+        onAddressChange(cleaned);
+      }
+    } catch (err) {
+      console.error('Reverse geocode error:', err);
+    }
+  }
+
   // Get user's current location
   const handleGetCurrentLocation = useCallback(() => {
     if (!navigator.geolocation) {
       alert('Geolocation is not supported by your browser')
       return
     }
-    
     setIsLocating(true)
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -203,58 +230,49 @@ export default function LocationPicker({
       { enableHighAccuracy: true, timeout: 10000 }
     )
   }, [onLocationChange])
-  
-  // Reverse geocode to get address from coordinates
-  const reverseGeocode = async (lat: number, lng: number) => {
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
-        { headers: { 'User-Agent': 'ResortifyPH' } }
-      )
-      const data = await response.json()
-      if (data.display_name) {
-        onAddressChange(data.display_name)
-      }
-    } catch (err) {
-      console.error('Reverse geocode error:', err)
-    }
-  }
-  
-  // Search for address
+
+  // Search for address using Nominatim (OpenStreetMap)
   const handleSearch = async () => {
-    if (!searchQuery.trim()) return
-    
-    setIsSearching(true)
+    if (!searchQuery.trim()) return;
+    setIsSearching(true);
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&countrycodes=ph&limit=5`,
         { headers: { 'User-Agent': 'ResortifyPH' } }
-      )
-      const data = await response.json()
-      setSearchResults(data)
+      );
+      const data = await response.json();
+      // Clean up display_name for each result to remove non-Latin characters
+      const cleanedResults = data.map((result: any) => ({
+        ...result,
+        display_name: cleanAddress(result.display_name),
+      }));
+      setSearchResults(cleanedResults);
     } catch (err) {
-      console.error('Search error:', err)
+      console.error('Search error:', err);
     } finally {
-      setIsSearching(false)
+      setIsSearching(false);
     }
   }
-  
+
   // Handle search result selection
   const handleSelectResult = (result: any) => {
     const lat = parseFloat(result.lat)
     const lng = parseFloat(result.lon)
     onLocationChange(lat, lng)
-    onAddressChange(result.display_name)
+    const cleaned = cleanAddress(result.display_name)
+    onAddressChange(cleaned)
     setSearchResults([])
     setSearchQuery('')
+    // Pan/zoom map to selected place
+    // (Removed: zoom/pan logic now handled in InteractiveMap)
   }
-  
+
   // Handle map click
   const handleMapClick = useCallback((lat: number, lng: number) => {
     onLocationChange(lat, lng)
     reverseGeocode(lat, lng)
   }, [onLocationChange])
-  
+
   return (
     <div className="space-y-4">
       {/* Search and locate buttons */}
@@ -278,7 +296,6 @@ export default function LocationPicker({
               {isSearching ? '...' : '🔍'}
             </button>
           </div>
-          
           {/* Search results dropdown */}
           {searchResults.length > 0 && (
             <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden">
@@ -295,8 +312,12 @@ export default function LocationPicker({
               ))}
             </div>
           )}
+          {searchResults.length === 0 && searchQuery.trim() && !isSearching && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden">
+              <div className="px-4 py-3 text-slate-500 text-sm">No results found</div>
+            </div>
+          )}
         </div>
-        
         <button
           type="button"
           onClick={handleGetCurrentLocation}
@@ -316,7 +337,6 @@ export default function LocationPicker({
           )}
         </button>
       </div>
-      
       {/* Instructions */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
         <p className="text-sm text-blue-800">
@@ -327,9 +347,10 @@ export default function LocationPicker({
       
       {/* Map */}
       <div className="rounded-xl overflow-hidden border-2 border-slate-200">
-        <InteractiveMap 
-          position={position} 
+        <InteractiveMap
+          position={position}
           onLocationSelect={handleMapClick}
+          mapRef={mapRef}
         />
       </div>
       

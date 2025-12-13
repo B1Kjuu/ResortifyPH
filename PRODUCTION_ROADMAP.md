@@ -29,7 +29,7 @@ ResortifyPH is a **vacation rental platform** like Airbnb, specifically designed
 | **Visual Calendars**    | ❌ MISSING  | 0%                    |
 | **Reviews & Ratings**   | ❌ MISSING  | 0%                    |
 | **Messaging System**    | ❌ MISSING  | 0%                    |
-| **Search & Discovery**  | ⚠️ Basic    | 40%                   |
+| **Search & Discovery**  | ✅ Improved | 60% (map picker, address cleaning, search UX) |
 | **Host Analytics**      | ❌ MISSING  | 0%                    |
 | **Form Validation**     | ❌ MISSING  | 0%                    |
 | **Error Handling**      | ⚠️ Poor     | 20%                   |
@@ -134,9 +134,18 @@ const totalCost = price * nightCount + cleaningFee + taxes;
 
 ---
 
-### Phase 2: Calendar & Availability (Weeks 2-3)
 
-#### 2.1 Interactive Calendar Component
+### Phase 2: Search & Location (Weeks 2-3)
+
+#### 2.1 Map-Based Location Picker & Address Cleaning (COMPLETE)
+
+- Resort create/edit pages now feature an interactive map-based location picker
+- Address search uses Nominatim (OpenStreetMap) and cleans non-Latin characters
+- Map zooms/pans to selected search or pin
+- "No results found" feedback in search dropdown
+- Improved UX: click map, drag marker, or use current location
+
+#### 2.2 Interactive Calendar Component
 
 ```bash
 npm install react-big-calendar

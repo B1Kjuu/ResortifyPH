@@ -31,15 +31,17 @@ You now have **6 comprehensive documents** to guide your development:
 
 ---
 
+
 ### 🛠️ IMPLEMENTATION DETAILS
 
 #### **PRODUCTION_ROADMAP.md** (Detailed technical plan)
 
 - Each critical feature with full specs:
-  - Database schema
-  - Component breakdown
-  - Implementation logic
-  - Effort estimates
+   - Database schema
+   - Component breakdown
+   - Implementation logic
+   - Effort estimates
+   - Map-based location picker, address cleaning, and search UX
 - 5 Critical Path features
 - 5 High Priority features
 - 2 Important features
@@ -49,11 +51,12 @@ You now have **6 comprehensive documents** to guide your development:
 #### **IMPLEMENTATION_GUIDE.md** (Copy-paste code!)
 
 - Ready-to-use code for:
-  - Form validation with Zod
-  - Stripe payment integration (full)
-  - Calendar component
-  - Toast notifications
-  - Example implementations
+   - Form validation with Zod
+   - Stripe payment integration (full)
+   - Calendar component
+   - Toast notifications
+   - Map-based location picker, address cleaning, and search UX
+   - Example implementations
 - Step-by-step instructions
 - Environment variable setup
 - Testing checklist

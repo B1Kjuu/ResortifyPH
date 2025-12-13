@@ -30,6 +30,14 @@ Signup
   └─ Toggle between Guest/Host with navbar buttons
 
 Result: Smooth, Airbnb-like experience
+
+---
+
+## Location Picker & Address Cleaning
+
+- Both guests and owners now benefit from an interactive map-based location picker
+- Address search and cleaning is consistent across all roles
+- Improved UX for location selection and resort management
 ```
 
 ---

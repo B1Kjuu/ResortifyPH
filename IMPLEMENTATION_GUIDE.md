@@ -1,3 +1,4 @@
+
 # Quick Start: Implement High-Impact Features This Week
 
 ## 🎯 Goal
@@ -6,7 +7,36 @@ Transform ResortifyPH from "MVP" to "production-ready" by addressing critical ga
 
 ---
 
+
 ## Week 1: Quick Wins (All Can Be Done in Parallel)
+
+### Task 2: Map-Based Location Picker & Address Cleaning (3 days)
+
+**Impact:** High | **Difficulty:** Medium
+
+#### Step 1: Add LocationPicker component
+
+- Use `react-leaflet` for interactive map
+- Allow users to search for addresses (Nominatim API)
+- Clean address results to English/Latin only
+- Show "No results found" if search is empty
+- Allow pinning by clicking map or dragging marker
+- Auto-fill address field and clean non-Latin characters
+- Map zooms/pans to selected search or pin
+
+#### Step 2: Integrate in Create/Edit Resort Pages
+
+- Use `<LocationPicker />` in `/owner/create-resort/page.tsx` and `/owner/edit-resort/[id]/index.tsx`
+- Pass latitude, longitude, and address state
+- Handle onLocationChange and onAddressChange
+
+#### Step 3: Test User Experience
+
+- Search for a location, select a result, and verify map zooms
+- Pin a location by clicking or dragging marker
+- Ensure address field is always cleaned and in English
+
+**Expected result:** Seamless, modern location selection for resorts
 
 ### Task 1: Form Validation + Error Feedback (3 days)
 

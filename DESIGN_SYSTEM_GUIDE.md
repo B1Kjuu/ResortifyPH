@@ -29,6 +29,15 @@ Used for: Main CTAs, primary buttons, header gradients
 
 ## Component Patterns
 
+### Location Picker (Map-Based)
+
+- Interactive map with draggable marker for selecting resort location
+- Address search with Nominatim (OpenStreetMap), cleaned to English/Latin only
+- "No results found" feedback in dropdown
+- Map zooms/pans to selected search or pin
+- Auto-filled address field, cleans non-Latin characters
+- User can click map, drag marker, or use current location
+
 ### Buttons
 
 **Primary Button (CTA)**

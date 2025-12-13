@@ -118,6 +118,17 @@ export default function LocationCombobox({ value = '', onChange, placeholder = '
               ref={searchInputRef}
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  // Find first visible province
+                  const firstRegion = filteredRegions[0]
+                  const firstProvince = firstRegion?.provinces?.[0]
+                  if (firstProvince) {
+                    event.preventDefault()
+                    handleSelect(firstProvince)
+                  }
+                }
+              }}
               placeholder="Search province or region"
               className={searchInputClasses}
               type="text"
