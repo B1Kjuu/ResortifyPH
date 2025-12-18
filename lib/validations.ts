@@ -6,8 +6,7 @@ const pesoField = (
 ) => {
   let schema = z
     .number({
-      required_error: `${label} is required`,
-      invalid_type_error: `${label} must be a valid number`,
+      message: `${label} must be a valid number`,
     })
     .min(min, `${label} must be at least ₱${min.toLocaleString()}`)
   if (typeof max === 'number') {
@@ -22,8 +21,7 @@ const countField = (
 ) => {
   let schema = z
     .number({
-      required_error: `${label} is required`,
-      invalid_type_error: `${label} must be a valid number`,
+      message: `${label} must be a valid number`,
     })
     .min(min, `${label} must be at least ${min}`)
   if (typeof max === 'number') {

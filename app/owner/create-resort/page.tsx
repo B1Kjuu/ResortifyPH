@@ -86,8 +86,8 @@ export default function CreateResort() {
     reset,
     control,
     formState: { errors, isSubmitting },
-  } = useForm<ResortInput>({
-    resolver: zodResolver(resortSchema),
+  } = useForm<ResortInput, any>({
+    resolver: zodResolver(resortSchema) as any,
     defaultValues: defaultResortValues,
   })
 

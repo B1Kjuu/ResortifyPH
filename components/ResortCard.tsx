@@ -83,7 +83,7 @@ export default function ResortCard({ resort, compact = false }: Props){
           {/* Image Dots */}
           {images.length > 1 && (
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1">
-              {images.slice(0, 5).map((_, idx) => (
+              {images.slice(0, 5).map((_: string, idx: number) => (
                 <span
                   key={idx}
                   className={`w-1.5 h-1.5 rounded-full transition-all ${

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import ChatLink from '../../../components/ChatLink'
 
 export default function ApprovalsPage(){
   const [pendingResorts, setPendingResorts] = useState<any[]>([])
@@ -22,7 +23,19 @@ export default function ApprovalsPage(){
       console.error('Error loading pending resorts:', error)
       toast.error(`Error: ${error.message}`)
     } else {
-      setPendingResorts(resorts || [])
+      const enriched = [] as any[]
+      for (const r of (resorts || [])) {
+        // Find latest booking for this resort, if any
+        const { data: latestBooking } = await supabase
+          .from('bookings')
+          .select('id')
+          .eq('resort_id', r.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        enriched.push({ ...r, latest_booking_id: latestBooking?.id || null })
+      }
+      setPendingResorts(enriched)
     }
   }
 
@@ -110,11 +123,7 @@ export default function ApprovalsPage(){
       <div className="w-full px-4 sm:px-6 lg:px-8 py-12 max-w-7xl mx-auto">
         <Link href="/admin/command-center" className="text-sm text-resort-500 font-semibold mb-8 inline-flex items-center gap-2 hover:gap-3 transition-all">← Back to Command Center</Link>
         
-        {toast.message && (
-          <div className={`mb-6 rounded-2xl px-6 py-4 text-sm font-semibold border-2 ${toast.type === 'success' ? 'bg-green-50 text-green-700 border-green-300' : 'bg-red-50 text-red-700 border-red-300'}`}>
-            {toast.message === 'Resort approved!' ? '✅' : '❌'} {toast.message}
-          </div>
-        )}
+        {/* Inline toast banner removed due to type mismatch; Sonner handles UI toasts directly. */}
 
         <div className="mb-8">
           <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -155,7 +164,7 @@ export default function ApprovalsPage(){
                     <p className="text-sm text-slate-600 line-clamp-3 mt-2 italic">{resort.description}</p>
                   </div>
                   
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 items-center">
                     <button 
                       onClick={() => approveResort(resort.id)} 
                       className="flex-1 px-4 py-3 text-sm font-bold bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all border-2 border-green-400"
@@ -168,6 +177,10 @@ export default function ApprovalsPage(){
                     >
                       ❌ Reject
                     </button>
+                    {/* If resort has a related booking, allow admin to open chat as admin by ID input or linking logic. As minimal step, show link if resort.latest_booking_id exists. */}
+                    {resort.latest_booking_id && (
+                      <ChatLink bookingId={resort.latest_booking_id} as="admin" label="Open Chat" />
+                    )}
                   </div>
                 </div>
               ))}

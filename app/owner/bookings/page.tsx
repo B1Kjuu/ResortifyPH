@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import SkeletonTable from '../../../components/SkeletonTable'
+import ChatLink from '../../../components/ChatLink'
 
 export default function OwnerBookingsPage(){
   const [bookings, setBookings] = useState<any[]>([])
@@ -248,7 +249,7 @@ export default function OwnerBookingsPage(){
                         </p>
                       </div>
 
-                      <div className="flex gap-3">
+                      <div className="flex gap-3 items-center">
                         <button
                           onClick={() => confirmBooking(booking.id)}
                           className="flex-1 px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all border-2 border-green-400"
@@ -261,6 +262,7 @@ export default function OwnerBookingsPage(){
                         >
                           ❌ Reject
                         </button>
+                        <ChatLink bookingId={booking.id} as="owner" label="Open Chat" />
                       </div>
                     </div>
                   ))}
@@ -303,6 +305,9 @@ export default function OwnerBookingsPage(){
                         <p className="text-sm text-slate-600 mt-2 italic">
                           ✓ Confirmed: {new Date(booking.created_at).toLocaleDateString()}
                         </p>
+                        <div className="mt-3 flex justify-end">
+                          <ChatLink bookingId={booking.id} as="owner" label="Open Chat" />
+                        </div>
                       </div>
                     </div>
                   ))}

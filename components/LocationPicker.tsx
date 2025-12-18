@@ -149,7 +149,7 @@ function InteractiveMap({
       zoom={zoom}
       style={{ height: '300px', width: '100%' }}
       scrollWheelZoom={true}
-      whenCreated={(mapInstance) => { if (mapRef) mapRef.current = mapInstance; }}
+      ref={mapRef}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'

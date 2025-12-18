@@ -193,6 +193,11 @@ export default function Navbar(){
           <Link href="/resorts" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
             Explore
           </Link>
+          {authChecked && user && (
+            <Link href="/chat" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
+              Chats
+            </Link>
+          )}
           {authChecked && user && userRole === 'guest' && (
             <Link href="/guest/trips" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
               My Trips

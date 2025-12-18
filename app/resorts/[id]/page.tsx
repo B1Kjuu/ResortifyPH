@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import DateRangePicker from '../../../components/DateRangePicker'
 import LocationCombobox from '../../../components/LocationCombobox'
 import { format } from 'date-fns'
+import ChatLink from '../../../components/ChatLink'
 
 export default function ResortDetail({ params }: { params: { id: string } }){
   const [resort, setResort] = useState<any>(null)
@@ -22,6 +23,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
   const [booking, setBooking] = useState(false)
   const [message, setMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null)
   const [quickExploreProvince, setQuickExploreProvince] = useState('')
+  const [latestBookingId, setLatestBookingId] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -95,6 +97,17 @@ export default function ResortDetail({ params }: { params: { id: string } }){
         const { data: { session } } = await supabase.auth.getSession()
         if (mounted && session?.user) {
           setUser(session.user)
+          // If the signed-in user has a booking for this resort, show chat button
+          const { data: latestBooking } = await supabase
+            .from('bookings')
+            .select('id')
+            .eq('resort_id', params.id)
+            .eq('guest_id', session.user.id)
+            .in('status', ['pending', 'confirmed'])
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          setLatestBookingId(latestBooking?.id || null)
         }
 
         if (mounted) {
@@ -147,7 +160,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
     const provinceInfo = getProvinceInfo(resort?.location)
 
-    const { error } = await supabase.from('bookings').insert({
+    const { data: created, error } = await supabase.from('bookings').insert({
       resort_id: resort.id,
       guest_id: user.id,
       date_from: format(selectedRange.from, 'yyyy-MM-dd'),
@@ -157,7 +170,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       resort_province: resort.location ?? null,
       resort_region_code: resort.region_code ?? provinceInfo?.regionCode ?? null,
       resort_region_name: resort.region_name ?? provinceInfo?.regionName ?? null,
-    })
+    }).select('id').single()
 
     setBooking(false)
     toast.dismiss()
@@ -165,9 +178,13 @@ export default function ResortDetail({ params }: { params: { id: string } }){
     if (error) {
       toast.error(`Error: ${error.message}`)
     } else {
-      toast.success('Booking request sent! The owner will review your request.')
+      toast.success('Booking request sent! Opening chat…')
       setSelectedRange({ from: undefined, to: undefined })
       setGuests(1)
+      // Navigate to booking chat for immediate messaging
+      if (created?.id) {
+        router.push(`/chat/${created.id}?as=guest`)
+      }
     }
   }
 
@@ -279,6 +296,19 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                   <p className="text-sm font-semibold text-slate-700">Contact</p>
                   <p className="text-sm text-slate-600">{resort.contact_number || 'Owner will share after booking'}</p>
                   {resort.nearby_landmarks && <p className="text-sm text-slate-600">Nearby: {resort.nearby_landmarks}</p>}
+                  {latestBookingId && (
+                    <div className="pt-2">
+                      <ChatLink bookingId={latestBookingId} as="guest" label="Message Host" />
+                    </div>
+                  )}
+                  {!latestBookingId && (
+                    <div className="pt-2">
+                      <ChatLink resortId={params.id} as="guest" label="Message Host (Pre-booking)" />
+                    </div>
+                  )}
+                  {!latestBookingId && (
+                    <p className="text-xs text-slate-500 pt-1">Chat becomes available after you request to book.</p>
+                  )}
                 </div>
               </div>
 

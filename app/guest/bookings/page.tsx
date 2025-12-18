@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabaseClient'
+import ChatLink from '../../../components/ChatLink'
 import { useRouter } from 'next/navigation'
 
 export default function GuestBookingsPage(){
@@ -63,6 +64,9 @@ export default function GuestBookingsPage(){
                 }`}>
                   {booking.status}
                 </span>
+              </div>
+              <div className="mt-4 flex justify-end">
+                <ChatLink bookingId={booking.id} as="guest" label="Message Host" />
               </div>
             </div>
           ))}
