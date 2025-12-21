@@ -49,6 +49,8 @@ export const signInSchema = z.object({
 export const resortSchema = z.object({
   name: z.string().min(5, 'Resort name must be at least 5 characters'),
   description: z.string().min(20, 'Description must be at least 20 characters'),
+  // Strip HTML tags and trim
+  description: z.string().min(20, 'Description must be at least 20 characters').transform((s) => s.replace(/<[^>]*>/g, ' ').replace(/[\u0000-\u001F\u007F]/g, ' ').trim()),
   location: z.string().min(3, 'Location must be at least 3 characters'),
   latitude: z.number().min(-90).max(90).optional().nullable(),
   longitude: z.number().min(-180).max(180).optional().nullable(),
@@ -71,15 +73,15 @@ export const resortSchema = z.object({
     .regex(/^(\+63|0)?9\d{9}$/, 'Invalid Philippine mobile number (e.g., 09171234567 or +639171234567)'),
   check_in_time: z.string().min(1, 'Check-in time is required'),
   check_out_time: z.string().min(1, 'Check-out time is required'),
-  house_rules: z.string().max(2000, 'House rules must be under 2000 characters').optional().nullable(),
+  house_rules: z.string().max(2000, 'House rules must be under 2000 characters').optional().nullable().transform((s) => (s ? s.replace(/<[^>]*>/g, ' ').replace(/[\u0000-\u001F\u007F]/g, ' ').trim() : s)),
   cancellation_policy: z.enum(['flexible', 'moderate', 'strict', 'no_refund']),
   pool_size: z.string().max(120, 'Pool size description too long').optional().nullable(),
   pool_depth: z.string().max(120, 'Pool depth description too long').optional().nullable(),
   has_pool_heating: z.boolean().default(false),
   has_jacuzzi: z.boolean().default(false),
   parking_slots: countField('Parking slots', { required: false, min: 0, max: 50 }),
-  nearby_landmarks: z.string().max(500, 'Nearby landmarks must be under 500 characters').optional().nullable(),
-  bring_own_items: z.string().max(500, 'Bring your own items note must be under 500 characters').optional().nullable(),
+  nearby_landmarks: z.string().max(500, 'Nearby landmarks must be under 500 characters').optional().nullable().transform((s) => (s ? s.replace(/<[^>]*>/g, ' ').replace(/[\u0000-\u001F\u007F]/g, ' ').trim() : s)),
+  bring_own_items: z.string().max(500, 'Bring your own items note must be under 500 characters').optional().nullable().transform((s) => (s ? s.replace(/<[^>]*>/g, ' ').replace(/[\u0000-\u001F\u007F]/g, ' ').trim() : s)),
 })
 
 // Booking validations

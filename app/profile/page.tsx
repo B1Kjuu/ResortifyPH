@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { supabase } from '../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { sanitizeText } from '../../lib/sanitize'
 
 export default function ProfilePage(){
   const [profile, setProfile] = useState<any>(null)
@@ -78,7 +79,12 @@ export default function ProfilePage(){
     
     const { error } = await supabase
       .from('profiles')
-      .update({ full_name: fullName, phone, bio, location: locationText })
+      .update({
+        full_name: sanitizeText(fullName, 120),
+        phone: sanitizeText(phone, 30),
+        bio: sanitizeText(bio, 500),
+        location: sanitizeText(locationText, 120)
+      })
       .eq('id', profile.id)
     
     setSaving(false)
@@ -135,6 +141,14 @@ export default function ProfilePage(){
                   const file = e.target.files?.[0]
                   if (!file) return
                   try {
+                    if (!file.type.startsWith('image/')) {
+                      toast.error('Please upload an image file')
+                      return
+                    }
+                    if (file.size > 2 * 1024 * 1024) { // 2MB limit
+                      toast.error('Image must be under 2MB')
+                      return
+                    }
                     const safeName = file.name.toLowerCase().replace(/[^a-z0-9\.\-]+/g, '-')
                     const filePath = `${profile.id}/${Date.now()}_${safeName}`
                     const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file, { contentType: file.type })
