@@ -1,4 +1,21 @@
-node_modules
+# Node/Next
+.next/
+node_modules/
+
+# Env files (keep secrets out of git)
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.production.local
+.env.preview.local
+
+# Playwright reports
+playwright-report/
+
+# OS files
+.DS_Store
+Thumbs.dbnode_modules
 .env.local
 .next
 .env
