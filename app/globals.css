@@ -309,3 +309,97 @@ a:not([class]) {
   border-radius: 0.5rem 0 0 0 !important;
   font-size: 10px !important;
 }
+
+/* FAQ styles */
+details.faq-item {
+  @apply border border-slate-200 rounded-xl bg-white shadow-sm;
+}
+.faq-summary {
+  @apply flex items-center justify-between text-slate-900 font-semibold cursor-pointer;
+}
+.faq-caret {
+  transition: transform 0.2s ease;
+}
+details.faq-item[open] .faq-caret {
+  transform: rotate(180deg);
+}
+
+/* --------- Animations & Motion Utilities --------- */
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes blur-in {
+  0% {
+    opacity: 0;
+    filter: blur(20px) saturate(120%);
+    transform: scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0) saturate(100%);
+    transform: scale(1);
+  }
+}
+
+@keyframes float-slow {
+  0% {
+    transform: translateY(0) translateX(0) scale(1);
+  }
+  50% {
+    transform: translateY(-6px) translateX(3px) scale(1.02);
+  }
+  100% {
+    transform: translateY(0) translateX(0) scale(1);
+  }
+}
+
+.fade-in-up {
+  animation: fade-in-up 700ms ease-out both;
+}
+
+.blur-in {
+  animation: blur-in 800ms ease-out both;
+}
+
+.float-slow {
+  animation: float-slow 12s ease-in-out infinite;
+}
+
+/* Scroll reveal utility */
+.reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  filter: blur(6px);
+  transition: opacity 600ms ease-out, transform 600ms ease-out,
+    filter 600ms ease-out;
+  will-change: opacity, transform, filter;
+}
+.reveal.in-view {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .fade-in-up,
+  .blur-in,
+  .float-slow,
+  .reveal {
+    animation: none !important;
+    transition: none !important;
+    filter: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+}

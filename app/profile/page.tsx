@@ -10,8 +10,13 @@ export default function ProfilePage(){
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [fullName, setFullName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [bio, setBio] = useState('')
+  const [locationText, setLocationText] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null)
+  const [activeTab, setActiveTab] = useState<'personal' | 'account' | 'travel'>('personal')
+  const [bookings, setBookings] = useState<any[]>([])
   const router = useRouter()
 
   useEffect(() => {
@@ -27,7 +32,7 @@ export default function ProfilePage(){
 
         const { data: userProfile, error } = await supabase
           .from('profiles')
-          .select('id, email, full_name, role, is_admin, created_at')
+          .select('id, email, full_name, role, is_admin, created_at, avatar_url, phone, bio, location')
           .eq('id', session.user.id)
           .single()
         if (error || !userProfile) {
@@ -39,6 +44,16 @@ export default function ProfilePage(){
         if (mounted) {
           setProfile(userProfile)
           setFullName(userProfile.full_name || '')
+          setPhone(userProfile.phone || '')
+          setBio(userProfile.bio || '')
+          setLocationText(userProfile.location || '')
+          
+          const { data: userBookings } = await supabase
+            .from('bookings')
+            .select('id, date_from, date_to, status, created_at, resort:resorts(id, name, location)')
+            .eq('guest_id', session.user.id)
+            .order('created_at', { ascending: false })
+          setBookings(userBookings || [])
           setLoading(false)
         }
       } catch (err) {
@@ -63,7 +78,7 @@ export default function ProfilePage(){
     
     const { error } = await supabase
       .from('profiles')
-      .update({ full_name: fullName })
+      .update({ full_name: fullName, phone, bio, location: locationText })
       .eq('id', profile.id)
     
     setSaving(false)
@@ -102,10 +117,53 @@ export default function ProfilePage(){
 
         <div className="bg-white rounded-3xl shadow-2xl border-2 border-slate-200 overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-resort-500 via-blue-500 to-resort-600 px-8 py-16 text-white text-center relative overflow-hidden">
+          <div className="bg-gradient-to-r from-resort-500 via-blue-500 to-resort-600 px-8 py-16 text-white text-center relative overflow-hidden flex flex-col items-center">
             <div className="absolute top-4 right-4 text-5xl opacity-20">🏨</div>
-            <div className="w-28 h-28 bg-white/20 backdrop-blur-sm rounded-full mx-auto mb-6 flex items-center justify-center text-6xl shadow-2xl border-4 border-white/30">
-              👤
+            <div className="relative w-28 h-28 bg-white/20 backdrop-blur-sm rounded-full mx-auto mb-6 flex items-center justify-center text-6xl shadow-2xl border-2 border-white/20 overflow-hidden">
+              {profile.avatar_url ? (
+                <img src={profile.avatar_url} alt="Profile avatar" className="w-full h-full object-cover" />
+              ) : (
+                <span>👤</span>
+              )}
+              {/* Avatar upload trigger */}
+              <input
+                id="avatar-input"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  try {
+                    const safeName = file.name.toLowerCase().replace(/[^a-z0-9\.\-]+/g, '-')
+                    const filePath = `${profile.id}/${Date.now()}_${safeName}`
+                    const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file, { contentType: file.type })
+                    if (uploadError) throw uploadError
+                    const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(filePath)
+                    const publicUrl = publicData.publicUrl
+                    const { error: updateError } = await supabase
+                      .from('profiles')
+                      .update({ avatar_url: publicUrl })
+                      .eq('id', profile.id)
+                    if (updateError) throw updateError
+                    setProfile({ ...profile, avatar_url: publicUrl })
+                    toast.success('Profile photo updated!')
+                  } catch (err: any) {
+                    console.error('Avatar upload error:', err)
+                    toast.error(`Failed to upload: ${err?.message || 'Unknown error'}`)
+                  }
+                }}
+              />
+              <label
+                htmlFor="avatar-input"
+                className="absolute bottom-3 right-3 z-10 w-8 h-8 rounded-full bg-resort-600 text-white flex items-center justify-center shadow-none cursor-pointer hover:bg-resort-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-resort-300"
+                aria-label="Change profile photo"
+                title="Change photo"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 5v14M5 12h14" />
+                </svg>
+              </label>
             </div>
             <h1 className="text-4xl font-bold mb-3">{profile.full_name || 'User'}</h1>
             <div className="flex items-center justify-center gap-3">
@@ -113,7 +171,7 @@ export default function ProfilePage(){
                 {getRoleLabel()}
               </span>
               <span className="text-white/80 font-semibold">•</span>
-              <span className="text-white/90 font-medium">Member since {new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}</span>
+              <span className="text-white/90 font-medium">Member since {new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
             </div>
           </div>
 
@@ -126,11 +184,14 @@ export default function ProfilePage(){
 
           {/* Profile Info */}
           <div className="px-8 py-10">
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-resort-600 to-blue-600 bg-clip-text text-transparent mb-8 flex items-center gap-2">
-              <span>ℹ️</span>
-              <span>Profile Information</span>
-            </h2>
+            {/* Tabs */}
+            <div className="mb-6 flex items-center justify-center gap-2">
+              <button onClick={() => setActiveTab('personal')} className={`px-4 py-2 rounded-full text-sm font-semibold border ${activeTab==='personal' ? 'bg-resort-600 text-white border-resort-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>Personal Info</button>
+              <button onClick={() => setActiveTab('account')} className={`px-4 py-2 rounded-full text-sm font-semibold border ${activeTab==='account' ? 'bg-resort-600 text-white border-resort-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>Account</button>
+              <button onClick={() => setActiveTab('travel')} className={`px-4 py-2 rounded-full text-sm font-semibold border ${activeTab==='travel' ? 'bg-resort-600 text-white border-resort-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>Travel</button>
+            </div>
             
+            {activeTab === 'personal' && (
             <div className="space-y-6">
               {/* Email */}
               <div>
@@ -166,7 +227,6 @@ export default function ProfilePage(){
                   </div>
                 )}
               </div>
-
               {/* Role */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
@@ -181,20 +241,115 @@ export default function ProfilePage(){
                 />
               </div>
 
-              {/* Created Date */}
+              {/* Phone */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-                  <span>📅</span>
-                  <span>Member Since</span>
+                  <span>📞</span>
+                  <span>Phone</span>
                 </label>
-                <input 
-                  type="text" 
-                  value={new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} 
-                  disabled 
-                  className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-slate-50 text-slate-600 cursor-not-allowed font-medium"
-                />
+                {editing ? (
+                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Optional" className="w-full px-5 py-3 border-2 border-resort-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm" />
+                ) : (
+                  <div className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-900">{phone || 'Not set'}</div>
+                )}
+              </div>
+
+              {/* Location */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+                  <span>📍</span>
+                  <span>Location</span>
+                </label>
+                {editing ? (
+                  <input type="text" value={locationText} onChange={(e) => setLocationText(e.target.value)} placeholder="City, Province" className="w-full px-5 py-3 border-2 border-resort-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm" />
+                ) : (
+                  <div className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-900">{locationText || 'Not set'}</div>
+                )}
+              </div>
+
+              {/* Bio */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+                  <span>📝</span>
+                  <span>Bio</span>
+                </label>
+                {editing ? (
+                  <textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell guests a little about you" className="w-full px-5 py-3 border-2 border-resort-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm min-h-[90px]" />
+                ) : (
+                  <div className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-900">{bio || 'Not set'}</div>
+                )}
               </div>
             </div>
+            )}
+
+            {activeTab === 'account' && (
+            <div className="space-y-6">
+              <div>
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+                  <span>🔒</span>
+                  <span>Password</span>
+                </label>
+                <div className="flex items-center gap-3">
+                  <span className="text-slate-600 text-sm">Manage your password and security settings.</span>
+                  <Link href="/auth/signin" className="px-4 py-2 rounded-xl bg-resort-600 text-white font-semibold hover:bg-resort-700">Change password</Link>
+                </div>
+              </div>
+              <div>
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+                  <span>🕒</span>
+                  <span>Login Activity</span>
+                </label>
+                <div className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-600">Recent sessions tracking will appear here.</div>
+              </div>
+              <div>
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+                  <span>🔗</span>
+                  <span>Linked Accounts</span>
+                </label>
+                <div className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-600">Connect Google, Facebook, or Apple in a future update.</div>
+              </div>
+            </div>
+            )}
+
+            {activeTab === 'travel' && (
+            <div className="space-y-6">
+              <div>
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+                  <span>🧳</span>
+                  <span>Past Bookings</span>
+                </label>
+                {bookings.length === 0 ? (
+                  <div className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-600">No bookings yet.</div>
+                ) : (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {bookings.map((b) => (
+                      <div key={b.id} className="p-4 border-2 border-slate-200 rounded-xl bg-white">
+                        <div className="font-semibold text-resort-900">{b.resort?.name || 'Resort'}</div>
+                        <div className="text-sm text-slate-600">{b.resort?.location || ''}</div>
+                        <div className="mt-2 text-sm">
+                          {new Date(b.date_from).toLocaleDateString()} → {new Date(b.date_to).toLocaleDateString()} • {b.status}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+                  <span>💚</span>
+                  <span>Wishlist</span>
+                </label>
+                <div className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-600">Save favorite resorts — coming soon.</div>
+              </div>
+              <div>
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+                  <span>⭐</span>
+                  <span>Reviews</span>
+                </label>
+                <div className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-600">Your reviews will appear here.</div>
+              </div>
+            </div>
+            )}
 
             {/* Action Buttons */}
             <div className="flex gap-3 mt-8">
@@ -211,6 +366,9 @@ export default function ProfilePage(){
                     onClick={() => {
                       setEditing(false)
                       setFullName(profile.full_name || '')
+                      setPhone(profile.phone || '')
+                      setBio(profile.bio || '')
+                      setLocationText(profile.location || '')
                       setMessage(null)
                     }}
                     disabled={saving}

@@ -1,20 +1,18 @@
-'use client'
-import React, { useState } from 'react'
+"use client"
+import React, { useState } from "react"
 
 export default function ContactPage() {
-  const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' })
+  const [formData, setFormData] = useState({ name: "", email: "", subject: "", message: "" })
   const [submitted, setSubmitted] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: Add actual form submission logic
     setSubmitted(true)
     setTimeout(() => setSubmitted(false), 3000)
   }
 
   return (
     <div className="w-full min-h-screen bg-white">
-      {/* Hero */}
       <div className="w-full px-4 sm:px-6 lg:px-8 py-16 sm:py-24 bg-gradient-to-br from-slate-50 to-white border-b border-slate-200">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl sm:text-5xl font-bold text-slate-900 mb-6">Contact Us</h1>
@@ -22,11 +20,9 @@ export default function ContactPage() {
         </div>
       </div>
 
-      {/* Content */}
       <div className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-20">
         <div className="max-w-5xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12">
-            {/* Contact Info */}
             <div>
               <h2 className="text-2xl font-bold text-slate-900 mb-6">Get in Touch</h2>
               <div className="space-y-6">
@@ -67,76 +63,54 @@ export default function ContactPage() {
                   <div>
                     <h3 className="font-semibold text-slate-900 mb-1">Business Hours</h3>
                     <p className="text-slate-600">Monday - Friday: 9AM - 6PM</p>
-                    <p className="text-slate-600">Saturday: 10AM - 4PM</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Contact Form */}
-            <div className="bg-slate-50 p-6 sm:p-8 rounded-2xl">
+            <div>
               <h2 className="text-2xl font-bold text-slate-900 mb-6">Send a Message</h2>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Name *</label>
-                  <input 
-                    type="text" 
-                    required
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <input
+                    type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-500"
-                    placeholder="Your name"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Email *</label>
-                  <input 
-                    type="email" 
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Your Name"
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400"
                     required
+                  />
+                  <input
+                    type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-500"
-                    placeholder="your@email.com"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Subject *</label>
-                  <input 
-                    type="text" 
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="Email Address"
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400"
                     required
-                    value={formData.subject}
-                    onChange={(e) => setFormData({...formData, subject: e.target.value})}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-500"
-                    placeholder="What can we help with?"
                   />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Message *</label>
-                  <textarea 
-                    required
-                    rows={5}
-                    value={formData.message}
-                    onChange={(e) => setFormData({...formData, message: e.target.value})}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-500"
-                    placeholder="Your message..."
-                  />
+                <input
+                  type="text"
+                  value={formData.subject}
+                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                  placeholder="Subject"
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400"
+                />
+                <textarea
+                  value={formData.message}
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  placeholder="Message"
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 min-h-[150px]"
+                  required
+                />
+                <div className="flex items-center gap-3">
+                  <button type="submit" className="px-6 py-3 bg-resort-600 text-white rounded-xl font-semibold hover:bg-resort-700">
+                    Send Message
+                  </button>
+                  {submitted && (
+                    <span className="text-sm text-resort-700">Thanks! We'll get back to you shortly.</span>
+                  )}
                 </div>
-
-                <button 
-                  type="submit"
-                  className="w-full px-6 py-3 bg-gradient-to-r from-resort-500 to-resort-600 text-white rounded-lg font-semibold hover:shadow-xl transition"
-                >
-                  Send Message
-                </button>
-
-                {submitted && (
-                  <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-center">
-                    Message sent successfully! We'll get back to you soon.
-                  </div>
-                )}
               </form>
             </div>
           </div>

@@ -9,6 +9,10 @@ create table if not exists profiles (
   full_name text,
   role text check (role in ('guest','owner')) default 'guest',
   is_admin boolean not null default false,
+  phone text,
+  bio text,
+  location text,
+  avatar_url text,
   created_at timestamp with time zone default now()
 );
 
@@ -45,18 +49,24 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, email, full_name, role, created_at)
+  insert into public.profiles (id, email, full_name, role, created_at, phone, bio, location)
   values (
     new.id,
     new.email,
     coalesce(nullif(new.raw_user_meta_data ->> 'full_name', ''), split_part(new.email, '@', 1)),
     coalesce(nullif(new.raw_user_meta_data ->> 'role', ''), 'guest'),
-    coalesce(new.created_at, now())
+    coalesce(new.created_at, now()),
+    nullif(new.raw_user_meta_data ->> 'phone', ''),
+    nullif(new.raw_user_meta_data ->> 'bio', ''),
+    nullif(new.raw_user_meta_data ->> 'location', '')
   )
   on conflict (id) do update
   set email = excluded.email,
       full_name = coalesce(nullif(excluded.full_name, ''), public.profiles.full_name),
-      role = coalesce(nullif(excluded.role, ''), public.profiles.role);
+      role = coalesce(nullif(excluded.role, ''), public.profiles.role),
+      phone = coalesce(nullif(excluded.phone, ''), public.profiles.phone),
+      bio = coalesce(nullif(excluded.bio, ''), public.profiles.bio),
+      location = coalesce(nullif(excluded.location, ''), public.profiles.location);
 
   return new;
 end;
@@ -72,7 +82,10 @@ begin
   update public.profiles
   set email = new.email,
       full_name = coalesce(nullif(new.raw_user_meta_data ->> 'full_name', ''), full_name),
-      role = coalesce(nullif(new.raw_user_meta_data ->> 'role', ''), role)
+      role = coalesce(nullif(new.raw_user_meta_data ->> 'role', ''), role),
+      phone = coalesce(nullif(new.raw_user_meta_data ->> 'phone', ''), phone),
+      bio = coalesce(nullif(new.raw_user_meta_data ->> 'bio', ''), bio),
+      location = coalesce(nullif(new.raw_user_meta_data ->> 'location', ''), location)
   where id = new.id;
 
   return new;

@@ -11,9 +11,11 @@ export default function Navbar(){
   const [isAdmin, setIsAdmin] = useState(false)
   const [userRole, setUserRole] = useState<string>('')
   const [profileEmail, setProfileEmail] = useState<string | null>(null)
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
   const [quickLocation, setQuickLocation] = useState('')
   const [showMobileFilters, setShowMobileFilters] = useState(false)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
   const authCompletedRef = useRef(false)
   const router = useRouter()
   const pathname = usePathname()
@@ -34,7 +36,7 @@ export default function Navbar(){
           try {
             const { data: profile, error } = await supabase
               .from('profiles')
-              .select('id, email, is_admin, role')
+              .select('id, email, is_admin, role, avatar_url')
               .eq('id', session.user.id)
               .single()
             
@@ -48,10 +50,12 @@ export default function Navbar(){
               setIsAdmin(profile.is_admin || false)
               setUserRole(profile.role || 'guest')
               setProfileEmail(profile.email || session.user.email || null)
+                setProfileAvatarUrl(profile.avatar_url || null)
             } else {
               setIsAdmin(false)
               setUserRole('guest')
               setProfileEmail(session.user.email || null)
+                setProfileAvatarUrl(null)
             }
             
             authCompletedRef.current = true
@@ -173,7 +177,7 @@ export default function Navbar(){
   return (
     <>
     <header className="bg-white border-b border-slate-200 w-full sticky top-0 z-50 shadow-sm">
-      <div className="w-full px-4 sm:px-6 lg:px-8 flex items-center py-3 max-w-7xl mx-auto">
+      <div className="w-full px-4 sm:px-6 lg:px-8 flex items-center h-16 max-w-7xl mx-auto">
         {/* Logo */}
         <Link href={getHomeLink()} className="flex items-center gap-2 flex-shrink-0">
           <div className="relative">
@@ -254,10 +258,20 @@ export default function Navbar(){
         </div>
 
         {/* Right Section - Auth */}
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex items-center gap-2 ml-auto justify-end">
+          <button
+            onClick={() => setShowMobileMenu(true)}
+            className="lg:hidden px-2.5 py-1.5 text-sm font-semibold text-slate-600 bg-slate-100 rounded-full hover:bg-slate-200 transition whitespace-nowrap"
+            aria-label="Open menu"
+          >
+            <span className="sr-only">Menu</span>
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
           <button
             onClick={() => setShowMobileFilters(true)}
-            className="lg:hidden px-3 py-1.5 text-sm font-semibold text-slate-600 bg-slate-100 rounded-full hover:bg-slate-200 transition"
+            className="lg:hidden px-3 py-1.5 text-sm font-semibold text-slate-600 bg-slate-100 rounded-full hover:bg-slate-200 transition whitespace-nowrap"
             aria-label="Open quick filters"
           >
             Filters
@@ -291,11 +305,19 @@ export default function Navbar(){
               <Link
                 href="/profile"
                 aria-label={profileEmail ? `Open profile for ${profileEmail}` : 'Open profile'}
-                className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition"
+                className="p-1 rounded-full hover:bg-slate-100 transition"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
+                {profileAvatarUrl ? (
+                  <img
+                    src={profileAvatarUrl}
+                    alt={profileEmail ? `${profileEmail} avatar` : 'Profile avatar'}
+                    className="w-8 h-8 rounded-full object-cover border border-slate-200"
+                  />
+                ) : (
+                  <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                )}
               </Link>
               
               <button 
@@ -307,10 +329,10 @@ export default function Navbar(){
             </>
           ) : authChecked ? (
             <>
-              <Link href="/auth/signin" className="px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition">
+              <Link href="/auth/signin" className="px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition whitespace-nowrap">
                 Sign in
               </Link>
-              <Link href="/auth/signup" className="px-3 py-1.5 text-sm font-medium text-white bg-resort-600 hover:bg-resort-700 rounded-lg transition">
+              <Link href="/auth/signup" className="px-3 py-1.5 text-sm font-medium text-white bg-resort-600 hover:bg-resort-700 rounded-lg transition whitespace-nowrap">
                 Sign up
               </Link>
             </>
@@ -320,6 +342,66 @@ export default function Navbar(){
         </div>
       </div>
     </header>
+    {/* Mobile Menu Drawer */}
+    {showMobileMenu && (
+      <div className="lg:hidden fixed inset-0 z-[60]">
+        <div
+          className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+          onClick={() => setShowMobileMenu(false)}
+        />
+        <div className="absolute left-0 top-0 h-full w-[86%] max-w-sm bg-white border-r border-slate-200 shadow-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">📖</span>
+              <p className="text-lg font-bold text-slate-900">Menu</p>
+            </div>
+            <button
+              onClick={() => setShowMobileMenu(false)}
+              className="text-slate-400 hover:text-slate-600"
+              aria-label="Close menu"
+            >
+              ✕
+            </button>
+          </div>
+
+          <nav className="space-y-2">
+            <Link href="/resorts" onClick={() => setShowMobileMenu(false)} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">Explore</Link>
+            {authChecked && user && (
+              <Link href="/chat" onClick={() => setShowMobileMenu(false)} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">Chats</Link>
+            )}
+            {authChecked && user && userRole === 'guest' && (
+              <Link href="/guest/trips" onClick={() => setShowMobileMenu(false)} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">My Trips</Link>
+            )}
+            {authChecked && user && userRole === 'owner' && (
+              <>
+                <Link href="/owner/my-resorts" onClick={() => setShowMobileMenu(false)} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">My Properties</Link>
+                <Link href="/owner/bookings" onClick={() => setShowMobileMenu(false)} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">Bookings</Link>
+              </>
+            )}
+            {authChecked && isAdmin && (
+              <>
+                <Link href="/admin/approvals" onClick={() => setShowMobileMenu(false)} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">Approvals</Link>
+                <Link href="/admin/command-center" onClick={() => setShowMobileMenu(false)} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">Admin</Link>
+              </>
+            )}
+
+            <div className="h-px bg-slate-200 my-4" />
+
+            {authChecked && user ? (
+              <div className="space-y-2">
+                <Link href="/profile" onClick={() => setShowMobileMenu(false)} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">Profile</Link>
+                <button onClick={() => { setShowMobileMenu(false); handleLogout(); }} className="w-full px-3 py-2 rounded-lg text-left text-slate-800 hover:bg-slate-100 font-medium">Sign out</button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <Link href="/auth/signin" onClick={() => setShowMobileMenu(false)} className="px-3 py-2 text-center rounded-lg border border-slate-200 text-slate-800 font-semibold">Sign in</Link>
+                <Link href="/auth/signup" onClick={() => setShowMobileMenu(false)} className="px-3 py-2 text-center rounded-lg bg-resort-600 text-white font-semibold">Sign up</Link>
+              </div>
+            )}
+          </nav>
+        </div>
+      </div>
+    )}
     {showMobileFilters && (
       <div className="lg:hidden fixed inset-0 z-[60]">
         <div
