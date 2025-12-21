@@ -35,7 +35,6 @@ const nextConfig = {
         ]
       }
     ]
-    }
   },
   webpack: (config, { isServer }) => {
     // Ensure webpack runtime uses globalThis instead of new Function('return this')
