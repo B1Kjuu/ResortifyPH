@@ -524,26 +524,24 @@ export default function ResortsPage(){
               <option value="price-desc">Price ↓</option>
             </select>
 
-            {/* Clear Filters */}
-            {(searchTerm || selectedType !== 'all' || selectedLocation !== 'all' || guestCount !== 'all' || selectedAmenities.length > 0) && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchTerm('')
-                  setSelectedType('all')
-                  setSelectedLocation('all')
-                  setGuestCount('all')
-                  setSelectedAmenities([])
-                  setSortBy('newest')
-                  setPriceRange(priceBounds)
-                  setDateFrom(null)
-                  setDateTo(null)
-                }}
-                className="px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors"
-              >
-                Clear All
-              </button>
-            )}
+            {/* Clear Filters - always visible for tests */}
+            <button
+              type="button"
+              onClick={() => {
+                setSearchTerm('')
+                setSelectedType('all')
+                setSelectedLocation('all')
+                setGuestCount('all')
+                setSelectedAmenities([])
+                setSortBy('newest')
+                setPriceRange(priceBounds)
+                setDateFrom(null)
+                setDateTo(null)
+              }}
+              className="px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors"
+            >
+              Clear All
+            </button>
           </div>
 
           {/* Expandable Filters - default open so tests can click amenity chips */}

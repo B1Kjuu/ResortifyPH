@@ -27,19 +27,19 @@ export default function Footer(){
             {/* For Guests section to satisfy tests */}
             <div>
               <h3 className="text-sm font-semibold text-white mb-2">For Guests</h3>
-              <nav className="flex flex-col gap-2 text-sm">
-                <Link href="/resorts" className="text-slate-300 hover:text-white">Explore</Link>
-                <Link href="/help-center" className="text-slate-300 hover:text-white">Help Center</Link>
-              </nav>
+              <ul className="flex flex-col gap-2 text-sm">
+                <li><Link href="/resorts" className="text-slate-300 hover:text-white">Explore</Link></li>
+                <li><Link href="/help-center" className="text-slate-300 hover:text-white">Help Center</Link></li>
+              </ul>
             </div>
 
             {/* Company section to satisfy tests */}
             <div>
               <h3 className="text-sm font-semibold text-white mb-2">Company</h3>
-              <nav className="flex flex-col gap-2 text-sm">
-                <Link href="/terms" className="text-slate-300 hover:text-white">Terms</Link>
-                <Link href="/privacy" className="text-slate-300 hover:text-white">Privacy</Link>
-              </nav>
+              <ul className="flex flex-col gap-2 text-sm">
+                <li><Link href="/terms" className="text-slate-300 hover:text-white">Terms</Link></li>
+                <li><Link href="/privacy" className="text-slate-300 hover:text-white">Privacy</Link></li>
+              </ul>
             </div>
           </div>
 
