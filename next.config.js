@@ -1,5 +1,15 @@
 /** @type {import('next').NextConfig} */
 // Next.js 14 enables the App Router (`app/`) by default. Remove deprecated experimental flags.
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+  analyzerMode: 'static',
+  openAnalyzer: false,
+  analyzeServer: false,
+  analyzeBrowser: true,
+  generateStatsFile: true,
+  statsFilename: 'bundle-stats.json'
+})
+
 const nextConfig = {
   images: {
     remotePatterns: [
@@ -14,7 +24,7 @@ const nextConfig = {
     const isDev = process.env.NODE_ENV !== 'production'
     const csp = isDev
       ? "default-src 'self'; img-src 'self' data: https://xbyxreqfoiwvpfrkopur.supabase.co; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://xbyxreqfoiwvpfrkopur.supabase.co ws:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
-      : "default-src 'self'; img-src 'self' data: https://xbyxreqfoiwvpfrkopur.supabase.co; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://xbyxreqfoiwvpfrkopur.supabase.co; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+      : "default-src 'self'; img-src 'self' data: https://xbyxreqfoiwvpfrkopur.supabase.co; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://xbyxreqfoiwvpfrkopur.supabase.co; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
     return [
       {
         source: '/(.*)',
@@ -31,4 +41,4 @@ const nextConfig = {
   }
 }
 
-module.exports = nextConfig
+module.exports = withBundleAnalyzer(nextConfig)
