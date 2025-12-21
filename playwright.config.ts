@@ -36,7 +36,8 @@ export default defineConfig({
   webServer: process.env.PLAYWRIGHT_SKIP_WEB_SERVER
     ? undefined
     : {
-        command: `npm run dev -- --hostname ${WEB_HOST} --port ${WEB_PORT}`,
+        // Use npx to avoid npm argument passthrough issues on Windows
+        command: `npx next dev -H ${WEB_HOST} -p ${WEB_PORT}`,
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120 * 1000,
