@@ -1,6 +1,7 @@
 'use client'
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { supabase } from '../lib/supabaseClient'
 import Reveal from '../components/Reveal'
 import { FiSearch, FiCalendar, FiShield, FiMapPin, FiHome, FiUsers, FiCheckCircle, FiCreditCard, FiStar, FiMessageCircle, FiHelpCircle, FiChevronDown, FiClock, FiPhoneCall, FiXCircle, FiFileText, FiDollarSign, FiRefreshCcw } from 'react-icons/fi'
@@ -8,6 +9,7 @@ import { FiSearch, FiCalendar, FiShield, FiMapPin, FiHome, FiUsers, FiCheckCircl
 export default function Home(){
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
     let mounted = true
@@ -108,10 +110,10 @@ export default function Home(){
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <Link href="/auth/signup" className="px-8 py-4 bg-gradient-to-r from-resort-500 to-resort-600 text-white rounded-xl font-semibold hover:shadow-xl transition-all duration-300 text-center">
+                <Link href="/auth/signup" prefetch={false} className="px-8 py-4 bg-gradient-to-r from-resort-500 to-resort-600 text-white rounded-xl font-semibold hover:shadow-xl transition-all duration-300 text-center">
                   Get Started Free
                 </Link>
-                <Link href="/resorts" className="px-8 py-4 border-2 border-slate-300 text-slate-900 rounded-xl font-semibold hover:border-resort-500 hover:bg-slate-50 transition-all duration-300 text-center">
+                <Link href="/resorts" prefetch={false} onClick={(e)=>{ e.preventDefault(); router.push('/resorts') }} className="px-8 py-4 border-2 border-slate-300 text-slate-900 rounded-xl font-semibold hover:border-resort-500 hover:bg-slate-50 transition-all duration-300 text-center">
                   Browse Resorts
                 </Link>
               </div>
