@@ -10,9 +10,10 @@ type LocationComboboxProps = {
   placeholder?: string
   error?: string
   variant?: 'default' | 'hero'
+  ariaLabel?: string
 }
 
-export default function LocationCombobox({ value = '', onChange, placeholder = 'Select province...', error, variant = 'default' }: LocationComboboxProps) {
+export default function LocationCombobox({ value = '', onChange, placeholder = 'Select province...', error, variant = 'default', ariaLabel }: LocationComboboxProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -92,6 +93,7 @@ export default function LocationCombobox({ value = '', onChange, placeholder = '
       <button
         type="button"
         onClick={toggle}
+        aria-label={ariaLabel}
         className={buttonClasses}
       >
         <div className="flex items-center justify-between gap-2">

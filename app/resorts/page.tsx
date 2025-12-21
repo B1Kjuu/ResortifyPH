@@ -477,6 +477,7 @@ export default function ResortsPage(){
                 value={selectedLocation === 'all' ? '' : selectedLocation}
                 onChange={(province) => setSelectedLocation(province || 'all')}
                 placeholder="Location"
+                ariaLabel="Filter by location"
                 variant="hero"
               />
             </div>
@@ -540,7 +541,7 @@ export default function ResortsPage(){
                 }}
                 className="px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors"
               >
-                Clear
+                Clear All
               </button>
             )}
           </div>
@@ -642,7 +643,7 @@ export default function ResortsPage(){
           {/* Results Count */}
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-slate-600">
-              <span className="font-semibold text-slate-900">{filteredResorts.length}</span> resort{filteredResorts.length !== 1 ? 's' : ''} found
+              Showing <span className="font-semibold text-slate-900">{filteredResorts.length}</span> resort{filteredResorts.length !== 1 ? 's' : ''}
             </p>
             
             {/* Mobile View Toggle */}
