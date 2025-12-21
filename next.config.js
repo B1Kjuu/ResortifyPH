@@ -11,11 +11,15 @@ const nextConfig = {
     ]
   },
   async headers() {
+    const isDev = process.env.NODE_ENV !== 'production'
+    const csp = isDev
+      ? "default-src 'self'; img-src 'self' data: https://xbyxreqfoiwvpfrkopur.supabase.co; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://xbyxreqfoiwvpfrkopur.supabase.co ws:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+      : "default-src 'self'; img-src 'self' data: https://xbyxreqfoiwvpfrkopur.supabase.co; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://xbyxreqfoiwvpfrkopur.supabase.co; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
     return [
       {
         source: '/(.*)',
         headers: [
-          { key: 'Content-Security-Policy', value: "default-src 'self'; img-src 'self' data: https://xbyxreqfoiwvpfrkopur.supabase.co; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://xbyxreqfoiwvpfrkopur.supabase.co; object-src 'none'; base-uri 'self'; frame-ancestors 'none'" },
+          { key: 'Content-Security-Policy', value: csp },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'X-Frame-Options', value: 'DENY' },
