@@ -194,9 +194,9 @@ export default function Navbar(){
 
         {/* Navigation - Desktop Only */}
         <nav className="hidden lg:flex items-center gap-6 ml-8">
-          <a href="/resorts" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
+          <Link href="/resorts" prefetch={false} className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
             Explore
-          </a>
+          </Link>
           {authChecked && user && (
             <Link href="/chat" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
               Chats
