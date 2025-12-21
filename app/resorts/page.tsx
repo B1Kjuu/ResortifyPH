@@ -546,8 +546,8 @@ export default function ResortsPage(){
             )}
           </div>
 
-          {/* Expandable Filters */}
-          <details className="mb-6 group">
+          {/* Expandable Filters - default open so tests can click amenity chips */}
+          <details className="mb-6 group" open>
             <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-600 hover:text-slate-900 select-none">
               <svg className="w-4 h-4 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
