@@ -39,6 +39,18 @@ const nextConfig = {
       }
     ]
   }
+  ,webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve = config.resolve || {}
+      config.resolve.alias = {
+        ...(config.resolve.alias || {}),
+        // Exclude libraries that may rely on eval/new Function from client bundles
+        'source-map-js': false,
+        sucrase: false,
+      }
+    }
+    return config
+  }
 }
 
 module.exports = withBundleAnalyzer(nextConfig)
