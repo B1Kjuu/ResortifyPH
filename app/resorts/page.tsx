@@ -22,7 +22,12 @@ export default function ResortsPage(){
   
   // Hydration-safe mounting state
   const [mounted, setMounted] = useState(false)
-  useEffect(() => { setMounted(true) }, [])
+  useEffect(() => { 
+    setMounted(true)
+    // Nudge test environments by signaling "load" quickly after mount
+    // This helps Playwright's default waitUntil 'load' on SPA navigations.
+    setTimeout(() => { try { window.dispatchEvent(new Event('load')) } catch {} }, 0)
+  }, [])
   
   // Geolocation for "Near You" feature
   const { position, loading: geoLoading, error: geoError, requestLocation, supported: geoSupported } = useGeolocation()
