@@ -384,6 +384,7 @@ export default function ResortsPage(){
                       ? 'border-b-2 border-slate-900 text-slate-900'
                       : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
                   }`}
+                  aria-label={cat.id === 'pool' ? 'Amazing swim spots' : undefined}
                 >
                   <span className="text-xl">{cat.icon}</span>
                   <span className="text-xs font-medium whitespace-nowrap">{cat.label}</span>
