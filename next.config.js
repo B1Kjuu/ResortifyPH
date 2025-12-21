@@ -36,29 +36,18 @@ const nextConfig = {
       }
     ]
     }
-    ,webpack: (config, { isServer }) => {
-      // Ensure webpack runtime uses globalThis instead of new Function('return this')
-      config.output = {
-        ...(config.output || {}),
-        globalObject: 'globalThis'
-      }
-      if (!isServer) {
-        config.resolve = config.resolve || {}
-        config.resolve.alias = {
-          ...(config.resolve.alias || {}),
-          'source-map-js': false,
-          sucrase: false,
-        }
-      }
-      return config
+  },
+  webpack: (config, { isServer }) => {
+    // Ensure webpack runtime uses globalThis instead of new Function('return this')
+    config.output = {
+      ...(config.output || {}),
+      globalObject: 'globalThis'
     }
-  }
-  ,webpack: (config, { isServer }) => {
+    // Exclude libraries that may rely on eval/new Function from client bundles
     if (!isServer) {
       config.resolve = config.resolve || {}
       config.resolve.alias = {
         ...(config.resolve.alias || {}),
-        // Exclude libraries that may rely on eval/new Function from client bundles
         'source-map-js': false,
         sucrase: false,
       }
