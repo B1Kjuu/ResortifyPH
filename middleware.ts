@@ -39,9 +39,24 @@ export function middleware(req: NextRequest) {
     }
   }
 
-  return NextResponse.next()
+  // Generate per-request CSP nonce and attach CSP header
+  const headers = new Headers(req.headers)
+  const isProd = process.env.NODE_ENV === 'production'
+  const nonce = (globalThis.crypto && 'randomUUID' in globalThis.crypto)
+    ? (globalThis.crypto as any).randomUUID()
+    : `${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`
+  headers.set('x-csp-nonce', nonce)
+
+  const supabaseHost = 'https://xbyxreqfoiwvpfrkopur.supabase.co'
+  const csp = isProd
+    ? `default-src 'self'; img-src 'self' data: ${supabaseHost}; script-src 'self' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; connect-src 'self' ${supabaseHost}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
+    : `default-src 'self'; img-src 'self' data: ${supabaseHost}; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; connect-src 'self' ${supabaseHost} ws:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
+
+  const res = NextResponse.next({ request: { headers } })
+  res.headers.set('Content-Security-Policy', csp)
+  return res
 }
 
 export const config = {
-  matcher: ['/api/:path*', '/app/api/:path*']
+  matcher: ['/(.*)']
 }

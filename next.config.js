@@ -22,14 +22,11 @@ const nextConfig = {
   },
   async headers() {
     const isDev = process.env.NODE_ENV !== 'production'
-    const csp = isDev
-      ? "default-src 'self'; img-src 'self' data: https://xbyxreqfoiwvpfrkopur.supabase.co; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://xbyxreqfoiwvpfrkopur.supabase.co ws:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
-      : "default-src 'self'; img-src 'self' data: https://xbyxreqfoiwvpfrkopur.supabase.co; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://xbyxreqfoiwvpfrkopur.supabase.co; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
     return [
       {
         source: '/(.*)',
         headers: [
-          { key: 'Content-Security-Policy', value: csp },
+            // CSP is set dynamically via middleware with per-request nonce
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'X-Frame-Options', value: 'DENY' },
@@ -38,6 +35,23 @@ const nextConfig = {
         ]
       }
     ]
+    }
+    ,webpack: (config, { isServer }) => {
+      // Ensure webpack runtime uses globalThis instead of new Function('return this')
+      config.output = {
+        ...(config.output || {}),
+        globalObject: 'globalThis'
+      }
+      if (!isServer) {
+        config.resolve = config.resolve || {}
+        config.resolve.alias = {
+          ...(config.resolve.alias || {}),
+          'source-map-js': false,
+          sucrase: false,
+        }
+      }
+      return config
+    }
   }
   ,webpack: (config, { isServer }) => {
     if (!isServer) {
