@@ -48,9 +48,11 @@ export const signInSchema = z.object({
 // Resort validations
 export const resortSchema = z.object({
   name: z.string().min(5, 'Resort name must be at least 5 characters'),
-  description: z.string().min(20, 'Description must be at least 20 characters'),
-  // Strip HTML tags and trim
-  description: z.string().min(20, 'Description must be at least 20 characters').transform((s) => s.replace(/<[^>]*>/g, ' ').replace(/[\u0000-\u001F\u007F]/g, ' ').trim()),
+  // Description: strip HTML tags and control chars, then trim
+  description: z
+    .string()
+    .min(20, 'Description must be at least 20 characters')
+    .transform((s) => s.replace(/<[^>]*>/g, ' ').replace(/[\u0000-\u001F\u007F]/g, ' ').trim()),
   location: z.string().min(3, 'Location must be at least 3 characters'),
   latitude: z.number().min(-90).max(90).optional().nullable(),
   longitude: z.number().min(-180).max(180).optional().nullable(),
