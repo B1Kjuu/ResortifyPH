@@ -73,14 +73,17 @@ export default function ResortDetail({ params }: { params: { id: string } }){
         // Get booked dates for this resort
         const { data: bookingsData } = await supabase
           .from('bookings')
-          .select('date_from, date_to')
+          .select('date_from, date_to, status')
           .eq('resort_id', params.id)
           .in('status', ['pending', 'confirmed'])
 
         if (bookingsData && mounted) {
-          // Create array of all booked dates (including ranges)
+          // Only mark CONFIRMED bookings as unavailable (pending bookings don't block dates)
           const allBookedDates: string[] = []
           bookingsData.forEach(booking => {
+            // Skip pending bookings - only confirmed ones block the calendar
+            if (booking.status !== 'confirmed') return
+            
             const start = new Date(booking.date_from)
             const end = new Date(booking.date_to)
             const current = new Date(start)

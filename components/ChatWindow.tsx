@@ -107,16 +107,28 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
       }
       setChat(chatRow)
 
-      // Fetch dynamic title based on booking or resort
+      // Fetch dynamic title based on booking or resort AND user role
       if (bookingId && chatRow.booking_id) {
         const { data: booking } = await supabase
           .from('bookings')
-          .select('resort_id, resorts(name)')
+          .select('resort_id, guest_id, resorts(name)')
           .eq('id', bookingId)
           .single()
         const resortData = booking?.resorts as any
-        if (resortData && typeof resortData === 'object' && 'name' in resortData) {
-          setDynamicTitle(`Chat about ${resortData.name}`)
+        
+        if (participantRole === 'guest' && resortData && typeof resortData === 'object' && 'name' in resortData) {
+          // Guest sees resort name
+          setDynamicTitle(resortData.name)
+        } else if (participantRole === 'owner' && booking?.guest_id) {
+          // Owner sees guest name
+          const { data: guestProfile } = await supabase
+            .from('profiles')
+            .select('full_name, email')
+            .eq('id', booking.guest_id)
+            .single()
+          if (guestProfile) {
+            setDynamicTitle(guestProfile.full_name || guestProfile.email || 'Guest')
+          }
         }
       } else if (resortId && chatRow.resort_id) {
         const { data: resort } = await supabase
@@ -125,7 +137,7 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
           .eq('id', resortId)
           .single()
         if (resort?.name) {
-          setDynamicTitle(`Chat about ${resort.name}`)
+          setDynamicTitle(resort.name)
         }
       }
 
@@ -204,8 +216,11 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
           console.log('🔌 Chat channel subscription status:', status)
           if (status === 'SUBSCRIBED') {
             console.log('✅ Successfully subscribed to chat channel')
+            // Only hide loading once subscription is active
+            if (mounted) setLoading(false)
           } else if (status === 'CHANNEL_ERROR') {
             console.error('❌ Chat channel subscription error')
+            if (mounted) setLoading(false)
           }
         })
 
@@ -238,8 +253,6 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
           last_seen: new Date().toISOString(),
         })
       }
-
-      setLoading(false)
 
       return () => {
         mounted = false
