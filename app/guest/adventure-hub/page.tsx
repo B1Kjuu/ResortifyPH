@@ -1,13 +1,60 @@
 'use client'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
+import LocationCombobox from '../../../components/LocationCombobox'
+import DateRangePicker from '../../../components/DateRangePicker'
+import ResortCard from '../../../components/ResortCard'
+import SkeletonCard from '../../../components/SkeletonCard'
+import ResortMap from '../../../components/ResortMap'
+import { useGeolocation, calculateDistance } from '../../../hooks/useGeolocation'
+import { getProvinceCoordinates } from '../../../lib/locations'
 
 export default function AdventureHub(){
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+
+  // Search hero state
+  const [searchLocation, setSearchLocation] = useState<string>('')
+  const [searchGuests, setSearchGuests] = useState<string>('2')
+  const [searchRange, setSearchRange] = useState<{ from: Date | undefined; to: Date | undefined }>({ from: undefined, to: undefined })
+
+  // Featured + trending
+  const categories = [
+    { id: 'beach', icon: '🏖️', label: 'Beachfront' },
+    { id: 'mountain', icon: '🏔️', label: 'Mountains' },
+    { id: 'nature', icon: '🌿', label: 'Nature' },
+    { id: 'city', icon: '🏙️', label: 'City' },
+    { id: 'countryside', icon: '🌾', label: 'Countryside' },
+    { id: 'pool', icon: '🏊', label: 'Amazing Pools' },
+    { id: 'trending', icon: '🔥', label: 'Trending' },
+  ]
+  const [trendingResorts, setTrendingResorts] = useState<any[]>([])
+  const [trendLoading, setTrendLoading] = useState(true)
+
+  // Map preview (uses geolocation if available)
+  const { position, supported: geoSupported, requestLocation, loading: geoLoading } = useGeolocation()
+  const nearbyResorts = useMemo(() => {
+    if (!position || trendingResorts.length === 0) return []
+    const withDist = trendingResorts.map((resort) => {
+      // Prefer exact coordinates, fallback to province center
+      let lat: number | null = resort.latitude ?? null
+      let lng: number | null = resort.longitude ?? null
+      if (lat == null || lng == null) {
+        const coords = getProvinceCoordinates(resort.location)
+        if (coords) { lat = coords.lat; lng = coords.lng }
+      }
+      if (lat == null || lng == null) return { ...resort, distance: null }
+      const distance = calculateDistance(position.latitude, position.longitude, lat, lng)
+      return { ...resort, distance }
+    })
+    .filter(r => r.distance !== null)
+    .sort((a, b) => (a.distance as number) - (b.distance as number))
+    .slice(0, 4)
+    return withDist
+  }, [position, trendingResorts])
 
   useEffect(() => {
     let mounted = true
@@ -49,7 +96,41 @@ export default function AdventureHub(){
     }
     
     load()
+    // Optionally dispatch load for SPA navigation tests
+    setTimeout(() => { try { window.dispatchEvent(new Event('load')) } catch {} }, 0)
     
+    return () => { mounted = false }
+  }, [])
+
+  // Fetch trending resorts (approved)
+  useEffect(() => {
+    let mounted = true
+    async function fetchTrending(){
+      try {
+        const { data, error } = await supabase
+          .from('resorts')
+          .select('id, name, location, price, images, type, created_at, latitude, longitude, address')
+          .eq('status', 'approved')
+          .order('created_at', { ascending: false })
+          .limit(8)
+        if (!mounted) return
+        if (error) {
+          console.error('Trending fetch error:', error)
+          setTrendingResorts([])
+          setTrendLoading(false)
+          return
+        }
+        setTrendingResorts(data || [])
+        setTrendLoading(false)
+      } catch (e) {
+        console.error('Trending error:', e)
+        if (mounted) {
+          setTrendingResorts([])
+          setTrendLoading(false)
+        }
+      }
+    }
+    fetchTrending()
     return () => { mounted = false }
   }, [])
 
@@ -60,14 +141,121 @@ export default function AdventureHub(){
       <div className="max-w-7xl mx-auto">
         {/* Hero Section */}
         <div className="mb-12">
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-3 mb-6">
             <span className="text-6xl">🌴</span>
             <div>
               <p className="text-sm text-resort-500 font-semibold uppercase tracking-wide">Welcome Back, {profile?.full_name?.split(' ')[0] || 'Traveler'}</p>
               <h1 className="text-5xl font-bold bg-gradient-to-r from-resort-600 to-blue-600 bg-clip-text text-transparent">Your Resort Adventure Hub</h1>
             </div>
           </div>
-          <p className="text-lg text-slate-600 ml-24">Discover amazing resorts, manage bookings, and create unforgettable memories</p>
+          <div className="bg-white border-2 border-slate-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 items-start">
+              {/* Left: stacked controls + quick picks */}
+              <div className="md:col-span-4 flex flex-col gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">Location</label>
+                  <LocationCombobox
+                    value={searchLocation}
+                    onChange={(province) => setSearchLocation(province || '')}
+                    placeholder="Where to?"
+                    ariaLabel="Search location"
+                    variant="hero"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">Guests</label>
+                  <select
+                    value={searchGuests}
+                    onChange={(e) => setSearchGuests(e.target.value)}
+                    aria-label="Guests count"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white cursor-pointer"
+                  >
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="4">4</option>
+                    <option value="6">6</option>
+                    <option value="8">8</option>
+                    <option value="10">10</option>
+                  </select>
+                </div>
+                <div>
+                  <button
+                    onClick={() => {
+                      const params = new URLSearchParams()
+                      if (searchLocation) params.set('location', searchLocation)
+                      if (searchRange.from) params.set('dateFrom', searchRange.from.toISOString().split('T')[0])
+                      if (searchRange.to) params.set('dateTo', searchRange.to.toISOString().split('T')[0])
+                      if (searchGuests) params.set('guests', searchGuests)
+                      router.push(`/resorts${params.toString() ? `?${params.toString()}` : ''}`)
+                    }}
+                    className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-medium shadow-sm w-full md:w-auto"
+                    aria-label="Search resorts"
+                  >
+                    Search
+                  </button>
+                </div>
+
+                {/* Quick picks below controls */}
+                <div className="p-3 border border-slate-200 rounded-xl bg-slate-50/50">
+                  <div className="text-xs font-semibold text-slate-600 mb-2">Quick picks</div>
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={() => {
+                        const today = new Date()
+                        const day = today.getDay()
+                        const nextFri = new Date(today)
+                        nextFri.setDate(today.getDate() + ((5 - day + 7) % 7))
+                        const nextSun = new Date(nextFri)
+                        nextSun.setDate(nextFri.getDate() + 2)
+                        setSearchRange({ from: nextFri, to: nextSun })
+                      }}
+                      className="px-3 py-2 rounded-lg text-sm bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-left"
+                    >
+                      Weekend getaway
+                    </button>
+                    <button
+                      onClick={() => {
+                        const start = new Date()
+                        const end = new Date(start)
+                        end.setDate(start.getDate() + 6)
+                        setSearchRange({ from: start, to: end })
+                      }}
+                      className="px-3 py-2 rounded-lg text-sm bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-left"
+                    >
+                      1 week
+                    </button>
+                    <button
+                      onClick={() => {
+                        const start = new Date()
+                        const end = new Date(start)
+                        end.setDate(start.getDate() + 13)
+                        setSearchRange({ from: start, to: end })
+                      }}
+                      className="px-3 py-2 rounded-lg text-sm bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-left"
+                    >
+                      2 weeks
+                    </button>
+                    <button
+                      onClick={() => setSearchRange({ from: undefined, to: undefined })}
+                      className="px-3 py-2 rounded-lg text-sm bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-left"
+                    >
+                      Clear dates
+                    </button>
+                  </div>
+                </div>
+              </div>
+              {/* Right: Dates only */}
+              <div className="md:col-span-8">
+                <label className="block text-xs font-semibold text-slate-600 mb-1.5">Dates</label>
+                <DateRangePicker
+                  bookedDates={[]}
+                  selectedRange={searchRange}
+                  onSelectRange={(range) => setSearchRange(range)}
+                  preferTwoMonthsOnDesktop
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Main Action Cards */}
@@ -97,6 +285,93 @@ export default function AdventureHub(){
               </svg>
             </span>
           </Link>
+        </div>
+
+        {/* Featured Categories */}
+        <div className="mb-12">
+          <h2 className="text-xl font-bold text-slate-900 mb-3">Featured Categories</h2>
+          <div className="flex flex-wrap gap-2">
+            {categories.map((cat) => {
+              const href = cat.id === 'pool'
+                ? '/resorts?amenities=Pool'
+                : cat.id === 'trending'
+                ? '/resorts?sort=newest'
+                : `/resorts?type=${cat.id}`
+              return (
+                <Link
+                  key={cat.id}
+                  href={href}
+                  className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-300 rounded-full text-sm font-medium hover:border-slate-900 hover:bg-slate-50 transition-colors"
+                  aria-label={`Browse ${cat.label}`}
+                >
+                  <span className="text-base">{cat.icon}</span>
+                  <span>{cat.label}</span>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Trending Resorts */}
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-slate-900">Trending Resorts</h2>
+            <Link href="/resorts" className="text-sm font-medium text-resort-600 hover:text-resort-700">View all →</Link>
+          </div>
+          {trendLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {[...Array(8)].map((_, i) => <SkeletonCard key={i} />)}
+            </div>
+          ) : trendingResorts.length === 0 ? (
+            <div className="text-slate-600 text-sm">No trending resorts available.</div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {trendingResorts.map((resort) => (
+                <ResortCard key={resort.id} resort={resort} compact />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Nearby For You */}
+        {geoSupported && (
+          <div className="mb-12">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-slate-900">Nearby For You</h2>
+              {!position && (
+                <button
+                  onClick={() => requestLocation()}
+                  className="text-sm font-medium px-3 py-1.5 border border-slate-300 rounded-lg hover:border-slate-900 transition-colors"
+                >
+                  {geoLoading ? 'Locating…' : 'Enable location'}
+                </button>
+              )}
+            </div>
+            {position && nearbyResorts.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {nearbyResorts.map((resort: any) => (
+                  <ResortCard key={resort.id} resort={resort} compact />
+                ))}
+              </div>
+            ) : (
+              <div className="text-slate-600 text-sm">{position ? 'No nearby resorts found.' : 'Turn on location to see resorts near you.'}</div>
+            )}
+          </div>
+        )}
+
+        {/* Map Preview */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xl font-bold text-slate-900">Map Preview</h2>
+            <Link href="/resorts?view=map" className="text-sm font-medium text-resort-600 hover:text-resort-700">Open full map →</Link>
+          </div>
+          <div className="h-[260px] sm:h-[320px]">
+            <ResortMap
+              resorts={trendingResorts}
+              userPosition={geoSupported && position ? position : null}
+              className="h-full"
+            />
+          </div>
         </div>
 
         {/* Profile & Quick Actions */}

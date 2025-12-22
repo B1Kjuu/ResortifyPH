@@ -178,6 +178,47 @@ export default function ResortDetail({ params }: { params: { id: string } }){
     if (error) {
       toast.error(`Error: ${error.message}`)
     } else {
+      // Create chat and send automatic welcome message
+      if (created?.id) {
+        try {
+          // Create chat for this booking
+          const { data: chat, error: chatError } = await supabase
+            .from('chats')
+            .insert({
+              booking_id: created.id,
+              creator_id: user.id,
+            })
+            .select('id')
+            .single()
+
+          if (!chatError && chat) {
+            // Add guest as participant
+            await supabase.from('chat_participants').insert({
+              chat_id: chat.id,
+              user_id: user.id,
+              role: 'guest',
+            })
+
+            // Add owner as participant
+            await supabase.from('chat_participants').insert({
+              chat_id: chat.id,
+              user_id: resort.owner_id,
+              role: 'owner',
+            })
+
+            // Send automatic welcome message to notify owner
+            await supabase.from('chat_messages').insert({
+              chat_id: chat.id,
+              sender_id: user.id,
+              content: `Hi! I'd like to book ${resort.name} from ${format(selectedRange.from, 'MMM dd, yyyy')} to ${format(selectedRange.to, 'MMM dd, yyyy')} for ${guests} ${guests === 1 ? 'guest' : 'guests'}. Looking forward to hearing from you!`,
+            })
+          }
+        } catch (chatSetupError) {
+          console.error('Chat setup error:', chatSetupError)
+          // Don't block booking success if chat fails
+        }
+      }
+
       toast.success('Booking request sent! Opening chat…')
       setSelectedRange({ from: undefined, to: undefined })
       setGuests(1)

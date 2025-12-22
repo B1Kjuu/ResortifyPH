@@ -20,6 +20,9 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
   const [loading, setLoading] = useState(true)
   const [markingRead, setMarkingRead] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
+  const [typingUsers, setTypingUsers] = useState<string[]>([])
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([])
+  const [dynamicTitle, setDynamicTitle] = useState<string>('')
 
   useEffect(() => {
     let mounted = true
@@ -104,6 +107,28 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
       }
       setChat(chatRow)
 
+      // Fetch dynamic title based on booking or resort
+      if (bookingId && chatRow.booking_id) {
+        const { data: booking } = await supabase
+          .from('bookings')
+          .select('resort_id, resorts(name)')
+          .eq('id', bookingId)
+          .single()
+        const resortData = booking?.resorts as any
+        if (resortData && typeof resortData === 'object' && 'name' in resortData) {
+          setDynamicTitle(`Chat about ${resortData.name}`)
+        }
+      } else if (resortId && chatRow.resort_id) {
+        const { data: resort } = await supabase
+          .from('resorts')
+          .select('name')
+          .eq('id', resortId)
+          .single()
+        if (resort?.name) {
+          setDynamicTitle(`Chat about ${resort.name}`)
+        }
+      }
+
       // Ensure current user is a participant
       await supabase.from('chat_participants').upsert({
         chat_id: chatRow.id,
@@ -131,7 +156,12 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
 
       // Realtime subscription
       const channel = supabase
-        .channel(`chat:${chatRow.id}`)
+        .channel(`chat:${chatRow.id}`, {
+          config: {
+            broadcast: { self: false },
+            presence: { key: uid }
+          }
+        })
         .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
@@ -139,55 +169,167 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
           filter: `chat_id=eq.${chatRow.id}`,
         }, (payload) => {
           const record = payload.new as ChatMessage
-          setMessages((prev) => [...prev, record])
+          console.log('📨 New message received:', record.id)
+          // Only add if not already in state (prevent duplicates from optimistic updates)
+          setMessages((prev) => {
+            if (prev.some(m => m.id === record.id)) {
+              console.log('⚠️ Message already exists, skipping')
+              return prev
+            }
+            console.log('✅ Adding new message to state')
+            return [...prev, record]
+          })
           // Mark read if incoming from others while viewing
           if (userId && record.sender_id !== userId) {
             supabase.from('chat_messages').update({ read_at: new Date().toISOString() }).eq('id', record.id)
           }
         })
-        .subscribe()
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'chat_typing',
+          filter: `chat_id=eq.${chatRow.id}`,
+        }, (payload) => {
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const record = payload.new as any
+            if (record.user_id !== userId) {
+              setTypingUsers((prev) => Array.from(new Set([...prev, record.user_id])))
+            }
+          } else if (payload.eventType === 'DELETE') {
+            const record = payload.old as any
+            setTypingUsers((prev) => prev.filter((id) => id !== record.user_id))
+          }
+        })
+        .subscribe((status) => {
+          console.log('🔌 Chat channel subscription status:', status)
+          if (status === 'SUBSCRIBED') {
+            console.log('✅ Successfully subscribed to chat channel')
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error('❌ Chat channel subscription error')
+          }
+        })
+
+      // Subscribe to presence updates for participants
+      const presenceChannel = supabase
+        .channel('user-presence')
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'user_presence',
+        }, (payload) => {
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const record = payload.new as any
+            if (record.status === 'online') {
+              setOnlineUsers((prev) => Array.from(new Set([...prev, record.user_id])))
+            } else {
+              setOnlineUsers((prev) => prev.filter((id) => id !== record.user_id))
+            }
+          }
+        })
+        .subscribe((status) => {
+          console.log('🔌 Presence channel subscription status:', status)
+        })
+
+      // Set current user as online
+      if (uid) {
+        await supabase.from('user_presence').upsert({
+          user_id: uid,
+          status: 'online',
+          last_seen: new Date().toISOString(),
+        })
+      }
 
       setLoading(false)
 
       return () => {
         mounted = false
         supabase.removeChannel(channel)
+        supabase.removeChannel(presenceChannel)
+        // Set user offline on unmount
+        if (uid) {
+          supabase.from('user_presence').update({
+            status: 'offline',
+            last_seen: new Date().toISOString(),
+          }).eq('user_id', uid)
+        }
       }
     })()
   }, [bookingId, resortId, participantRole])
 
   const handleSend = useMemo(() => {
-    return async (content: string) => {
+    return async (content: string, attachmentData?: { url: string; type: string; name: string; size: number }) => {
       setSendError(null)
       if (!chat || !userId) {
         setSendError('Not ready to send. Try reloading.')
         return
       }
+      console.log('📤 Sending message...')
+      const startTime = Date.now()
       const { data, error } = await supabase
         .from('chat_messages')
         .insert({
           chat_id: chat.id,
           sender_id: userId,
           content,
+          attachment_url: attachmentData?.url || null,
+          attachment_type: attachmentData?.type || null,
+          attachment_name: attachmentData?.name || null,
+          attachment_size: attachmentData?.size || null,
         } as any)
         .select('*')
         .single()
+      const endTime = Date.now()
+      console.log(`⏱️ Message insert took ${endTime - startTime}ms`)
       if (error) {
-        console.error('Send error:', error)
+        console.error('❌ Send error:', error)
         setSendError(error.message)
         return
       }
       if (data) {
+        console.log('✅ Message sent successfully, ID:', (data as ChatMessage).id)
         // Optimistically append; realtime will also deliver
         setMessages((prev) => [...prev, data as ChatMessage])
       }
     }
   }, [chat, userId])
 
+  const handleReaction = async (messageId: string, emoji: string) => {
+    if (!userId) return
+
+    // Check if user already reacted with this emoji
+    const { data: existing } = await supabase
+      .from('message_reactions')
+      .select('id')
+      .eq('message_id', messageId)
+      .eq('user_id', userId)
+      .eq('emoji', emoji)
+      .maybeSingle()
+
+    if (existing) {
+      // Remove reaction
+      await supabase.from('message_reactions').delete().eq('id', existing.id)
+    } else {
+      // Add reaction
+      await supabase.from('message_reactions').insert({
+        message_id: messageId,
+        user_id: userId,
+        emoji,
+      })
+    }
+  }
+
   return (
     <div className="flex h-full min-h-[400px] w-full flex-col rounded-md border">
-      <div className="flex items-center justify-between border-b px-4 py-2">
-        <h3 className="font-semibold">{title || 'Booking Chat'}</h3>
+      <div className="flex items-center justify-between border-b px-4 py-2 bg-gray-50">
+        <div>
+          <h3 className="font-semibold">{title || dynamicTitle || 'Chat'}</h3>
+          {onlineUsers.length > 0 && (
+            <div className="text-xs text-green-600 flex items-center gap-1">
+              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+              {onlineUsers.length} online
+            </div>
+          )}
+        </div>
         {chat && (
           <div className="text-xs text-gray-500">Chat ID: {chat.id.slice(0, 8)}</div>
         )}
@@ -203,8 +345,13 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
         <div className="flex flex-1 items-center justify-center text-sm text-gray-500">Sign in to chat.</div>
       ) : (
         <>
-          <MessageList messages={messages} currentUserId={userId} />
-          <MessageInput onSend={handleSend} />
+          <MessageList messages={messages} currentUserId={userId} onReact={handleReaction} />
+          {typingUsers.length > 0 && (
+            <div className="px-4 py-2 text-xs text-gray-500 italic border-t">
+              {typingUsers.length === 1 ? 'Someone is' : `${typingUsers.length} people are`} typing...
+            </div>
+          )}
+          <MessageInput onSend={handleSend} chatId={chat?.id} />
         </>
       )}
     </div>

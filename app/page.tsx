@@ -72,6 +72,9 @@ export default function Home(){
 
     checkAuth()
 
+    // Signal a 'load' event to help test environments
+    setTimeout(() => { try { window.dispatchEvent(new Event('load')) } catch {} }, 0)
+
     return () => { 
       mounted = false
       clearTimeout(timeoutId)

@@ -5,7 +5,13 @@ import { supabase } from '../lib/supabaseClient'
 import ChatLink from './ChatLink'
 import type { Chat, ChatMessage, ChatParticipant } from '../types/chat'
 
-type ChatItem = Chat & { lastMessage?: ChatMessage | null, unreadCount?: number }
+type ChatItem = Chat & { 
+  lastMessage?: ChatMessage | null
+  unreadCount?: number
+  resortName?: string
+  participantName?: string
+  participantRole?: string
+}
 
 export default function ChatList() {
   const [items, setItems] = useState<ChatItem[]>([])
@@ -56,7 +62,58 @@ export default function ChatList() {
           .eq('chat_id', c.id)
           .is('read_at', null)
           .neq('sender_id', uid)
-        return { ...c, lastMessage: msg || null, unreadCount: unreadCount || 0 }
+        
+        // Fetch resort name if available
+        let resortName = ''
+        if (c.booking_id) {
+          const { data: booking } = await supabase
+            .from('bookings')
+            .select('resort_id, resorts(name)')
+            .eq('id', c.booking_id)
+            .single()
+          const resortData = booking?.resorts as any
+          if (resortData && typeof resortData === 'object' && 'name' in resortData) {
+            resortName = resortData.name
+          }
+        } else if (c.resort_id) {
+          const { data: resort } = await supabase
+            .from('resorts')
+            .select('name')
+            .eq('id', c.resort_id)
+            .single()
+          if (resort?.name) resortName = resort.name
+        }
+
+        // Fetch other participant info
+        let participantName = ''
+        let participantRole = ''
+        const { data: otherParticipants } = await supabase
+          .from('chat_participants')
+          .select('user_id, role')
+          .eq('chat_id', c.id)
+          .neq('user_id', uid)
+          .limit(1)
+        if (otherParticipants && otherParticipants.length > 0) {
+          const otherUser = otherParticipants[0]
+          participantRole = otherUser.role
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name, email')
+            .eq('id', otherUser.user_id)
+            .single()
+          if (profile) {
+            participantName = profile.full_name || profile.email || 'User'
+          }
+        }
+        
+        return { 
+          ...c, 
+          lastMessage: msg || null, 
+          unreadCount: unreadCount || 0,
+          resortName,
+          participantName,
+          participantRole
+        }
       }))
 
       if (mounted) setItems(withLast)
@@ -70,28 +127,43 @@ export default function ChatList() {
 
   return (
     <ul className="divide-y">
-      {items.map((c) => (
-        <li key={c.id} className="flex items-center justify-between gap-4 p-3">
-          <div className="min-w-0">
-            <div className="font-medium">Booking Chat</div>
-            {c.lastMessage ? (
-              <div className="truncate text-sm text-gray-600">
-                {c.lastMessage.content}
-              </div>
-            ) : (
-              <div className="text-sm text-gray-400">No messages yet</div>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            {c.unreadCount ? (
-              <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-blue-600 px-2 text-xs font-bold text-white">
-                {c.unreadCount}
-              </span>
-            ) : null}
-            <ChatLink bookingId={c.booking_id ?? undefined} as={'guest'} label="Open" />
-          </div>
-        </li>
-      ))}
+      {items.map((c) => {
+        // Build dynamic title
+        let title = 'Chat'
+        if (c.resortName) {
+          title = c.resortName
+        }
+        let subtitle = ''
+        if (c.participantName) {
+          subtitle = c.participantRole === 'owner' ? `Host: ${c.participantName}` : `Guest: ${c.participantName}`
+        }
+
+        return (
+          <li key={c.id} className="flex items-center justify-between gap-4 p-3 hover:bg-gray-50 transition-colors">
+            <div className="min-w-0 flex-1">
+              <div className="font-medium text-gray-900">{title}</div>
+              {subtitle && (
+                <div className="text-xs text-gray-500 mb-1">{subtitle}</div>
+              )}
+              {c.lastMessage ? (
+                <div className="truncate text-sm text-gray-600">
+                  {c.lastMessage.content}
+                </div>
+              ) : (
+                <div className="text-sm text-gray-400">No messages yet</div>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {c.unreadCount ? (
+                <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-blue-600 px-2 text-xs font-bold text-white">
+                  {c.unreadCount}
+                </span>
+              ) : null}
+              <ChatLink bookingId={c.booking_id ?? undefined} as={'guest'} label="Open" />
+            </div>
+          </li>
+        )
+      })}
     </ul>
   )
 }

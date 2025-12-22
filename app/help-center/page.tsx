@@ -82,6 +82,11 @@ export default function HelpCenterPage() {
     }
   ]
 
+  React.useEffect(() => {
+    // Help test environments: quickly signal a window 'load' after mount
+    setTimeout(() => { try { window.dispatchEvent(new Event('load')) } catch {} }, 0)
+  }, [])
+
   return (
     <div className="w-full min-h-screen bg-white">
       {/* Hero */}

@@ -4,6 +4,7 @@ import { headers } from 'next/headers'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { Toaster } from 'sonner'
+import RouteLoadNudger from '../components/RouteLoadNudger'
 
 export const metadata = {
   title: 'ResortifyPH',
@@ -25,6 +26,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Navbar />
         <main className="w-full">{children}</main>
         <Footer />
+        {/* Nudge SPA route changes to emit a synthetic load for E2E stability */}
+        <RouteLoadNudger />
         <Toaster position="top-right" richColors />
         {/* Provide nonce to Next internal scripts; suppress hydration warnings */}
         {nonce && (

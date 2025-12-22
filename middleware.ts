@@ -24,7 +24,7 @@ function allow(ip: string | undefined): boolean {
   return true
 }
 
-export function middleware(req: NextRequest) {
+export default function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
   const method = req.method
 
@@ -48,9 +48,18 @@ export function middleware(req: NextRequest) {
   headers.set('x-csp-nonce', nonce)
 
   const supabaseHost = 'https://xbyxreqfoiwvpfrkopur.supabase.co'
+  const imgSources = [
+    `'self'`,
+    `data:`,
+    supabaseHost,
+    `https://images.unsplash.com`,
+    `https://lh3.googleusercontent.com`,
+    `https://*.tile.openstreetmap.org`,
+  ].join(' ')
+
   const csp = isProd
-    ? `default-src 'self'; img-src 'self' data: ${supabaseHost}; script-src 'self' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; connect-src 'self' ${supabaseHost}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
-    : `default-src 'self'; img-src 'self' data: ${supabaseHost}; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; connect-src 'self' ${supabaseHost} ws:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
+    ? `default-src 'self'; img-src ${imgSources}; script-src 'self' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; connect-src 'self' ${supabaseHost}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
+    : `default-src 'self'; img-src ${imgSources}; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; connect-src 'self' ${supabaseHost} ws:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
 
   const res = NextResponse.next({ request: { headers } })
   res.headers.set('Content-Security-Policy', csp)

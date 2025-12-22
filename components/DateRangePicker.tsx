@@ -9,12 +9,16 @@ interface DateRangePickerProps {
   bookedDates: string[] // Array of date strings in ISO format
   onSelectRange: (range: { from: Date | undefined; to: Date | undefined }) => void
   selectedRange: { from: Date | undefined; to: Date | undefined }
+  months?: number // explicit number of months to render
+  preferTwoMonthsOnDesktop?: boolean // show 2 months on >=768px, else 1
 }
 
 export default function DateRangePicker({ 
   bookedDates, 
   onSelectRange, 
-  selectedRange 
+  selectedRange, 
+  months,
+  preferTwoMonthsOnDesktop,
 }: DateRangePickerProps) {
   const [monthCount, setMonthCount] = useState(1)
   const wrapperRef = useRef<HTMLDivElement | null>(null)
@@ -29,25 +33,39 @@ export default function DateRangePicker({
   ]
 
   useEffect(() => {
-    // Prefer container width so the calendar can show two months inside the booking card when it fits.
     const el = wrapperRef.current
-    if (!el) return
-
     const update = () => {
+      if (typeof months === 'number') {
+        setMonthCount(months)
+        return
+      }
+
+      // prefer 2 months on desktop width if requested
+      if (preferTwoMonthsOnDesktop) {
+        const vw = window.innerWidth
+        setMonthCount(vw >= 768 ? 2 : 1)
+        return
+      }
+
+      if (!el) {
+        setMonthCount(1)
+        return
+      }
+
       const w = el.clientWidth || window.innerWidth
-      // show two months when container width >= 520px (fits compact months)
-      setMonthCount(w >= 520 ? 2 : 1)
+      // default heuristic: show two months when there is ample space
+      setMonthCount(w >= 640 ? 2 : 1)
     }
 
     update()
     const ro = new ResizeObserver(update)
-    ro.observe(el)
+    if (el) ro.observe(el)
     window.addEventListener('resize', update)
     return () => {
       ro.disconnect()
       window.removeEventListener('resize', update)
     }
-  }, [wrapperRef])
+  }, [wrapperRef, months, preferTwoMonthsOnDesktop])
 
   const handleSelect = (range: DateRange | undefined) => {
     if (!range) {
@@ -83,6 +101,10 @@ export default function DateRangePicker({
         disabled={disabledDays}
         numberOfMonths={monthCount}
         className={`calendar-custom ${monthCount === 2 ? 'two-months' : ''}`}
+        styles={{
+          root: { width: '100%' },
+          months: { display: 'flex', gap: '16px', justifyContent: 'flex-start', flexWrap: 'wrap' },
+        }}
       />
       {selectedRange.from && selectedRange.to && (
         <div className="mt-4 p-3 bg-blue-50 rounded-md border border-blue-200">
