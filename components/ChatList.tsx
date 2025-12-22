@@ -48,6 +48,30 @@ export default function ChatList() {
         .in('id', chatIds)
         .order('updated_at', { ascending: false })
 
+      // Batch fetch all participants first to avoid N+1 queries
+      const { data: allParticipants } = await supabase
+        .from('chat_participants')
+        .select('chat_id, user_id, role')
+        .in('chat_id', chatIds)
+      
+      // Get unique user IDs (excluding current user)
+      const otherUserIds = Array.from(new Set(
+        (allParticipants || [])
+          .filter(p => p.user_id !== uid)
+          .map(p => p.user_id)
+      ))
+      
+      // Batch fetch all profiles at once
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .in('id', otherUserIds)
+
+      // Create a map for quick lookup
+      const profileMap = new Map(
+        (profiles || []).map(p => [p.id, p])
+      )
+
       const withLast = await Promise.all((chats || []).map(async (c: Chat) => {
         const { data: msg } = await supabase
           .from('chat_messages')
@@ -84,23 +108,15 @@ export default function ChatList() {
           if (resort?.name) resortName = resort.name
         }
 
-        // Fetch other participant info
+        // Get participant info from pre-fetched data
         let participantName = ''
         let participantRole = ''
-        const { data: otherParticipants } = await supabase
-          .from('chat_participants')
-          .select('user_id, role')
-          .eq('chat_id', c.id)
-          .neq('user_id', uid)
-          .limit(1)
-        if (otherParticipants && otherParticipants.length > 0) {
-          const otherUser = otherParticipants[0]
-          participantRole = otherUser.role
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name, email')
-            .eq('id', otherUser.user_id)
-            .single()
+        const otherParticipant = (allParticipants || []).find(
+          p => p.chat_id === c.id && p.user_id !== uid
+        )
+        if (otherParticipant) {
+          participantRole = otherParticipant.role
+          const profile = profileMap.get(otherParticipant.user_id)
           if (profile) {
             participantName = profile.full_name || profile.email || 'User'
           }
