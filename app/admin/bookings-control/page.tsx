@@ -6,8 +6,20 @@ import { useRouter } from 'next/navigation'
 import ChatLink from '../../../components/ChatLink'
 
 export default function BookingsControlPage(){
-  const [pendingBookings, setPendingBookings] = useState<any[]>([])
-  const [confirmedBookings, setConfirmedBookings] = useState<any[]>([])
+  type AdminBooking = {
+    id: string
+    resort_id: string
+    date_from: string
+    date_to: string
+    guest_count: number
+    status: string
+    created_at: string
+    resort: { name: string | null }
+    guest: { full_name: string | null; email: string | null }
+  }
+
+  const [pendingBookings, setPendingBookings] = useState<AdminBooking[]>([])
+  const [confirmedBookings, setConfirmedBookings] = useState<AdminBooking[]>([])
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | '' }>({ message: '', type: '' })
@@ -19,7 +31,7 @@ export default function BookingsControlPage(){
     if (rpcError) {
       console.error('Admin bookings RPC error:', rpcError)
     }
-    const bookings = (rpcData || []).map((row: any) => ({
+    const bookings: AdminBooking[] = (rpcData || []).map((row: any) => ({
       id: row.booking_id,
       resort_id: row.resort_id,
       date_from: row.date_from,
@@ -146,7 +158,7 @@ export default function BookingsControlPage(){
                   <div className="flex gap-2 items-center">
                     <button onClick={() => confirmBooking(booking.id)} className="flex-1 px-3 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition font-semibold">Confirm</button>
                     <button onClick={() => rejectBooking(booking.id)} className="flex-1 px-3 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-semibold">Reject</button>
-                    <ChatLink bookingId={booking.id} as="admin" label="Open Chat" title={booking.resort?.name} />
+                    <ChatLink bookingId={booking.id} as="admin" label="Open Chat" title={booking.resort?.name || undefined} />
                   </div>
                 </div>
               ))}
@@ -176,7 +188,7 @@ export default function BookingsControlPage(){
                     <span className="text-xs bg-green-500 text-white px-2 py-1 rounded">Confirmed</span>
                   </div>
                   <p className="text-sm text-slate-600 mb-3">📅 {booking.date_from} → {booking.date_to}</p>
-                  <ChatLink bookingId={booking.id} as="admin" label="Open Chat" title={booking.resort?.name} />
+                  <ChatLink bookingId={booking.id} as="admin" label="Open Chat" title={booking.resort?.name || undefined} />
                 </div>
               ))}
             </div>
