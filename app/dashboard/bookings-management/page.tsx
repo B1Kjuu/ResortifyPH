@@ -5,8 +5,20 @@ import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 
 export default function BookingsManagementPage(){
-  const [pendingBookings, setPendingBookings] = useState<any[]>([])
-  const [confirmedBookings, setConfirmedBookings] = useState<any[]>([])
+  type OwnerBooking = {
+    id: string
+    resort_id: string
+    date_from: string
+    date_to: string
+    guest_count: number
+    status: string
+    created_at: string
+    resort: { name: string | null }
+    guest: { full_name: string | null; email: string | null }
+  }
+
+  const [pendingBookings, setPendingBookings] = useState<OwnerBooking[]>([])
+  const [confirmedBookings, setConfirmedBookings] = useState<OwnerBooking[]>([])
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
@@ -28,7 +40,7 @@ export default function BookingsManagementPage(){
       if (rpcError) {
         console.error('Owner bookings RPC error:', rpcError)
       }
-      const bookings = (rpcData || []).map((row: any) => ({
+      const bookings: OwnerBooking[] = (rpcData || []).map((row: any) => ({
         id: row.booking_id,
         resort_id: row.resort_id,
         date_from: row.date_from,
@@ -40,8 +52,8 @@ export default function BookingsManagementPage(){
         guest: { full_name: row.guest_full_name, email: row.guest_email }
       }))
 
-      const pending = bookings?.filter(b => b.status === 'pending') || []
-      const confirmed = bookings?.filter(b => b.status === 'confirmed') || []
+      const pending = bookings.filter((b: OwnerBooking) => b.status === 'pending')
+      const confirmed = bookings.filter((b: OwnerBooking) => b.status === 'confirmed')
 
       setPendingBookings(pending)
       setConfirmedBookings(confirmed)
