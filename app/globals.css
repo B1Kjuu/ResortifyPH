@@ -174,19 +174,23 @@ a:not([class]) {
 
 /* Visually highlight booked/unavailable dates */
 .calendar-custom .day-booked {
-  background-color: #fee2e2 !important;
-  color: #991b1b !important;
+  background-color: #fca5a5 !important;
+  color: #7f1d1d !important;
   position: relative;
-  font-weight: 600;
+  font-weight: 700;
+  text-decoration: line-through;
+  opacity: 1 !important;
 }
 
 .calendar-custom .day-booked:hover {
-  background-color: #fecaca !important;
+  background-color: #f87171 !important;
+  cursor: not-allowed;
 }
 
 .calendar-custom .rdp-day_disabled.day-booked {
   background-color: #fca5a5 !important;
-  opacity: 0.9;
+  color: #7f1d1d !important;
+  opacity: 1 !important;
 }
 
 /* Compact two-month layout for narrow booking cards */

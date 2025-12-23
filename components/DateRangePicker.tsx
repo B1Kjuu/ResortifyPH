@@ -26,10 +26,10 @@ export default function DateRangePicker({
   // Convert booked date strings to Date objects
   const disabledDates = bookedDates.map(dateStr => parseISO(dateStr))
   
-  // Disable past dates
+  // Disable past dates and booked dates
   const disabledDays = [
     { before: new Date() },
-    ...disabledDates.map(date => ({ from: date, to: date }))
+    ...disabledDates
   ]
 
   useEffect(() => {
