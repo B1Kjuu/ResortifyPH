@@ -125,6 +125,11 @@ export default function SignInPage(){
             {errors.password && (
               <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>
             )}
+            <div className="text-right mt-1">
+              <Link href="/auth/forgot-password" className="text-xs text-resort-600 hover:underline">
+                Forgot password?
+              </Link>
+            </div>
           </div>
 
           <button

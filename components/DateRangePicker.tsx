@@ -26,11 +26,6 @@ export default function DateRangePicker({
   // Convert booked date strings to Date objects
   const disabledDates = bookedDates.map(dateStr => parseISO(dateStr))
   
-  // DEBUG: Log to see what dates we're working with
-  console.log('DateRangePicker - bookedDates (strings):', bookedDates)
-  console.log('DateRangePicker - disabledDates (Date objects):', disabledDates)
-  console.log('DateRangePicker - disabledDates count:', disabledDates.length)
-  
   // Disable past dates and booked dates
   const disabledDays = [
     { before: new Date() },

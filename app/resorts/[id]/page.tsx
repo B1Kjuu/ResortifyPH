@@ -77,16 +77,12 @@ export default function ResortDetail({ params }: { params: { id: string } }){
           .eq('resort_id', params.id)
           .in('status', ['pending', 'confirmed'])
 
-        console.log('Resort Detail - All bookings for resort:', bookingsData)
-
         if (bookingsData && mounted) {
           // Only mark CONFIRMED bookings as unavailable (pending bookings don't block dates)
           const allBookedDates: string[] = []
           bookingsData.forEach(booking => {
             // Skip pending bookings - only confirmed ones block the calendar
             if (booking.status !== 'confirmed') return
-            
-            console.log('Resort Detail - Processing confirmed booking:', booking)
             
             const start = new Date(booking.date_from)
             const end = new Date(booking.date_to)
@@ -97,7 +93,6 @@ export default function ResortDetail({ params }: { params: { id: string } }){
               current.setDate(current.getDate() + 1)
             }
           })
-          console.log('Resort Detail - Final bookedDates array:', allBookedDates)
           setBookedDates(allBookedDates)
         }
 
@@ -144,8 +139,6 @@ export default function ResortDetail({ params }: { params: { id: string } }){
         .eq('resort_id', params.id)
         .in('status', ['pending', 'confirmed'])
       
-      console.log('Realtime refresh - bookings data:', bookingsData)
-      
       const allBookedDates: string[] = []
       ;(bookingsData || []).forEach(booking => {
         if (booking.status !== 'confirmed') return
@@ -157,7 +150,6 @@ export default function ResortDetail({ params }: { params: { id: string } }){
           current.setDate(current.getDate() + 1)
         }
       })
-      console.log('Realtime refresh - updated bookedDates:', allBookedDates)
       setBookedDates(allBookedDates)
     }
 

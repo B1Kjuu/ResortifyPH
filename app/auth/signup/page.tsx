@@ -28,6 +28,7 @@ export default function SignUpPage(){
       email: data.email, 
       password: data.password,
       options: {
+        emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/verify-email` : undefined,
         data: {
           full_name: data.fullName,
           role: 'guest',  // All new users start as guest
@@ -42,8 +43,8 @@ export default function SignUpPage(){
       return 
     }
 
-    toast.success('Account created successfully!')
-    router.push('/profile?welcome=true')
+    toast.success('Check your email for verification link!')
+    router.push(`/auth/verify-email?email=${encodeURIComponent(data.email)}`)
   }
 
   async function signUpWithFacebook(){
