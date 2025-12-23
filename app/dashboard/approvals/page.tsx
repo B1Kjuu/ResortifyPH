@@ -4,9 +4,22 @@ import DashboardSidebar from '../../../components/DashboardSidebar'
 import { supabase } from '../../../lib/supabaseClient'
 import ChatLink from '../../../components/ChatLink'
 
+type OwnerBooking = {
+  id: string
+  resort_id: string
+  guest_id: string
+  date_from: string
+  date_to: string
+  guest_count: number
+  status: string
+  created_at: string
+  resort: { id: string; name: string | null }
+  guest: { id: string; full_name: string | null; email: string | null }
+}
+
 export default function ApprovalsPage(){
   const [pendingResorts, setPendingResorts] = useState<any[]>([])
-  const [pendingBookings, setPendingBookings] = useState<any[]>([])
+  const [pendingBookings, setPendingBookings] = useState<OwnerBooking[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -26,7 +39,7 @@ export default function ApprovalsPage(){
       if (rpcError) {
         console.error('Owner bookings RPC error:', rpcError)
       }
-      const allOwnerBookings = (rpcData || []).map((row: any) => ({
+      const allOwnerBookings: OwnerBooking[] = (rpcData || []).map((row: any) => ({
         id: row.booking_id,
         resort_id: row.resort_id,
         guest_id: row.guest_id,
@@ -40,7 +53,7 @@ export default function ApprovalsPage(){
       }))
 
       // Only show pending bookings here
-      const pending = allOwnerBookings.filter(b => b.status === 'pending')
+      const pending = allOwnerBookings.filter((b: OwnerBooking) => b.status === 'pending')
 
       setPendingResorts(resorts || [])
       setPendingBookings(pending)
