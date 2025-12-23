@@ -28,7 +28,8 @@ export default function BookingsManagementPage(){
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [month, setMonth] = useState<Date>(new Date())
   const [selectedResortId, setSelectedResortId] = useState<string | 'all'>('all')
-  const [highlightRange, setHighlightRange] = useState<{ from?: string; to?: string } | null>(null)
+  const [hoverRange, setHoverRange] = useState<{ from?: string; to?: string } | null>(null)
+  const [pinnedRange, setPinnedRange] = useState<{ from?: string; to?: string } | null>(null)
 
   useEffect(() => {
     async function load(){
@@ -184,7 +185,7 @@ export default function BookingsManagementPage(){
               <label className="text-sm text-slate-600">Resort:</label>
               <select value={selectedResortId} onChange={(e) => setSelectedResortId(e.target.value as any)} className="text-sm px-3 py-1.5 border border-slate-300 rounded">
                 <option value="all">All</option>
-                {Array.from(new Map([...pendingBookings, ...confirmedBookings].map(b => [b.resort_id, b.resort?.name || 'Unnamed Resort']))).entries().map(([id, name]) => (
+                {Array.from(new Map([...pendingBookings, ...confirmedBookings].map(b => [b.resort_id, b.resort?.name || 'Unnamed Resort']))).map(([id, name]) => (
                   <option key={id} value={id}>{name}</option>
                 ))}
               </select>
@@ -196,12 +197,12 @@ export default function BookingsManagementPage(){
             selectedDate={selectedDate}
             onSelectDate={(d) => setSelectedDate(d === selectedDate ? null : d)}
             weekStartsOn={1}
-            highlightRange={highlightRange || undefined}
+            highlightRange={(pinnedRange || hoverRange) || undefined}
           />
           {selectedDate && (
             <div className="mt-2 flex items-center justify-between">
               <p className="text-sm text-slate-600">Filtering bookings for <span className="font-semibold text-resort-900">{selectedDate}</span></p>
-              <button onClick={() => setSelectedDate(null)} className="text-sm px-3 py-1.5 rounded bg-slate-200 hover:bg-slate-300">Clear filter</button>
+              <button onClick={() => { setSelectedDate(null); setPinnedRange(null); setHoverRange(null); }} className="text-sm px-3 py-1.5 rounded bg-slate-200 hover:bg-slate-300">Clear filter</button>
             </div>
           )}
         </div>
@@ -217,8 +218,9 @@ export default function BookingsManagementPage(){
                 <div
                   key={booking.id}
                   className="p-4 border rounded-lg"
-                  onMouseEnter={() => setHighlightRange({ from: booking.date_from, to: booking.date_to })}
-                  onMouseLeave={() => setHighlightRange(null)}
+                  onMouseEnter={() => setHoverRange({ from: booking.date_from, to: booking.date_to })}
+                  onMouseLeave={() => setHoverRange(null)}
+                  onClick={() => setPinnedRange({ from: booking.date_from, to: booking.date_to })}
                 >
                   <h4 className="font-semibold">{booking.resort?.name || 'Resort'}</h4>
                   <p className="text-sm text-slate-600">Guest: {booking.guest?.full_name || booking.guest?.email || 'Guest'}</p>
@@ -244,8 +246,9 @@ export default function BookingsManagementPage(){
                 <div
                   key={booking.id}
                   className="p-4 border rounded-lg bg-green-50"
-                  onMouseEnter={() => setHighlightRange({ from: booking.date_from, to: booking.date_to })}
-                  onMouseLeave={() => setHighlightRange(null)}
+                  onMouseEnter={() => setHoverRange({ from: booking.date_from, to: booking.date_to })}
+                  onMouseLeave={() => setHoverRange(null)}
+                  onClick={() => setPinnedRange({ from: booking.date_from, to: booking.date_to })}
                 >
                   <h4 className="font-semibold">{booking.resort?.name || 'Resort'}</h4>
                   <p className="text-sm text-slate-600">Guest: {booking.guest?.full_name || booking.guest?.email || 'Guest'}</p>
