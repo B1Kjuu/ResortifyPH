@@ -31,8 +31,8 @@ export default function BookingsControlPage(){
       guest: { full_name: row.guest_full_name, email: row.guest_email }
     }))
 
-    const pending = bookings?.filter(b => b.status === 'pending') || []
-    const confirmed = bookings?.filter(b => b.status === 'confirmed') || []
+    const pending = bookings.filter(b => b.status === 'pending')
+    const confirmed = bookings.filter(b => b.status === 'confirmed')
 
     setPendingBookings(pending)
     setConfirmedBookings(confirmed)
