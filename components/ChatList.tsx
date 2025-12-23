@@ -3,145 +3,67 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import ChatLink from './ChatLink'
-import type { Chat, ChatMessage, ChatParticipant } from '../types/chat'
 
-type ChatItem = Chat & { 
-  lastMessage?: ChatMessage | null
+type ChatListProps = {
+  roleFilter?: 'guest' | 'owner' | 'admin'
+}
+
+type RpcChatRow = {
+  chat_id: string
+  booking_id: string | null
+  resort_id: string | null
+  my_role: 'guest' | 'owner' | 'admin'
+  other_participant_name: string | null
+  resort_name: string | null
+  last_message: string | null
+  last_message_at: string | null
+  unread_count: number | null
+}
+
+type ChatItem = {
+  id: string
+  booking_id: string | null
+  resort_id: string | null
+  lastMessage?: { content: string | null; created_at: string | null } | null
   unreadCount?: number
   resortName?: string
   participantName?: string
-  participantRole?: string
-  myRole?: string
+  myRole?: 'guest' | 'owner' | 'admin'
 }
 
-export default function ChatList() {
+export default function ChatList({ roleFilter }: ChatListProps) {
   const [items, setItems] = useState<ChatItem[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let mounted = true
     ;(async () => {
-      const { data: userRes } = await supabase.auth.getUser()
-      const uid = userRes.user?.id
-      if (!uid) {
-        setLoading(false)
-        return
-      }
-
-      const { data: parts, error: pErr } = await supabase
-        .from('chat_participants')
-        .select('*')
-        .eq('user_id', uid)
-      if (pErr) {
-        console.error(pErr)
-        setLoading(false)
-        return
-      }
-      const chatIds = (parts || []).map((p: ChatParticipant) => p.chat_id)
-      if (chatIds.length === 0) {
+      const { data: rpcData, error } = await supabase.rpc('get_user_chats')
+      if (error) {
+        console.error('get_user_chats RPC error:', error)
         setItems([])
         setLoading(false)
         return
       }
-      const { data: chats } = await supabase
-        .from('chats')
-        .select('*')
-        .in('id', chatIds)
-        .order('updated_at', { ascending: false })
 
-      // Batch fetch all participants first to avoid N+1 queries
-      const { data: allParticipants } = await supabase
-        .from('chat_participants')
-        .select('chat_id, user_id, role')
-        .in('chat_id', chatIds)
-      
-      // Get unique user IDs (excluding current user)
-      const otherUserIds = Array.from(new Set(
-        (allParticipants || [])
-          .filter(p => p.user_id !== uid)
-          .map(p => p.user_id)
-      ))
-      
-      // Batch fetch all profiles at once
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, email, full_name')
-        .in('id', otherUserIds)
-
-      // Create a map for quick lookup
-      const profileMap = new Map(
-        (profiles || []).map(p => [p.id, p])
-      )
-
-      const withLast = await Promise.all((chats || []).map(async (c: Chat) => {
-        const { data: msg } = await supabase
-          .from('chat_messages')
-          .select('*')
-          .eq('chat_id', c.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle()
-        const { count: unreadCount } = await supabase
-          .from('chat_messages')
-          .select('*', { count: 'exact', head: true })
-          .eq('chat_id', c.id)
-          .is('read_at', null)
-          .neq('sender_id', uid)
-        
-        // Fetch resort name if available
-        let resortName = ''
-        if (c.booking_id) {
-          const { data: booking } = await supabase
-            .from('bookings')
-            .select('resort_id, resorts(name)')
-            .eq('id', c.booking_id)
-            .single()
-          const resortData = booking?.resorts as any
-          if (resortData && typeof resortData === 'object' && 'name' in resortData) {
-            resortName = resortData.name
-          }
-        } else if (c.resort_id) {
-          const { data: resort } = await supabase
-            .from('resorts')
-            .select('name')
-            .eq('id', c.resort_id)
-            .single()
-          if (resort?.name) resortName = resort.name
-        }
-
-        // Get participant info from pre-fetched data
-        let participantName = ''
-        let participantRole = ''
-        const otherParticipant = (allParticipants || []).find(
-          p => p.chat_id === c.id && p.user_id !== uid
-        )
-        const meParticipant = (allParticipants || []).find(
-          p => p.chat_id === c.id && p.user_id === uid
-        )
-        if (otherParticipant) {
-          participantRole = otherParticipant.role
-          const profile = profileMap.get(otherParticipant.user_id)
-          if (profile) {
-            participantName = profile.full_name || profile.email || 'User'
-          }
-        }
-        
-        return { 
-          ...c, 
-          lastMessage: msg || null, 
-          unreadCount: unreadCount || 0,
-          resortName,
-          participantName,
-          participantRole,
-          myRole: meParticipant?.role || ''
-        }
+      let mapped: ChatItem[] = (rpcData as RpcChatRow[] | null || []).map((r) => ({
+        id: r.chat_id,
+        booking_id: r.booking_id,
+        resort_id: r.resort_id,
+        lastMessage: { content: r.last_message, created_at: r.last_message_at },
+        unreadCount: r.unread_count || 0,
+        resortName: r.resort_name || undefined,
+        participantName: r.other_participant_name || undefined,
+        myRole: r.my_role,
       }))
 
-      if (mounted) setItems(withLast)
+      if (roleFilter) mapped = mapped.filter(i => i.myRole === roleFilter)
+
+      if (mounted) setItems(mapped)
       setLoading(false)
     })()
     return () => { mounted = false }
-  }, [])
+  }, [roleFilter])
 
   if (loading) return <div className="p-4 text-sm text-gray-500">Loading chats…</div>
   if (items.length === 0) return <div className="p-4 text-sm text-gray-500">No chats yet.</div>
@@ -154,7 +76,11 @@ export default function ChatList() {
         let title = c.myRole === 'owner' ? (c.participantName || 'Guest') : (c.resortName || 'Chat')
         let subtitle = ''
         if (c.participantName) {
-          subtitle = c.participantRole === 'owner' ? `Host: ${c.participantName}` : `Guest: ${c.participantName}`
+          subtitle = c.myRole === 'owner'
+            ? `Guest: ${c.participantName}`
+            : c.myRole === 'guest'
+              ? `Host: ${c.participantName}`
+              : `${c.participantName}`
         }
 
         return (

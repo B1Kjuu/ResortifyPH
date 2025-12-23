@@ -209,7 +209,10 @@ export default function Navbar(){
             Explore
           </Link>
           {authChecked && user && (
-            <Link href="/chat" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
+            <Link
+              href={userRole === 'owner' ? '/owner/chats' : '/guest/chats'}
+              className="text-sm font-medium text-slate-600 hover:text-resort-600 transition"
+            >
               Chats
             </Link>
           )}
@@ -378,7 +381,13 @@ export default function Navbar(){
           <nav className="space-y-2">
             <Link href="/resorts" onClick={(e) => { setShowMobileMenu(false); handleExploreClick(e) }} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">Explore</Link>
             {authChecked && user && (
-              <Link href="/chat" onClick={() => setShowMobileMenu(false)} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">Chats</Link>
+              <Link
+                href={userRole === 'owner' ? '/owner/chats' : '/guest/chats'}
+                onClick={() => setShowMobileMenu(false)}
+                className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium"
+              >
+                Chats
+              </Link>
             )}
             {authChecked && user && userRole === 'guest' && (
               <Link href="/guest/trips" onClick={() => setShowMobileMenu(false)} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">My Trips</Link>

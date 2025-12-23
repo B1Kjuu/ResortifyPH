@@ -129,6 +129,39 @@ export default function ResortDetail({ params }: { params: { id: string } }){
     return () => { mounted = false }
   }, [params.id])
 
+  // Realtime-sync booked dates for this resort (confirmed bookings only)
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null
+    async function refreshBookedDates() {
+      const { data: bookingsData } = await supabase
+        .from('bookings')
+        .select('date_from, date_to, status')
+        .eq('resort_id', params.id)
+        .in('status', ['pending', 'confirmed'])
+      const allBookedDates: string[] = []
+      ;(bookingsData || []).forEach(booking => {
+        if (booking.status !== 'confirmed') return
+        const start = new Date(booking.date_from)
+        const end = new Date(booking.date_to)
+        const current = new Date(start)
+        while (current <= end) {
+          allBookedDates.push(format(current, 'yyyy-MM-dd'))
+          current.setDate(current.getDate() + 1)
+        }
+      })
+      setBookedDates(allBookedDates)
+    }
+
+    const sub = supabase
+      .channel(`resort_bookings_${params.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings', filter: `resort_id=eq.${params.id}` }, () => {
+        if (timer) clearTimeout(timer)
+        timer = setTimeout(() => { refreshBookedDates() }, 250)
+      })
+      .subscribe()
+    return () => { sub.unsubscribe(); if (timer) clearTimeout(timer) }
+  }, [params.id])
+
   function handleQuickExplore(province: string | null) {
     const selectedProvince = province || ''
     setQuickExploreProvince(selectedProvince)
