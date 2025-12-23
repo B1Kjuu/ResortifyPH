@@ -4,10 +4,12 @@ import Link from 'next/link'
 import { supabase } from '../../../lib/supabaseClient'
 import ChatLink from '../../../components/ChatLink'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 
 export default function GuestBookingsPage(){
   const [bookings, setBookings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [cancellingId, setCancellingId] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -17,7 +19,7 @@ export default function GuestBookingsPage(){
       // Fetch bookings for this guest; include resort name via join, avoid profiles fetch
       const { data } = await supabase
         .from('bookings')
-        .select('id, resort_id, guest_id, date_from, date_to, guest_count, status, created_at, resorts:resorts(id,name)')
+        .select('id, resort_id, guest_id, date_from, date_to, guest_count, status, created_at, cancellation_status, cancellation_requested_at, cancellation_reason, resorts:resorts(id,name)')
         .eq('guest_id', session.user.id)
         .order('created_at', { ascending: false })
       setBookings(data || [])
@@ -37,7 +39,7 @@ export default function GuestBookingsPage(){
           if (!session?.user) return
           const { data } = await supabase
             .from('bookings')
-            .select('id, resort_id, guest_id, date_from, date_to, guest_count, status, created_at, resorts:resorts(id,name)')
+            .select('id, resort_id, guest_id, date_from, date_to, guest_count, status, created_at, cancellation_status, cancellation_requested_at, cancellation_reason, resorts:resorts(id,name)')
             .eq('guest_id', session.user.id)
             .order('created_at', { ascending: false })
           setBookings(data || [])
@@ -79,8 +81,71 @@ export default function GuestBookingsPage(){
                   {booking.status}
                 </span>
               </div>
-              <div className="mt-4 flex justify-end">
-                <ChatLink bookingId={booking.id} as="guest" label="Message Host" title={booking.resorts?.name || undefined} />
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  {/* Pre-booking/general inquiries to the resort */}
+                  <ChatLink resortId={booking.resort_id} as="guest" label="Ask Resort" title={booking.resorts?.name || undefined} />
+                </div>
+                <div className="flex items-center gap-2">
+                  <ChatLink bookingId={booking.id} as="guest" label="Message Host" title={booking.resorts?.name || undefined} />
+                  {booking.status === 'pending' && (
+                    <button
+                      onClick={async () => {
+                        if (!confirm('Cancel this booking request?')) return
+                        setCancellingId(booking.id)
+                        const { error } = await supabase
+                          .from('bookings')
+                          .update({ status: 'rejected' })
+                          .eq('id', booking.id)
+                          .eq('status', 'pending')
+                        setCancellingId(null)
+                        if (error) {
+                          toast.error(`Failed to cancel: ${error.message}`)
+                        } else {
+                          // Optimistic update; realtime will also refresh
+                          setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, status: 'rejected' } : b))
+                          toast.success('Booking request cancelled')
+                        }
+                      }}
+                      disabled={cancellingId === booking.id}
+                      className="inline-flex items-center rounded-md border px-3 py-1 text-sm bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {cancellingId === booking.id ? 'Cancelling…' : 'Cancel Request'}
+                    </button>
+                  )}
+                  {booking.status === 'confirmed' && (
+                    booking.cancellation_status === 'requested' ? (
+                      <span className="inline-flex items-center rounded-md border px-3 py-1 text-sm bg-yellow-50 text-yellow-700">Cancellation requested</span>
+                    ) : (
+                      <button
+                        onClick={async () => {
+                          const reason = window.prompt('Reason for cancellation (optional):') || ''
+                          try {
+                            toast.loading('Requesting cancellation...')
+                            const { error } = await supabase.rpc('request_booking_cancellation', {
+                              p_booking_id: booking.id,
+                              p_reason: reason
+                            })
+                            toast.dismiss()
+                            if (error) {
+                              toast.error(error.message)
+                              return
+                            }
+                            // Optimistic update
+                            setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, cancellation_status: 'requested', cancellation_reason: reason } : b))
+                            toast.success('Cancellation request sent')
+                          } catch (err: any) {
+                            toast.dismiss()
+                            toast.error(err?.message || 'Failed to request cancellation')
+                          }
+                        }}
+                        className="inline-flex items-center rounded-md border px-3 py-1 text-sm bg-slate-50 text-slate-700 hover:bg-slate-100"
+                      >
+                        Request Cancellation
+                      </button>
+                    )
+                  )}
+                </div>
               </div>
             </div>
           ))}

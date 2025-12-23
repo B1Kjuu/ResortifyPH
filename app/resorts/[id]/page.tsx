@@ -214,36 +214,35 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
     const provinceInfo = getProvinceInfo(resort?.location)
 
-    const { data: created, error } = await supabase.from('bookings').insert({
-      resort_id: resort.id,
-      guest_id: user.id,
-      date_from: format(selectedRange.from, 'yyyy-MM-dd'),
-      date_to: format(selectedRange.to, 'yyyy-MM-dd'),
-      guest_count: guests,
-      status: 'pending',
-      resort_province: resort.location ?? null,
-      resort_region_code: resort.region_code ?? provinceInfo?.regionCode ?? null,
-      resort_region_name: resort.region_name ?? provinceInfo?.regionName ?? null,
-    }).select('id').single()
+    const { data: newId, error } = await supabase.rpc('create_booking_safe', {
+      p_resort_id: resort.id,
+      p_guest_id: user.id,
+      p_date_from: format(selectedRange.from, 'yyyy-MM-dd'),
+      p_date_to: format(selectedRange.to, 'yyyy-MM-dd'),
+      p_guest_count: guests,
+      p_resort_province: resort.location ?? null,
+      p_resort_region_code: resort.region_code ?? provinceInfo?.regionCode ?? null,
+      p_resort_region_name: resort.region_name ?? provinceInfo?.regionName ?? null,
+    })
 
     setBooking(false)
     toast.dismiss()
 
     if (error) {
       const msg = (error.message || '').toLowerCase()
-      const friendly = msg.includes('exclusion') || msg.includes('overlap') || msg.includes('bookings_no_overlap')
+      const friendly = msg.includes('overlap') || msg.includes('check_violation')
         ? 'Your selected dates overlap with an existing booking.'
         : error.message
       toast.error(`Error: ${friendly}`)
     } else {
       // Create chat and send automatic welcome message
-      if (created?.id) {
+      if (newId) {
         try {
           // Create chat for this booking
           const { data: chat, error: chatError } = await supabase
             .from('chats')
             .insert({
-              booking_id: created.id,
+              booking_id: newId,
               creator_id: user.id,
             })
             .select('id')
@@ -281,8 +280,8 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       setSelectedRange({ from: undefined, to: undefined })
       setGuests(1)
       // Navigate to booking chat for immediate messaging
-      if (created?.id) {
-        router.push(`/chat/${created.id}?as=guest`)
+      if (newId) {
+        router.push(`/chat/${newId}?as=guest`)
       }
     }
   }

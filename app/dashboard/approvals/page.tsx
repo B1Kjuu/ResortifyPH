@@ -5,6 +5,7 @@ import DashboardSidebar from '../../../components/DashboardSidebar'
 import { supabase } from '../../../lib/supabaseClient'
 import ChatLink from '../../../components/ChatLink'
 import OwnerAvailabilityCalendar from '../../../components/OwnerAvailabilityCalendar'
+import { toast } from 'sonner'
 
 type OwnerBooking = {
   id: string
@@ -14,6 +15,9 @@ type OwnerBooking = {
   date_to: string
   guest_count: number
   status: string
+  cancellation_status?: string | null
+  cancellation_requested_at?: string | null
+  cancellation_reason?: string | null
   created_at: string
   resort: { id: string; name: string | null }
   guest: { id: string; full_name: string | null; email: string | null }
@@ -56,6 +60,9 @@ export default function ApprovalsPage(){
         date_to: row.date_to,
         guest_count: row.guest_count,
         status: row.status,
+        cancellation_status: row.cancellation_status,
+        cancellation_requested_at: row.cancellation_requested_at,
+        cancellation_reason: row.cancellation_reason,
         created_at: row.created_at,
         resort: { id: row.resort_id, name: row.resort_name },
         guest: { id: row.guest_id, full_name: row.guest_full_name, email: row.guest_email }
@@ -111,9 +118,9 @@ export default function ApprovalsPage(){
       .from('resorts')
       .update({ status: 'approved' })
       .eq('id', id)
-    if (error) { alert(error.message); return }
+    if (error) { toast.error(error.message); return }
     setPendingResorts(pendingResorts.filter(r => r.id !== id))
-    alert('Resort approved!')
+    toast.success('Resort approved!')
   }
 
   async function rejectResort(id: string){
@@ -121,9 +128,9 @@ export default function ApprovalsPage(){
       .from('resorts')
       .update({ status: 'rejected' })
       .eq('id', id)
-    if (error) { alert(error.message); return }
+    if (error) { toast.error(error.message); return }
     setPendingResorts(pendingResorts.filter(r => r.id !== id))
-    alert('Resort rejected.')
+    toast.success('Resort rejected.')
   }
 
   async function confirmBooking(id: string){
@@ -139,12 +146,12 @@ export default function ApprovalsPage(){
       const friendly = msg.includes('exclusion') || msg.includes('overlap') || msg.includes('bookings_no_overlap')
         ? 'Cannot confirm: dates overlap with another confirmed booking.'
         : error.message
-      alert(friendly)
+      toast.error(friendly)
       const reverted = new Set(confirmingIds); reverted.delete(id); setConfirmingIds(reverted)
       return
     }
     setPendingBookings(pendingBookings.filter(b => b.id !== id))
-    alert('Booking confirmed!')
+    toast.success('Booking confirmed!')
     const cleared = new Set(confirmingIds); cleared.delete(id); setConfirmingIds(cleared)
   }
 
@@ -153,9 +160,9 @@ export default function ApprovalsPage(){
       .from('bookings')
       .update({ status: 'rejected' })
       .eq('id', id)
-    if (error) { alert(error.message); return }
+    if (error) { toast.error(error.message); return }
     setPendingBookings(pendingBookings.filter(b => b.id !== id))
-    alert('Booking rejected.')
+    toast.success('Booking rejected.')
   }
 
   if (loading) return <div>Loading...</div>
@@ -203,6 +210,8 @@ export default function ApprovalsPage(){
   const visiblePendingBookings = selectedDate
     ? filteredPendingByResort.filter(b => coversDate(b, selectedDate))
     : filteredPendingByResort
+
+  const cancellationRequests = confirmedBookings.filter(b => b.cancellation_status === 'requested')
 
   return (
     <div className="grid md:grid-cols-4 gap-6">
@@ -286,6 +295,51 @@ export default function ApprovalsPage(){
                   <div className="flex gap-2 mt-4 items-center">
                     <button onClick={() => confirmBooking(booking.id)} disabled={confirmingIds.has(booking.id)} className={`px-3 py-1 text-sm rounded ${confirmingIds.has(booking.id) ? 'bg-green-300 text-white cursor-not-allowed' : 'bg-green-500 text-white'}`}>Confirm</button>
                     <button onClick={() => rejectBooking(booking.id)} className="px-3 py-1 text-sm bg-red-500 text-white rounded">Reject</button>
+                    <ChatLink bookingId={booking.id} as="owner" label="Open Chat" title={booking.guest?.full_name || booking.guest?.email || 'Guest'} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Cancellation Requests */}
+        <section className="mt-8">
+          <h3 className="text-xl font-semibold mb-3">Cancellation Requests ({cancellationRequests.length})</h3>
+          {cancellationRequests.length === 0 ? (
+            <p className="text-slate-500">No cancellation requests.</p>
+          ) : (
+            <div className="space-y-3">
+              {cancellationRequests.map(booking => (
+                <div key={booking.id} className="p-4 border rounded-lg">
+                  <h4 className="font-semibold">{booking.resort?.name || 'Unknown Resort'}</h4>
+                  <p className="text-sm text-slate-600">{booking.date_from} to {booking.date_to}</p>
+                  <p className="text-sm text-slate-600">Guest: {booking.guest?.full_name || booking.guest?.email || 'Guest'}</p>
+                  {booking.cancellation_reason && (
+                    <p className="text-sm text-slate-600">Reason: {booking.cancellation_reason}</p>
+                  )}
+                  <div className="flex gap-2 mt-4 items-center">
+                    <button
+                      onClick={async () => {
+                        const { error } = await supabase.rpc('respond_booking_cancellation', { p_booking_id: booking.id, p_approve: true })
+                        if (error) { toast.error(error.message); return }
+                        toast.success('Cancellation approved')
+                        // Refresh lists
+                        const nextConfirmed = confirmedBookings.filter(b => b.id !== booking.id)
+                        setConfirmedBookings(nextConfirmed)
+                      }}
+                      className="px-3 py-1 text-sm rounded bg-green-500 text-white"
+                    >Approve</button>
+                    <button
+                      onClick={async () => {
+                        const { error } = await supabase.rpc('respond_booking_cancellation', { p_booking_id: booking.id, p_approve: false })
+                        if (error) { toast.error(error.message); return }
+                        toast.success('Cancellation rejected')
+                        // Update in place
+                        setConfirmedBookings(prev => prev.map(b => b.id === booking.id ? { ...b, cancellation_status: 'rejected' } : b))
+                      }}
+                      className="px-3 py-1 text-sm rounded bg-red-500 text-white"
+                    >Reject</button>
                     <ChatLink bookingId={booking.id} as="owner" label="Open Chat" title={booking.guest?.full_name || booking.guest?.email || 'Guest'} />
                   </div>
                 </div>
