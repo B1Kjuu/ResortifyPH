@@ -23,6 +23,7 @@ export default function BookingsControlPage(){
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | '' }>({ message: '', type: '' })
+  const [confirmingIds, setConfirmingIds] = useState<Set<string>>(new Set())
   const router = useRouter()
 
   async function loadAllBookings(){
@@ -88,17 +89,33 @@ export default function BookingsControlPage(){
   }, [])
 
   async function confirmBooking(id: string){
+    if (confirmingIds.has(id)) return
+    const next = new Set(confirmingIds); next.add(id); setConfirmingIds(next)
     // Optimistic update
+    const original = pendingBookings.find(b => b.id === id)
     setPendingBookings(prev => prev.filter(b => b.id !== id))
-    const booking = pendingBookings.find(b => b.id === id)
-    if (booking) setConfirmedBookings(prev => [...prev, { ...booking, status: 'confirmed' }])
+    if (original) setConfirmedBookings(prev => [...prev, { ...original, status: 'confirmed' }])
     const { error } = await supabase
       .from('bookings')
       .update({ status: 'confirmed' })
       .eq('id', id)
-    if (error) { setToast({ message: error.message, type: 'error' }); return }
+    if (error) {
+      // Revert optimistic update
+      if (original) {
+        setConfirmedBookings(prev => prev.filter(b => b.id !== id))
+        setPendingBookings(prev => [original!, ...prev])
+      }
+      const msg = (error.message || '').toLowerCase()
+      const friendly = msg.includes('exclusion') || msg.includes('overlap') || msg.includes('bookings_no_overlap')
+        ? 'Cannot confirm: dates overlap with another confirmed booking.'
+        : error.message
+      setToast({ message: friendly, type: 'error' })
+      const reverted = new Set(confirmingIds); reverted.delete(id); setConfirmingIds(reverted)
+      return
+    }
     setTimeout(() => loadAllBookings(), 500)
     setToast({ message: 'Booking confirmed!', type: 'success' })
+    const cleared = new Set(confirmingIds); cleared.delete(id); setConfirmingIds(cleared)
   }
 
   async function rejectBooking(id: string){
@@ -156,7 +173,7 @@ export default function BookingsControlPage(){
                   </div>
                   <p className="text-sm text-slate-600 mb-4">📅 {booking.date_from} → {booking.date_to}</p>
                   <div className="flex gap-2 items-center">
-                    <button onClick={() => confirmBooking(booking.id)} className="flex-1 px-3 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition font-semibold">Confirm</button>
+                    <button onClick={() => confirmBooking(booking.id)} disabled={confirmingIds.has(booking.id)} className={`flex-1 px-3 py-2 text-sm rounded-lg transition font-semibold ${confirmingIds.has(booking.id) ? 'bg-green-300 text-white cursor-not-allowed' : 'bg-green-500 text-white hover:bg-green-600'}`}>Confirm</button>
                     <button onClick={() => rejectBooking(booking.id)} className="flex-1 px-3 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-semibold">Reject</button>
                     <ChatLink bookingId={booking.id} as="admin" label="Open Chat" title={booking.resort?.name || undefined} />
                   </div>

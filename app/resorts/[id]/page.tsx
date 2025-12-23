@@ -181,6 +181,24 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       return
     }
 
+    // Guard against overlapping with already booked dates (confirmed bookings)
+    try {
+      const chosen: string[] = []
+      const start = new Date(selectedRange.from)
+      const end = new Date(selectedRange.to)
+      const cursor = new Date(start)
+      while (cursor <= end) {
+        chosen.push(format(cursor, 'yyyy-MM-dd'))
+        cursor.setDate(cursor.getDate() + 1)
+      }
+      const bookedSet = new Set(bookedDates)
+      const overlaps = chosen.some(d => bookedSet.has(d))
+      if (overlaps) {
+        toast.error('Selected dates overlap with an existing confirmed booking')
+        return
+      }
+    } catch {}
+
     if (guests < 1) {
       toast.error('At least 1 guest required')
       return
@@ -212,7 +230,11 @@ export default function ResortDetail({ params }: { params: { id: string } }){
     toast.dismiss()
 
     if (error) {
-      toast.error(`Error: ${error.message}`)
+      const msg = (error.message || '').toLowerCase()
+      const friendly = msg.includes('exclusion') || msg.includes('overlap') || msg.includes('bookings_no_overlap')
+        ? 'Your selected dates overlap with an existing booking.'
+        : error.message
+      toast.error(`Error: ${friendly}`)
     } else {
       // Create chat and send automatic welcome message
       if (created?.id) {

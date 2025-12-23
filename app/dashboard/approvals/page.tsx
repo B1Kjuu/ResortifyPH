@@ -1,8 +1,10 @@
 'use client'
 import React, { useEffect, useState } from 'react'
+import { format, addMonths } from 'date-fns'
 import DashboardSidebar from '../../../components/DashboardSidebar'
 import { supabase } from '../../../lib/supabaseClient'
 import ChatLink from '../../../components/ChatLink'
+import OwnerAvailabilityCalendar from '../../../components/OwnerAvailabilityCalendar'
 
 type OwnerBooking = {
   id: string
@@ -20,7 +22,13 @@ type OwnerBooking = {
 export default function ApprovalsPage(){
   const [pendingResorts, setPendingResorts] = useState<any[]>([])
   const [pendingBookings, setPendingBookings] = useState<OwnerBooking[]>([])
+  const [confirmedBookings, setConfirmedBookings] = useState<OwnerBooking[]>([])
   const [loading, setLoading] = useState(true)
+  const [confirmingIds, setConfirmingIds] = useState<Set<string>>(new Set())
+  const [month, setMonth] = useState<Date>(new Date())
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [selectedResortId, setSelectedResortId] = useState<string | 'all'>('all')
+  const [highlightRange, setHighlightRange] = useState<{ from?: string; to?: string } | null>(null)
 
   useEffect(() => {
     async function load(){
@@ -54,9 +62,11 @@ export default function ApprovalsPage(){
 
       // Only show pending bookings here
       const pending = allOwnerBookings.filter((b: OwnerBooking) => b.status === 'pending')
+      const confirmed = allOwnerBookings.filter((b: OwnerBooking) => b.status === 'confirmed')
 
       setPendingResorts(resorts || [])
       setPendingBookings(pending)
+      setConfirmedBookings(confirmed)
       setLoading(false)
     }
     load()
@@ -116,13 +126,25 @@ export default function ApprovalsPage(){
   }
 
   async function confirmBooking(id: string){
+    if (confirmingIds.has(id)) return
+    const next = new Set(confirmingIds); next.add(id); setConfirmingIds(next)
+    const original = pendingBookings.find(b => b.id === id)
     const { error } = await supabase
       .from('bookings')
       .update({ status: 'confirmed' })
       .eq('id', id)
-    if (error) { alert(error.message); return }
+    if (error) {
+      const msg = (error.message || '').toLowerCase()
+      const friendly = msg.includes('exclusion') || msg.includes('overlap') || msg.includes('bookings_no_overlap')
+        ? 'Cannot confirm: dates overlap with another confirmed booking.'
+        : error.message
+      alert(friendly)
+      const reverted = new Set(confirmingIds); reverted.delete(id); setConfirmingIds(reverted)
+      return
+    }
     setPendingBookings(pendingBookings.filter(b => b.id !== id))
     alert('Booking confirmed!')
+    const cleared = new Set(confirmingIds); cleared.delete(id); setConfirmingIds(cleared)
   }
 
   async function rejectBooking(id: string){
@@ -137,11 +159,88 @@ export default function ApprovalsPage(){
 
   if (loading) return <div>Loading...</div>
 
+  // Build day stats (pending only) and apply filters
+  const filteredPendingByResort = selectedResortId === 'all'
+    ? pendingBookings
+    : pendingBookings.filter(b => b.resort?.id === selectedResortId)
+  const filteredConfirmedByResort = selectedResortId === 'all'
+    ? confirmedBookings
+    : confirmedBookings.filter(b => b.resort?.id === selectedResortId)
+
+  const dayStats: Record<string, { pending: number; confirmed: number }> = {}
+  function addRange(from: string, to: string){
+    const start = new Date(from)
+    const end = new Date(to)
+    const cursor = new Date(start)
+    while (cursor <= end) {
+      const key = format(cursor, 'yyyy-MM-dd')
+      if (!dayStats[key]) dayStats[key] = { pending: 0, confirmed: 0 }
+      dayStats[key].pending += 1
+      cursor.setDate(cursor.getDate() + 1)
+    }
+  }
+  filteredPendingByResort.forEach(b => addRange(b.date_from, b.date_to))
+  // add confirmed counts
+  filteredConfirmedByResort.forEach(b => {
+    const start = new Date(b.date_from)
+    const end = new Date(b.date_to)
+    const cursor = new Date(start)
+    while (cursor <= end) {
+      const key = format(cursor, 'yyyy-MM-dd')
+      if (!dayStats[key]) dayStats[key] = { pending: 0, confirmed: 0 }
+      dayStats[key].confirmed += 1
+      cursor.setDate(cursor.getDate() + 1)
+    }
+  })
+
+  function coversDate(b: OwnerBooking, dateStr: string){
+    const d = new Date(dateStr)
+    const from = new Date(b.date_from)
+    const to = new Date(b.date_to)
+    return d >= from && d <= to
+  }
+  const visiblePendingBookings = selectedDate
+    ? filteredPendingByResort.filter(b => coversDate(b, selectedDate))
+    : filteredPendingByResort
+
   return (
     <div className="grid md:grid-cols-4 gap-6">
       <DashboardSidebar />
       <div className="md:col-span-3">
         <h2 className="text-2xl font-semibold mb-6">Approvals & Management</h2>
+
+        {/* Availability Calendar + Filters */}
+        <div className="mb-6 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <button onClick={() => setMonth(prev => addMonths(prev, -1))} className="px-3 py-1.5 rounded bg-slate-200 hover:bg-slate-300">◀ Prev</button>
+              <button onClick={() => setMonth(prev => addMonths(prev, 1))} className="px-3 py-1.5 rounded bg-slate-200 hover:bg-slate-300">Next ▶</button>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-slate-600">Resort:</label>
+              <select value={selectedResortId} onChange={(e) => setSelectedResortId(e.target.value as any)} className="text-sm px-3 py-1.5 border border-slate-300 rounded">
+                <option value="all">All</option>
+                {Array.from(new Map(pendingBookings.map(b => [b.resort.id, b.resort.name || 'Unnamed Resort'])).entries()).map(([id, name]) => (
+                  <option key={id} value={id}>{name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <OwnerAvailabilityCalendar
+            month={month}
+            dayStats={dayStats}
+            selectedDate={selectedDate}
+            onSelectDate={(d) => setSelectedDate(d === selectedDate ? null : d)}
+            weekStartsOn={1}
+            highlightRange={highlightRange || undefined}
+          />
+          {selectedDate && (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-slate-600">Filtering pending bookings for <span className="font-semibold text-resort-900">{selectedDate}</span></p>
+              <button onClick={() => setSelectedDate(null)} className="text-sm px-3 py-1.5 rounded bg-slate-200 hover:bg-slate-300">Clear filter</button>
+            </div>
+          )}
+        </div>
 
         {/* Pending Resorts */}
         <section className="mb-8">
@@ -167,18 +266,23 @@ export default function ApprovalsPage(){
 
         {/* Pending Bookings */}
         <section>
-          <h3 className="text-xl font-semibold mb-3">Pending Bookings ({pendingBookings.length})</h3>
-          {pendingBookings.length === 0 ? (
+          <h3 className="text-xl font-semibold mb-3">Pending Bookings ({visiblePendingBookings.length})</h3>
+          {visiblePendingBookings.length === 0 ? (
             <p className="text-slate-500">No pending bookings.</p>
           ) : (
             <div className="space-y-3">
-              {pendingBookings.map(booking => (
-                <div key={booking.id} className="p-4 border rounded-lg">
+              {visiblePendingBookings.map(booking => (
+                <div
+                  key={booking.id}
+                  className="p-4 border rounded-lg"
+                  onMouseEnter={() => setHighlightRange({ from: booking.date_from, to: booking.date_to })}
+                  onMouseLeave={() => setHighlightRange(null)}
+                >
                   <h4 className="font-semibold">{booking.resort?.name || 'Unknown Resort'}</h4>
                   <p className="text-sm text-slate-600">{booking.date_from} to {booking.date_to}</p>
                   <p className="text-sm text-slate-600">Guest: {booking.guest?.full_name || booking.guest?.email || 'Guest'}</p>
                   <div className="flex gap-2 mt-4 items-center">
-                    <button onClick={() => confirmBooking(booking.id)} className="px-3 py-1 text-sm bg-green-500 text-white rounded">Confirm</button>
+                    <button onClick={() => confirmBooking(booking.id)} disabled={confirmingIds.has(booking.id)} className={`px-3 py-1 text-sm rounded ${confirmingIds.has(booking.id) ? 'bg-green-300 text-white cursor-not-allowed' : 'bg-green-500 text-white'}`}>Confirm</button>
                     <button onClick={() => rejectBooking(booking.id)} className="px-3 py-1 text-sm bg-red-500 text-white rounded">Reject</button>
                     <ChatLink bookingId={booking.id} as="owner" label="Open Chat" title={booking.guest?.full_name || booking.guest?.email || 'Guest'} />
                   </div>

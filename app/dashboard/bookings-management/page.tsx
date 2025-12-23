@@ -1,8 +1,10 @@
 'use client'
 import React, { useEffect, useState } from 'react'
+import { format, addMonths } from 'date-fns'
 import DashboardSidebar from '../../../components/DashboardSidebar'
 import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
+import OwnerAvailabilityCalendar from '../../../components/OwnerAvailabilityCalendar'
 
 export default function BookingsManagementPage(){
   type OwnerBooking = {
@@ -22,6 +24,11 @@ export default function BookingsManagementPage(){
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
+  const [confirmingIds, setConfirmingIds] = useState<Set<string>>(new Set())
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [month, setMonth] = useState<Date>(new Date())
+  const [selectedResortId, setSelectedResortId] = useState<string | 'all'>('all')
+  const [highlightRange, setHighlightRange] = useState<{ from?: string; to?: string } | null>(null)
 
   useEffect(() => {
     async function load(){
@@ -74,15 +81,30 @@ export default function BookingsManagementPage(){
   }, [router])
 
   async function confirmBooking(id: string){
+    if (confirmingIds.has(id)) return
+    const next = new Set(confirmingIds); next.add(id); setConfirmingIds(next)
     // Optimistic update
+    const original = pendingBookings.find(b => b.id === id)
     setPendingBookings(prev => prev.filter(b => b.id !== id))
-    const booking = pendingBookings.find(b => b.id === id)
-    if (booking) setConfirmedBookings(prev => [...prev, { ...booking, status: 'confirmed' }])
+    if (original) setConfirmedBookings(prev => [...prev, { ...original, status: 'confirmed' }])
     const { error } = await supabase
       .from('bookings')
       .update({ status: 'confirmed' })
       .eq('id', id)
-    if (error) { alert(error.message); return }
+    if (error) {
+      // Revert
+      if (original) {
+        setConfirmedBookings(prev => prev.filter(b => b.id !== id))
+        setPendingBookings(prev => [original!, ...prev])
+      }
+      const msg = (error.message || '').toLowerCase()
+      const friendly = msg.includes('exclusion') || msg.includes('overlap') || msg.includes('bookings_no_overlap')
+        ? 'Cannot confirm: dates overlap with another confirmed booking.'
+        : error.message
+      alert(friendly)
+      const reverted = new Set(confirmingIds); reverted.delete(id); setConfirmingIds(reverted)
+      return
+    }
     // Fallback refresh in case realtime is delayed
     setTimeout(() => {
       supabase
@@ -92,6 +114,7 @@ export default function BookingsManagementPage(){
         .then(() => {})
     }, 500)
     alert('Booking confirmed!')
+    const cleared = new Set(confirmingIds); cleared.delete(id); setConfirmingIds(cleared)
   }
 
   async function rejectBooking(id: string){
@@ -115,26 +138,93 @@ export default function BookingsManagementPage(){
 
   if (loading) return <div>Loading...</div>
 
+  // Build day stats for calendar from both pending and confirmed bookings (with resort filter)
+  const filteredPending = selectedResortId === 'all' ? pendingBookings : pendingBookings.filter(b => b.resort_id === selectedResortId)
+  const filteredConfirmed = selectedResortId === 'all' ? confirmedBookings : confirmedBookings.filter(b => b.resort_id === selectedResortId)
+  const dayStats: Record<string, { pending: number; confirmed: number }> = {}
+  function addRangeToStats(from: string, to: string, status: string){
+    const start = new Date(from)
+    const end = new Date(to)
+    const cursor = new Date(start)
+    while (cursor <= end) {
+      const key = format(cursor, 'yyyy-MM-dd')
+      if (!dayStats[key]) dayStats[key] = { pending: 0, confirmed: 0 }
+      if (status === 'pending') dayStats[key].pending += 1
+      if (status === 'confirmed') dayStats[key].confirmed += 1
+      cursor.setDate(cursor.getDate() + 1)
+    }
+  }
+  filteredPending.forEach(b => addRangeToStats(b.date_from, b.date_to, 'pending'))
+  filteredConfirmed.forEach(b => addRangeToStats(b.date_from, b.date_to, 'confirmed'))
+
+  function bookingCoversDate(b: OwnerBooking, dateStr: string){
+    const d = new Date(dateStr)
+    const from = new Date(b.date_from)
+    const to = new Date(b.date_to)
+    return d >= from && d <= to
+  }
+  const visiblePending = selectedDate ? filteredPending.filter(b => bookingCoversDate(b, selectedDate)) : filteredPending
+  const visibleConfirmed = selectedDate ? filteredConfirmed.filter(b => bookingCoversDate(b, selectedDate)) : filteredConfirmed
+
   return (
     <div className="grid md:grid-cols-4 gap-6">
       <DashboardSidebar isAdmin={isAdmin} />
       <div className="md:col-span-3">
         <h2 className="text-2xl font-semibold mb-6">Bookings Management</h2>
 
+        {/* Availability Calendar */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <button onClick={() => setMonth(prev => addMonths(prev, -1))} className="px-3 py-1.5 rounded bg-slate-200 hover:bg-slate-300">◀ Prev</button>
+              <button onClick={() => setMonth(prev => addMonths(prev, 1))} className="px-3 py-1.5 rounded bg-slate-200 hover:bg-slate-300">Next ▶</button>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-slate-600">{format(month, 'MMMM yyyy')}</span>
+              <label className="text-sm text-slate-600">Resort:</label>
+              <select value={selectedResortId} onChange={(e) => setSelectedResortId(e.target.value as any)} className="text-sm px-3 py-1.5 border border-slate-300 rounded">
+                <option value="all">All</option>
+                {Array.from(new Map([...pendingBookings, ...confirmedBookings].map(b => [b.resort_id, b.resort?.name || 'Unnamed Resort']))).entries().map(([id, name]) => (
+                  <option key={id} value={id}>{name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <OwnerAvailabilityCalendar
+            month={month}
+            dayStats={dayStats}
+            selectedDate={selectedDate}
+            onSelectDate={(d) => setSelectedDate(d === selectedDate ? null : d)}
+            weekStartsOn={1}
+            highlightRange={highlightRange || undefined}
+          />
+          {selectedDate && (
+            <div className="mt-2 flex items-center justify-between">
+              <p className="text-sm text-slate-600">Filtering bookings for <span className="font-semibold text-resort-900">{selectedDate}</span></p>
+              <button onClick={() => setSelectedDate(null)} className="text-sm px-3 py-1.5 rounded bg-slate-200 hover:bg-slate-300">Clear filter</button>
+            </div>
+          )}
+        </div>
+
         {/* Pending Bookings */}
         <section className="mb-8">
-          <h3 className="text-xl font-semibold mb-3">Pending Bookings ({pendingBookings.length})</h3>
-          {pendingBookings.length === 0 ? (
+          <h3 className="text-xl font-semibold mb-3">Pending Bookings ({visiblePending.length})</h3>
+          {visiblePending.length === 0 ? (
             <p className="text-slate-500">No pending bookings.</p>
           ) : (
             <div className="space-y-3">
-              {pendingBookings.map(booking => (
-                <div key={booking.id} className="p-4 border rounded-lg">
+              {visiblePending.map(booking => (
+                <div
+                  key={booking.id}
+                  className="p-4 border rounded-lg"
+                  onMouseEnter={() => setHighlightRange({ from: booking.date_from, to: booking.date_to })}
+                  onMouseLeave={() => setHighlightRange(null)}
+                >
                   <h4 className="font-semibold">{booking.resort?.name || 'Resort'}</h4>
                   <p className="text-sm text-slate-600">Guest: {booking.guest?.full_name || booking.guest?.email || 'Guest'}</p>
                   <p className="text-sm text-slate-600">{booking.date_from} to {booking.date_to}</p>
                   <div className="flex gap-2 mt-4">
-                    <button onClick={() => confirmBooking(booking.id)} className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600">Confirm</button>
+                    <button onClick={() => confirmBooking(booking.id)} disabled={confirmingIds.has(booking.id)} className={`px-3 py-1 text-sm rounded ${confirmingIds.has(booking.id) ? 'bg-green-300 text-white cursor-not-allowed' : 'bg-green-500 text-white hover:bg-green-600'}`}>Confirm</button>
                     <button onClick={() => rejectBooking(booking.id)} className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">Reject</button>
                   </div>
                 </div>
@@ -145,13 +235,18 @@ export default function BookingsManagementPage(){
 
         {/* Confirmed Bookings */}
         <section>
-          <h3 className="text-xl font-semibold mb-3">Confirmed Bookings ({confirmedBookings.length})</h3>
-          {confirmedBookings.length === 0 ? (
+          <h3 className="text-xl font-semibold mb-3">Confirmed Bookings ({visibleConfirmed.length})</h3>
+          {visibleConfirmed.length === 0 ? (
             <p className="text-slate-500">No confirmed bookings.</p>
           ) : (
             <div className="space-y-3">
-              {confirmedBookings.map(booking => (
-                <div key={booking.id} className="p-4 border rounded-lg bg-green-50">
+              {visibleConfirmed.map(booking => (
+                <div
+                  key={booking.id}
+                  className="p-4 border rounded-lg bg-green-50"
+                  onMouseEnter={() => setHighlightRange({ from: booking.date_from, to: booking.date_to })}
+                  onMouseLeave={() => setHighlightRange(null)}
+                >
                   <h4 className="font-semibold">{booking.resort?.name || 'Resort'}</h4>
                   <p className="text-sm text-slate-600">Guest: {booking.guest?.full_name || booking.guest?.email || 'Guest'}</p>
                   <p className="text-sm text-slate-600">{booking.date_from} to {booking.date_to}</p>
