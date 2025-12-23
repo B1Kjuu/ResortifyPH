@@ -1,0 +1,83 @@
+-- Create secure RPCs to fetch bookings with guest details without RLS recursion
+BEGIN;
+
+-- Owner bookings with guest info
+CREATE OR REPLACE FUNCTION public.get_owner_bookings()
+RETURNS TABLE (
+  booking_id uuid,
+  resort_id uuid,
+  resort_name text,
+  guest_id uuid,
+  guest_full_name text,
+  guest_email text,
+  date_from date,
+  date_to date,
+  guest_count int,
+  status text,
+  created_at timestamptz
+) AS $$
+  SELECT
+    b.id AS booking_id,
+    b.resort_id,
+    r.name AS resort_name,
+    b.guest_id,
+    p.full_name AS guest_full_name,
+    p.email AS guest_email,
+    b.date_from,
+    b.date_to,
+    b.guest_count,
+    b.status,
+    b.created_at
+  FROM public.bookings b
+  JOIN public.resorts r ON r.id = b.resort_id
+  JOIN public.profiles p ON p.id = b.guest_id
+  WHERE r.owner_id = (SELECT auth.uid())
+     OR EXISTS (
+       SELECT 1 FROM public.profiles me
+       WHERE me.id = (SELECT auth.uid()) AND me.is_admin = TRUE
+     )
+  ORDER BY b.created_at DESC;
+$$ LANGUAGE sql SECURITY DEFINER SET search_path = public, pg_temp;
+
+GRANT EXECUTE ON FUNCTION public.get_owner_bookings() TO authenticated;
+
+-- Admin all bookings with guest info
+CREATE OR REPLACE FUNCTION public.get_all_bookings()
+RETURNS TABLE (
+  booking_id uuid,
+  resort_id uuid,
+  resort_name text,
+  guest_id uuid,
+  guest_full_name text,
+  guest_email text,
+  date_from date,
+  date_to date,
+  guest_count int,
+  status text,
+  created_at timestamptz
+) AS $$
+  SELECT
+    b.id AS booking_id,
+    b.resort_id,
+    r.name AS resort_name,
+    b.guest_id,
+    p.full_name AS guest_full_name,
+    p.email AS guest_email,
+    b.date_from,
+    b.date_to,
+    b.guest_count,
+    b.status,
+    b.created_at
+  FROM public.bookings b
+  JOIN public.resorts r ON r.id = b.resort_id
+  JOIN public.profiles p ON p.id = b.guest_id
+  WHERE EXISTS (
+    SELECT 1 FROM public.profiles me
+    WHERE me.id = (SELECT auth.uid()) AND me.is_admin = TRUE
+  )
+  ORDER BY b.created_at DESC;
+$$ LANGUAGE sql SECURITY DEFINER SET search_path = public, pg_temp;
+
+GRANT EXECUTE ON FUNCTION public.get_all_bookings() TO authenticated;
+
+COMMIT;

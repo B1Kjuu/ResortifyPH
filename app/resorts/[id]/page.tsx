@@ -342,12 +342,12 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                   {resort.nearby_landmarks && <p className="text-sm text-slate-600">Nearby: {resort.nearby_landmarks}</p>}
                   {latestBookingId && (
                     <div className="pt-2">
-                      <ChatLink bookingId={latestBookingId} as="guest" label="Message Host" />
+                      <ChatLink bookingId={latestBookingId} as="guest" label="Message Host" title={resort.name} />
                     </div>
                   )}
                   {!latestBookingId && (
                     <div className="pt-2">
-                      <ChatLink resortId={params.id} as="guest" label="Message Host (Pre-booking)" />
+                      <ChatLink resortId={params.id} as="guest" label="Message Host (Pre-booking)" title={resort.name} />
                     </div>
                   )}
                   {!latestBookingId && (

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
+import ChatLink from '../../../components/ChatLink'
 
 export default function BookingsControlPage(){
   const [pendingBookings, setPendingBookings] = useState<any[]>([])
@@ -14,10 +15,21 @@ export default function BookingsControlPage(){
 
   async function loadAllBookings(){
     // Admin can see all bookings
-    const { data: bookings } = await supabase
-      .from('bookings')
-      .select('*, resort:resorts(name, owner_id), guest:profiles(full_name)')
-      .order('created_at', { ascending: false })
+    const { data: rpcData, error: rpcError } = await supabase.rpc('get_all_bookings')
+    if (rpcError) {
+      console.error('Admin bookings RPC error:', rpcError)
+    }
+    const bookings = (rpcData || []).map((row: any) => ({
+      id: row.booking_id,
+      resort_id: row.resort_id,
+      date_from: row.date_from,
+      date_to: row.date_to,
+      guest_count: row.guest_count,
+      status: row.status,
+      created_at: row.created_at,
+      resort: { name: row.resort_name },
+      guest: { full_name: row.guest_full_name, email: row.guest_email }
+    }))
 
     const pending = bookings?.filter(b => b.status === 'pending') || []
     const confirmed = bookings?.filter(b => b.status === 'confirmed') || []
@@ -44,14 +56,16 @@ export default function BookingsControlPage(){
     }
     checkAdminAndLoad()
 
-    // Subscribe to real-time changes
+    // Subscribe to real-time changes with debounce
+    let refreshTimer: NodeJS.Timeout | null = null
     const subscription = supabase
       .channel('all_bookings')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'bookings' },
         () => {
-          loadAllBookings()
+          if (refreshTimer) clearTimeout(refreshTimer)
+          refreshTimer = setTimeout(() => { loadAllBookings() }, 250)
         }
       )
       .subscribe()
@@ -62,24 +76,28 @@ export default function BookingsControlPage(){
   }, [])
 
   async function confirmBooking(id: string){
+    // Optimistic update
+    setPendingBookings(prev => prev.filter(b => b.id !== id))
+    const booking = pendingBookings.find(b => b.id === id)
+    if (booking) setConfirmedBookings(prev => [...prev, { ...booking, status: 'confirmed' }])
     const { error } = await supabase
       .from('bookings')
       .update({ status: 'confirmed' })
       .eq('id', id)
     if (error) { setToast({ message: error.message, type: 'error' }); return }
-    const booking = pendingBookings.find(b => b.id === id)
-    setPendingBookings(pendingBookings.filter(b => b.id !== id))
-    if (booking) setConfirmedBookings([...confirmedBookings, booking])
+    setTimeout(() => loadAllBookings(), 500)
     setToast({ message: 'Booking confirmed!', type: 'success' })
   }
 
   async function rejectBooking(id: string){
+    // Optimistic update
+    setPendingBookings(prev => prev.filter(b => b.id !== id))
     const { error } = await supabase
       .from('bookings')
       .update({ status: 'rejected' })
       .eq('id', id)
     if (error) { setToast({ message: error.message, type: 'error' }); return }
-    setPendingBookings(pendingBookings.filter(b => b.id !== id))
+    setTimeout(() => loadAllBookings(), 500)
     setToast({ message: 'Booking rejected.', type: 'success' })
   }
 
@@ -120,14 +138,15 @@ export default function BookingsControlPage(){
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <h4 className="font-semibold text-resort-900">{booking.resort?.name}</h4>
-                      <p className="text-sm text-slate-600">Guest: {booking.guest?.full_name || 'Unknown'}</p>
+                      <p className="text-sm text-slate-600">Guest: {booking.guest?.full_name || booking.guest?.email || 'Guest'}</p>
                     </div>
                     <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Pending</span>
                   </div>
                   <p className="text-sm text-slate-600 mb-4">📅 {booking.date_from} → {booking.date_to}</p>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 items-center">
                     <button onClick={() => confirmBooking(booking.id)} className="flex-1 px-3 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition font-semibold">Confirm</button>
                     <button onClick={() => rejectBooking(booking.id)} className="flex-1 px-3 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-semibold">Reject</button>
+                    <ChatLink bookingId={booking.id} as="admin" label="Open Chat" title={booking.resort?.name} />
                   </div>
                 </div>
               ))}
@@ -152,11 +171,12 @@ export default function BookingsControlPage(){
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <h4 className="font-semibold text-resort-900">{booking.resort?.name}</h4>
-                      <p className="text-sm text-slate-600">Guest: {booking.guest?.full_name || 'Unknown'}</p>
+                      <p className="text-sm text-slate-600">Guest: {booking.guest?.full_name || booking.guest?.email || 'Guest'}</p>
                     </div>
                     <span className="text-xs bg-green-500 text-white px-2 py-1 rounded">Confirmed</span>
                   </div>
-                  <p className="text-sm text-slate-600">📅 {booking.date_from} → {booking.date_to}</p>
+                  <p className="text-sm text-slate-600 mb-3">📅 {booking.date_from} → {booking.date_to}</p>
+                  <ChatLink bookingId={booking.id} as="admin" label="Open Chat" title={booking.resort?.name} />
                 </div>
               ))}
             </div>

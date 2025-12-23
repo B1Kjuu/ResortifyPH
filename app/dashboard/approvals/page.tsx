@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import DashboardSidebar from '../../../components/DashboardSidebar'
 import { supabase } from '../../../lib/supabaseClient'
+import ChatLink from '../../../components/ChatLink'
 
 export default function ApprovalsPage(){
   const [pendingResorts, setPendingResorts] = useState<any[]>([])
@@ -20,17 +21,65 @@ export default function ApprovalsPage(){
         .eq('owner_id', session.user.id)
         .eq('status', 'pending')
 
-      // Get pending bookings for this owner's resorts
-      const { data: bookings } = await supabase
-        .from('bookings')
-        .select('*, resort:resorts(name, owner_id)')
-        .eq('status', 'pending')
+      // Get bookings via secure RPC to include guest details and avoid RLS recursion
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_owner_bookings')
+      if (rpcError) {
+        console.error('Owner bookings RPC error:', rpcError)
+      }
+      const allOwnerBookings = (rpcData || []).map((row: any) => ({
+        id: row.booking_id,
+        resort_id: row.resort_id,
+        guest_id: row.guest_id,
+        date_from: row.date_from,
+        date_to: row.date_to,
+        guest_count: row.guest_count,
+        status: row.status,
+        created_at: row.created_at,
+        resort: { id: row.resort_id, name: row.resort_name },
+        guest: { id: row.guest_id, full_name: row.guest_full_name, email: row.guest_email }
+      }))
+
+      // Only show pending bookings here
+      const pending = allOwnerBookings.filter(b => b.status === 'pending')
 
       setPendingResorts(resorts || [])
-      setPendingBookings(bookings || [])
+      setPendingBookings(pending)
       setLoading(false)
     }
     load()
+
+    // Subscribe to realtime booking changes with debounce
+    let refreshTimer: NodeJS.Timeout | null = null
+    const subscription = supabase
+      .channel('owner_approvals_bookings')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'bookings' },
+        () => {
+          if (refreshTimer) clearTimeout(refreshTimer)
+          refreshTimer = setTimeout(() => { load() }, 250)
+        }
+      )
+      .subscribe()
+
+    // Subscribe to resort changes to refresh pending resorts
+    const resortSubscription = supabase
+      .channel('owner_approvals_resorts')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'resorts' },
+        () => {
+          if (refreshTimer) clearTimeout(refreshTimer)
+          refreshTimer = setTimeout(() => { load() }, 250)
+        }
+      )
+      .subscribe()
+
+    return () => {
+      subscription.unsubscribe()
+      resortSubscription.unsubscribe()
+      if (refreshTimer) clearTimeout(refreshTimer)
+    }
   }, [])
 
   async function approveResort(id: string){
@@ -114,10 +163,11 @@ export default function ApprovalsPage(){
                 <div key={booking.id} className="p-4 border rounded-lg">
                   <h4 className="font-semibold">{booking.resort?.name || 'Unknown Resort'}</h4>
                   <p className="text-sm text-slate-600">{booking.date_from} to {booking.date_to}</p>
-                  <p className="text-sm">Guest ID: {booking.guest_id}</p>
-                  <div className="flex gap-2 mt-4">
+                  <p className="text-sm text-slate-600">Guest: {booking.guest?.full_name || booking.guest?.email || 'Guest'}</p>
+                  <div className="flex gap-2 mt-4 items-center">
                     <button onClick={() => confirmBooking(booking.id)} className="px-3 py-1 text-sm bg-green-500 text-white rounded">Confirm</button>
                     <button onClick={() => rejectBooking(booking.id)} className="px-3 py-1 text-sm bg-red-500 text-white rounded">Reject</button>
+                    <ChatLink bookingId={booking.id} as="owner" label="Open Chat" title={booking.guest?.full_name || booking.guest?.email || 'Guest'} />
                   </div>
                 </div>
               ))}

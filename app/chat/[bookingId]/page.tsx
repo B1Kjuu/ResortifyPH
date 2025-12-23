@@ -10,7 +10,7 @@ export default function BookingChatPage({ params, searchParams }: Props) {
   // Let ChatWindow fetch dynamic title based on booking/resort
   return (
     <div className="mx-auto max-w-3xl p-4">
-      <ChatWindow bookingId={params.bookingId} participantRole={role} />
+      <ChatWindow bookingId={params.bookingId} participantRole={role} title={searchParams.title} />
     </div>
   )
 }

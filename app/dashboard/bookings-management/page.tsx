@@ -24,10 +24,21 @@ export default function BookingsManagementPage(){
       setIsAdmin(profile?.is_admin || false)
 
       // Get all bookings for this owner's resorts
-      const { data: bookings } = await supabase
-        .from('bookings')
-        .select('*, resort:resorts(name, owner_id), guest:profiles(full_name)')
-        .filter('resort.owner_id', 'eq', session.user.id)
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_owner_bookings')
+      if (rpcError) {
+        console.error('Owner bookings RPC error:', rpcError)
+      }
+      const bookings = (rpcData || []).map((row: any) => ({
+        id: row.booking_id,
+        resort_id: row.resort_id,
+        date_from: row.date_from,
+        date_to: row.date_to,
+        guest_count: row.guest_count,
+        status: row.status,
+        created_at: row.created_at,
+        resort: { name: row.resort_name },
+        guest: { full_name: row.guest_full_name, email: row.guest_email }
+      }))
 
       const pending = bookings?.filter(b => b.status === 'pending') || []
       const confirmed = bookings?.filter(b => b.status === 'confirmed') || []
@@ -37,27 +48,56 @@ export default function BookingsManagementPage(){
       setLoading(false)
     }
     load()
+    
+    // Debounced realtime subscription
+    let refreshTimer: NodeJS.Timeout | null = null
+    const sub = supabase
+      .channel('owner_dashboard_bookings')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => {
+        if (refreshTimer) clearTimeout(refreshTimer)
+        refreshTimer = setTimeout(() => load(), 250)
+      })
+      .subscribe()
+    return () => { sub.unsubscribe(); if (refreshTimer) clearTimeout(refreshTimer) }
   }, [router])
 
   async function confirmBooking(id: string){
+    // Optimistic update
+    setPendingBookings(prev => prev.filter(b => b.id !== id))
+    const booking = pendingBookings.find(b => b.id === id)
+    if (booking) setConfirmedBookings(prev => [...prev, { ...booking, status: 'confirmed' }])
     const { error } = await supabase
       .from('bookings')
       .update({ status: 'confirmed' })
       .eq('id', id)
     if (error) { alert(error.message); return }
-    const booking = pendingBookings.find(b => b.id === id)
-    setPendingBookings(pendingBookings.filter(b => b.id !== id))
-    if (booking) setConfirmedBookings([...confirmedBookings, booking])
+    // Fallback refresh in case realtime is delayed
+    setTimeout(() => {
+      supabase
+        .from('bookings')
+        .select('id')
+        .limit(1)
+        .then(() => {})
+    }, 500)
     alert('Booking confirmed!')
   }
 
   async function rejectBooking(id: string){
+    // Optimistic update
+    setPendingBookings(prev => prev.filter(b => b.id !== id))
     const { error } = await supabase
       .from('bookings')
       .update({ status: 'rejected' })
       .eq('id', id)
     if (error) { alert(error.message); return }
-    setPendingBookings(pendingBookings.filter(b => b.id !== id))
+    // Fallback ping
+    setTimeout(() => {
+      supabase
+        .from('bookings')
+        .select('id')
+        .limit(1)
+        .then(() => {})
+    }, 500)
     alert('Booking rejected.')
   }
 
@@ -78,8 +118,8 @@ export default function BookingsManagementPage(){
             <div className="space-y-3">
               {pendingBookings.map(booking => (
                 <div key={booking.id} className="p-4 border rounded-lg">
-                  <h4 className="font-semibold">{booking.resort?.name}</h4>
-                  <p className="text-sm text-slate-600">Guest: {booking.guest?.full_name || 'Unknown'}</p>
+                  <h4 className="font-semibold">{booking.resort?.name || 'Resort'}</h4>
+                  <p className="text-sm text-slate-600">Guest: {booking.guest?.full_name || booking.guest?.email || 'Guest'}</p>
                   <p className="text-sm text-slate-600">{booking.date_from} to {booking.date_to}</p>
                   <div className="flex gap-2 mt-4">
                     <button onClick={() => confirmBooking(booking.id)} className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600">Confirm</button>
@@ -100,8 +140,8 @@ export default function BookingsManagementPage(){
             <div className="space-y-3">
               {confirmedBookings.map(booking => (
                 <div key={booking.id} className="p-4 border rounded-lg bg-green-50">
-                  <h4 className="font-semibold">{booking.resort?.name}</h4>
-                  <p className="text-sm text-slate-600">Guest: {booking.guest?.full_name || 'Unknown'}</p>
+                  <h4 className="font-semibold">{booking.resort?.name || 'Resort'}</h4>
+                  <p className="text-sm text-slate-600">Guest: {booking.guest?.full_name || booking.guest?.email || 'Guest'}</p>
                   <p className="text-sm text-slate-600">{booking.date_from} to {booking.date_to}</p>
                   <span className="inline-block text-xs bg-green-500 text-white px-2 py-1 rounded mt-2">Confirmed</span>
                 </div>

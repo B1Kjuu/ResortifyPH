@@ -11,6 +11,7 @@ type ChatItem = Chat & {
   resortName?: string
   participantName?: string
   participantRole?: string
+  myRole?: string
 }
 
 export default function ChatList() {
@@ -114,6 +115,9 @@ export default function ChatList() {
         const otherParticipant = (allParticipants || []).find(
           p => p.chat_id === c.id && p.user_id !== uid
         )
+        const meParticipant = (allParticipants || []).find(
+          p => p.chat_id === c.id && p.user_id === uid
+        )
         if (otherParticipant) {
           participantRole = otherParticipant.role
           const profile = profileMap.get(otherParticipant.user_id)
@@ -128,7 +132,8 @@ export default function ChatList() {
           unreadCount: unreadCount || 0,
           resortName,
           participantName,
-          participantRole
+          participantRole,
+          myRole: meParticipant?.role || ''
         }
       }))
 
@@ -145,10 +150,8 @@ export default function ChatList() {
     <ul className="divide-y">
       {items.map((c) => {
         // Build dynamic title
-        let title = 'Chat'
-        if (c.resortName) {
-          title = c.resortName
-        }
+        // Determine title: guest sees resort name; owner sees guest name
+        let title = c.myRole === 'owner' ? (c.participantName || 'Guest') : (c.resortName || 'Chat')
         let subtitle = ''
         if (c.participantName) {
           subtitle = c.participantRole === 'owner' ? `Host: ${c.participantName}` : `Guest: ${c.participantName}`
@@ -175,7 +178,11 @@ export default function ChatList() {
                   {c.unreadCount}
                 </span>
               ) : null}
-              <ChatLink bookingId={c.booking_id ?? undefined} as={'guest'} label="Open" />
+              {c.booking_id ? (
+                <ChatLink bookingId={c.booking_id} as={(c.myRole as any) || 'guest'} label="Open" title={title} />
+              ) : (
+                <ChatLink resortId={c.resort_id} as={(c.myRole as any) || 'guest'} label="Open" title={title} />
+              )}
             </div>
           </li>
         )

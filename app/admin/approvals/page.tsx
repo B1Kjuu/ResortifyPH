@@ -179,7 +179,7 @@ export default function ApprovalsPage(){
                     </button>
                     {/* If resort has a related booking, allow admin to open chat as admin by ID input or linking logic. As minimal step, show link if resort.latest_booking_id exists. */}
                     {resort.latest_booking_id && (
-                      <ChatLink bookingId={resort.latest_booking_id} as="admin" label="Open Chat" />
+                      <ChatLink bookingId={resort.latest_booking_id} as="admin" label="Open Chat" title={resort.name} />
                     )}
                   </div>
                 </div>

@@ -17,61 +17,28 @@ export default function OwnerBookingsPage(){
     if (!userId) return
 
     try {
-      // Get all resorts owned by this user
-      const { data: resorts, error: resortsError } = await supabase
-        .from('resorts')
-        .select('id')
-        .eq('owner_id', userId)
+      // Use secure RPC to fetch bookings with guest details for the owner
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_owner_bookings')
 
-      if (resortsError) {
-        console.error('Resorts error:', resortsError)
-        return
-      }
-
-      if (!resorts || resorts.length === 0) {
+      if (rpcError) {
+        console.error('Owner bookings RPC error:', rpcError)
         setBookings([])
         return
       }
 
-      const resortIds = resorts.map(r => r.id)
-
-      // Get all bookings for these resorts - using filter instead of in
-      const { data: bookingsData, error: bookingsError } = await supabase
-        .from('bookings')
-        .select('id, resort_id, guest_id, date_from, date_to, guest_count, status, created_at')
-        .in('resort_id', resortIds)
-        .order('created_at', { ascending: false })
-
-      if (bookingsError) {
-        console.error('Bookings error details:', bookingsError)
-        setBookings([])
-        return
-      }
-
-      // Fetch resort and guest data separately to avoid join issues
-      let enrichedBookings: any[] = []
-      
-      if (bookingsData && bookingsData.length > 0) {
-        for (const booking of bookingsData) {
-          const { data: resort } = await supabase
-            .from('resorts')
-            .select('name, id')
-            .eq('id', booking.resort_id)
-            .single()
-
-          const { data: guest } = await supabase
-            .from('profiles')
-            .select('id, email, full_name, role, is_admin')
-            .eq('id', booking.guest_id)
-            .single()
-
-          enrichedBookings.push({
-            ...booking,
-            resort,
-            guest
-          })
-        }
-      }
+      // Map RPC rows to UI shape
+      const enrichedBookings = (rpcData || []).map((row: any) => ({
+        id: row.booking_id,
+        resort_id: row.resort_id,
+        guest_id: row.guest_id,
+        date_from: row.date_from,
+        date_to: row.date_to,
+        guest_count: row.guest_count,
+        status: row.status,
+        created_at: row.created_at,
+        resort: { id: row.resort_id, name: row.resort_name },
+        guest: { id: row.guest_id, full_name: row.guest_full_name, email: row.guest_email }
+      }))
 
       setBookings(enrichedBookings)
     } catch (err) {
@@ -93,20 +60,7 @@ export default function OwnerBookingsPage(){
           return
         }
 
-        // Check if user is owner
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('id, email, full_name, role, is_admin')
-          .eq('id', session.user.id)
-          .single()
-
-        if (!mounted) return
-
-        if (profile?.role !== 'owner') {
-          router.push('/owner/empire')
-          return
-        }
-
+        // Proceed without fetching profile to avoid loops if RLS/policies error
         setUserId(session.user.id)
         setLoading(false)
       } catch (err) {
@@ -126,14 +80,18 @@ export default function OwnerBookingsPage(){
 
     loadOwnerBookings()
 
-    // Subscribe to real-time changes
+    // Subscribe to real-time changes with simple debounce to avoid bursts
+    let refreshTimer: NodeJS.Timeout | null = null
     const subscription = supabase
       .channel('owner_bookings')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'bookings' },
         () => {
-          loadOwnerBookings()
+          if (refreshTimer) clearTimeout(refreshTimer)
+          refreshTimer = setTimeout(() => {
+            loadOwnerBookings()
+          }, 250)
         }
       )
       .subscribe()
@@ -145,6 +103,8 @@ export default function OwnerBookingsPage(){
 
   async function confirmBooking(bookingId: string){
     try {
+      // Optimistic update
+      setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'confirmed' } : b))
       const { error } = await supabase
         .from('bookings')
         .update({ status: 'confirmed' })
@@ -152,9 +112,12 @@ export default function OwnerBookingsPage(){
 
       if (error) {
         setToast({ message: `Error: ${error.message}`, type: 'error' })
+        // revert optimistic update on error
+        setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'pending' } : b))
       } else {
         setToast({ message: 'Booking confirmed!', type: 'success' })
-        loadOwnerBookings()
+        // rely on realtime to refresh; as a fallback, refresh after a short delay
+        setTimeout(() => loadOwnerBookings(), 500)
       }
     } catch (err) {
       setToast({ message: 'Error confirming booking', type: 'error' })
@@ -163,6 +126,8 @@ export default function OwnerBookingsPage(){
 
   async function rejectBooking(bookingId: string){
     try {
+      // Optimistic update
+      setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'rejected' } : b))
       const { error } = await supabase
         .from('bookings')
         .update({ status: 'rejected' })
@@ -170,9 +135,12 @@ export default function OwnerBookingsPage(){
 
       if (error) {
         setToast({ message: `Error: ${error.message}`, type: 'error' })
+        // revert optimistic update on error
+        setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'pending' } : b))
       } else {
         setToast({ message: 'Booking rejected', type: 'success' })
-        loadOwnerBookings()
+        // rely on realtime to refresh; as a fallback, refresh after a short delay
+        setTimeout(() => loadOwnerBookings(), 500)
       }
     } catch (err) {
       setToast({ message: 'Error rejecting booking', type: 'error' })
@@ -262,7 +230,7 @@ export default function OwnerBookingsPage(){
                         >
                           ❌ Reject
                         </button>
-                        <ChatLink bookingId={booking.id} as="owner" label="Open Chat" />
+                        <ChatLink bookingId={booking.id} as="owner" label="Open Chat" title={booking.guest?.full_name || booking.guest?.email || 'Guest'} />
                       </div>
                     </div>
                   ))}
@@ -306,7 +274,7 @@ export default function OwnerBookingsPage(){
                           ✓ Confirmed: {new Date(booking.created_at).toLocaleDateString()}
                         </p>
                         <div className="mt-3 flex justify-end">
-                          <ChatLink bookingId={booking.id} as="owner" label="Open Chat" />
+                          <ChatLink bookingId={booking.id} as="owner" label="Open Chat" title={booking.guest?.full_name || booking.guest?.email || 'Guest'} />
                         </div>
                       </div>
                     </div>
