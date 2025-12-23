@@ -179,9 +179,9 @@ export default function ChatList() {
                 </span>
               ) : null}
               {c.booking_id ? (
-                <ChatLink bookingId={c.booking_id} as={(c.myRole as any) || 'guest'} label="Open" title={title} />
+                <ChatLink bookingId={c.booking_id || undefined} as={(c.myRole as any) || 'guest'} label="Open" title={title} />
               ) : (
-                <ChatLink resortId={c.resort_id} as={(c.myRole as any) || 'guest'} label="Open" title={title} />
+                <ChatLink resortId={c.resort_id || undefined} as={(c.myRole as any) || 'guest'} label="Open" title={title} />
               )}
             </div>
           </li>
