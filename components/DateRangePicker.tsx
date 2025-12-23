@@ -101,6 +101,12 @@ export default function DateRangePicker({
         disabled={disabledDays}
         numberOfMonths={monthCount}
         className={`calendar-custom ${monthCount === 2 ? 'two-months' : ''}`}
+        modifiers={{
+          booked: disabledDates,
+        }}
+        modifiersClassNames={{
+          booked: 'day-booked',
+        }}
         styles={{
           root: { width: '100%' },
           months: { display: 'flex', gap: '16px', justifyContent: 'flex-start', flexWrap: 'wrap' },

@@ -172,6 +172,23 @@ a:not([class]) {
   cursor: not-allowed;
 }
 
+/* Visually highlight booked/unavailable dates */
+.calendar-custom .day-booked {
+  background-color: #fee2e2 !important;
+  color: #991b1b !important;
+  position: relative;
+  font-weight: 600;
+}
+
+.calendar-custom .day-booked:hover {
+  background-color: #fecaca !important;
+}
+
+.calendar-custom .rdp-day_disabled.day-booked {
+  background-color: #fca5a5 !important;
+  opacity: 0.9;
+}
+
 /* Compact two-month layout for narrow booking cards */
 .calendar-custom.two-months {
   --rdp-day-size: 36px;
