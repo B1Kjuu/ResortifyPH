@@ -23,23 +23,27 @@ export default function ResortsPage(){
   // Hydration-safe mounting state
   const [mounted, setMounted] = useState(false)
   useEffect(() => { 
-    // Scroll reveal once on mount
+    // Scroll reveal observer
+    let io: IntersectionObserver | null = null
     try {
-      const elements = Array.from(document.querySelectorAll('.reveal'))
-      if (elements.length > 0) {
-        const io = new IntersectionObserver((entries) => {
-          entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add('in-view') })
-        }, { threshold: 0.05 })
-        elements.forEach(el => io.observe(el))
-        return () => io.disconnect()
+      io = new IntersectionObserver((entries) => {
+        entries.forEach((e) => { if (e.isIntersecting) (e.target as HTMLElement).classList.add('in-view') })
+      }, { threshold: 0.05 })
+      const observeAll = () => {
+        document.querySelectorAll('.reveal').forEach((el) => io?.observe(el))
       }
+      // Observe existing and soon-to-render elements
+      observeAll()
+      setTimeout(observeAll, 0)
     } catch {}
     setMounted(true)
     // Nudge test environments by signaling "load" quickly after mount
-    // This helps Playwright's default waitUntil 'load' on SPA navigations.
     setTimeout(() => { try { window.dispatchEvent(new Event('load')) } catch {} }, 0)
+    return () => { try { io?.disconnect() } catch {} }
   }, [])
+
   
+
   // Geolocation for "Near You" feature
   const { position, loading: geoLoading, error: geoError, requestLocation, supported: geoSupported } = useGeolocation()
   const [showNearby, setShowNearby] = useState(false)
@@ -79,6 +83,17 @@ export default function ResortsPage(){
   const [availableResortIds, setAvailableResortIds] = useState<string[] | null>(null)
 
   const amenityOptions = ['Pool', 'WiFi', 'Parking', 'Breakfast', 'Beachfront', 'Air Conditioning', 'Spa', 'Bar', 'Pet Friendly', 'Kitchen']
+
+  // Re-attach reveal observer when results/view change so new cards animate
+  useEffect(() => {
+    try {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((e) => { if (e.isIntersecting) (e.target as HTMLElement).classList.add('in-view') })
+      }, { threshold: 0.05 })
+      document.querySelectorAll('.reveal').forEach((el) => io.observe(el))
+      return () => io.disconnect()
+    } catch {}
+  }, [viewMode, searchTerm, selectedLocation, selectedType, guestCount, selectedAmenities, sortBy])
 
   // Open filters by default on desktop, collapsed on mobile
   useEffect(() => {
@@ -529,7 +544,7 @@ export default function ResortsPage(){
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
               aria-label="Filter by resort type"
-              className="flex-shrink-0 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white cursor-pointer"
+              className="flex-shrink-0 px-3 py-2 h-10 min-w-[120px] border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white cursor-pointer"
             >
               <option value="all">All Types</option>
               <option value="beach">🏖️ Beach</option>
@@ -544,7 +559,7 @@ export default function ResortsPage(){
               value={guestCount}
               onChange={(e) => setGuestCount(e.target.value)}
               aria-label="Filter by guest count"
-              className="flex-shrink-0 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white cursor-pointer"
+              className="flex-shrink-0 px-3 py-2 h-10 min-w-[110px] border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white cursor-pointer"
             >
               <option value="all">Guests</option>
               <option value="2">2+</option>
@@ -559,7 +574,7 @@ export default function ResortsPage(){
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
               aria-label="Sort resorts"
-              className="flex-shrink-0 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white cursor-pointer"
+              className="flex-shrink-0 px-3 py-2 h-10 min-w-[110px] border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white cursor-pointer"
             >
               <option value="newest">Newest</option>
               <option value="price-asc">Price ↑</option>
@@ -598,7 +613,7 @@ export default function ResortsPage(){
             
             <div className="mt-4 p-4 bg-slate-50 rounded-xl space-y-4">
               {/* Date Range */}
-              <div className="grid sm:grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-2 gap-3 md:gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">Check-in</label>
                   <DatePicker
