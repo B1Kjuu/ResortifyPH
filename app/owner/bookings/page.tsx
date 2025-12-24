@@ -257,13 +257,13 @@ export default function OwnerBookingsPage(){
               </div>
 
               <div className="bg-white border-2 border-slate-200 rounded-2xl p-4">
-                <div ref={calendarRef} className="relative">
+                <div ref={calendarRef} className="relative calendar-custom two-months">
                 <DayPicker
                   numberOfMonths={2}
                   mode="single"
                   modifiers={{ booked: bookedDatesForCalendar }}
                   modifiersClassNames={{ booked: 'day-booked' }}
-                  styles={{ months: { display: 'flex', gap: '16px' } }}
+                    
                   onDayClick={(day, modifiers) => {
                     const key = day.toISOString().slice(0,10)
                     const bookingsForDay = dateToBookings.get(key) || []

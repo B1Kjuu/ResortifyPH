@@ -223,6 +223,9 @@ export default function Navbar(){
           )}
           {authChecked && user && userRole === 'owner' && (
             <>
+              <Link href="/owner/empire" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
+                Empire
+              </Link>
               <Link href="/owner/my-resorts" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
                 My Properties
               </Link>
@@ -394,6 +397,7 @@ export default function Navbar(){
             )}
             {authChecked && user && userRole === 'owner' && (
               <>
+                <Link href="/owner/empire" onClick={() => setShowMobileMenu(false)} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">Empire</Link>
                 <Link href="/owner/my-resorts" onClick={() => setShowMobileMenu(false)} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">My Properties</Link>
                 <Link href="/owner/bookings" onClick={() => setShowMobileMenu(false)} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">Bookings</Link>
               </>
