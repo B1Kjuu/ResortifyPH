@@ -46,12 +46,12 @@ export default function ResortCard({ resort, compact = false }: Props){
   return (
     <Link href={`/resorts/${resort.id}`}>
       <article 
-        className="group cursor-pointer h-full"
+        className="group cursor-pointer h-full reveal"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
         {/* Image Container - Airbnb Style */}
-        <div className="relative overflow-hidden aspect-square rounded-xl bg-slate-100">
+        <div className="relative overflow-hidden aspect-square rounded-xl bg-slate-100 fade-in-up">
           <img 
             src={images[currentImageIndex]} 
             alt={resort.name} 

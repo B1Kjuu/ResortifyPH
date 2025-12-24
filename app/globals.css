@@ -309,6 +309,23 @@ a:not([class]) {
   animation: pulse-ring 1.5s ease-out infinite;
 }
 
+/* Hover-only pulse for map pins */
+.marker-pulse-hover {
+  position: relative;
+}
+.marker-pulse-hover::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: rgba(14, 165, 233, 0.22);
+  opacity: 0;
+}
+.marker-pulse-hover:hover::before {
+  opacity: 1;
+  animation: pulse-ring 1.6s ease-out infinite;
+}
+
 /* Leaflet controls styling */
 .leaflet-control-zoom {
   border: 2px solid #e2e8f0 !important;

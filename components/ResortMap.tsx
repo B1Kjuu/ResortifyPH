@@ -97,7 +97,7 @@ function getMarkerIcon(isSelected: boolean = false, isUser: boolean = false, pri
     return L.divIcon({
       className: 'custom-marker',
       html: `
-        <div class="cursor-pointer transform transition-all duration-200 ${isSelected ? 'scale-110' : 'hover:scale-105'}">
+        <div class="cursor-pointer transform transition-all duration-200 ${isSelected ? 'scale-110' : 'hover:scale-105'} marker-pulse-hover">
           <div class="px-2 py-1.5 ${isSelected ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'} 
             rounded-full shadow-lg border ${isSelected ? 'border-slate-900' : 'border-slate-200'} 
             font-semibold text-sm whitespace-nowrap hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-colors">
@@ -119,7 +119,7 @@ function getMarkerIcon(isSelected: boolean = false, isUser: boolean = false, pri
   return L.divIcon({
     className: 'custom-marker',
     html: `
-      <div class="relative group cursor-pointer transform transition-transform ${isSelected ? 'scale-125' : 'hover:scale-110'}">
+      <div class="relative group cursor-pointer transform transition-transform ${isSelected ? 'scale-125' : 'hover:scale-110'} marker-pulse-hover">
         <div class="w-10 h-10 ${isSelected ? 'bg-resort-600' : 'bg-resort-500'} rounded-full border-3 ${isSelected ? 'border-white ring-4 ring-resort-300' : 'border-white'} shadow-lg flex items-center justify-center">
           <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
             <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />

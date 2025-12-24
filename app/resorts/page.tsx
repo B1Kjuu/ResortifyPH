@@ -23,6 +23,17 @@ export default function ResortsPage(){
   // Hydration-safe mounting state
   const [mounted, setMounted] = useState(false)
   useEffect(() => { 
+    // Scroll reveal once on mount
+    try {
+      const elements = Array.from(document.querySelectorAll('.reveal'))
+      if (elements.length > 0) {
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add('in-view') })
+        }, { threshold: 0.05 })
+        elements.forEach(el => io.observe(el))
+        return () => io.disconnect()
+      }
+    } catch {}
     setMounted(true)
     // Nudge test environments by signaling "load" quickly after mount
     // This helps Playwright's default waitUntil 'load' on SPA navigations.
@@ -36,6 +47,7 @@ export default function ResortsPage(){
   const [selectedMapResort, setSelectedMapResort] = useState<string | null>(null)
   const [showTotalPrice, setShowTotalPrice] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [filtersOpen, setFiltersOpen] = useState<boolean>(false)
   
   // Airbnb-style categories
   const categories = [
@@ -67,6 +79,18 @@ export default function ResortsPage(){
   const [availableResortIds, setAvailableResortIds] = useState<string[] | null>(null)
 
   const amenityOptions = ['Pool', 'WiFi', 'Parking', 'Breakfast', 'Beachfront', 'Air Conditioning', 'Spa', 'Bar', 'Pet Friendly', 'Kitchen']
+
+  // Open filters by default on desktop, collapsed on mobile
+  useEffect(() => {
+    const handler = () => {
+      try {
+        setFiltersOpen(window.innerWidth >= 768)
+      } catch {}
+    }
+    handler()
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
 
   // Sync filters to URL
   useEffect(() => {
@@ -413,10 +437,7 @@ export default function ResortsPage(){
               {/* Filters Button */}
               <div className="flex-shrink-0 pl-4 border-l border-slate-200 ml-auto">
                 <button
-                  onClick={() => {
-                    const details = document.querySelector('details')
-                    if (details) details.open = !details.open
-                  }}
+                  onClick={() => setFiltersOpen((v) => !v)}
                   className="flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-xl hover:border-slate-900 transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -444,7 +465,8 @@ export default function ResortsPage(){
           )}
 
           {/* Compact Filters Bar */}
-          <div className="flex flex-wrap items-center gap-3 mb-6">
+          <div className="overflow-x-auto scrollbar-hide">
+            <div className="flex items-center gap-3 mb-6 flex-nowrap md:flex-wrap">
             {/* Near Me Button - Subtle toggle */}
             {mounted && geoSupported && (
               <button
@@ -457,7 +479,7 @@ export default function ResortsPage(){
                   }
                 }}
                 disabled={geoLoading}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
+                className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
                   showNearby && position
                     ? 'bg-emerald-500 text-white border-emerald-500'
                     : geoLoading
@@ -477,7 +499,7 @@ export default function ResortsPage(){
             )}
             
             {/* Search Bar */}
-            <div className="relative flex-1 min-w-[200px] max-w-md">
+            <div className="relative md:flex-1 flex-shrink-0 w-64 min-w-[200px] max-w-md">
               <svg className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -492,7 +514,7 @@ export default function ResortsPage(){
             </div>
 
             {/* Location */}
-            <div className="w-40">
+            <div className="w-40 flex-shrink-0">
               <LocationCombobox
                 value={selectedLocation === 'all' ? '' : selectedLocation}
                 onChange={(province) => setSelectedLocation(province || 'all')}
@@ -507,7 +529,7 @@ export default function ResortsPage(){
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
               aria-label="Filter by resort type"
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white cursor-pointer"
+              className="flex-shrink-0 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white cursor-pointer"
             >
               <option value="all">All Types</option>
               <option value="beach">🏖️ Beach</option>
@@ -522,7 +544,7 @@ export default function ResortsPage(){
               value={guestCount}
               onChange={(e) => setGuestCount(e.target.value)}
               aria-label="Filter by guest count"
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white cursor-pointer"
+              className="flex-shrink-0 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white cursor-pointer"
             >
               <option value="all">Guests</option>
               <option value="2">2+</option>
@@ -537,7 +559,7 @@ export default function ResortsPage(){
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
               aria-label="Sort resorts"
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white cursor-pointer"
+              className="flex-shrink-0 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white cursor-pointer"
             >
               <option value="newest">Newest</option>
               <option value="price-asc">Price ↑</option>
@@ -558,14 +580,15 @@ export default function ResortsPage(){
                 setDateFrom(null)
                 setDateTo(null)
               }}
-              className="px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors"
+              className="flex-shrink-0 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors"
             >
               Clear All
             </button>
+            </div>
           </div>
 
-          {/* Expandable Filters - default open so tests can click amenity chips */}
-          <details className="mb-6 group" open>
+          {/* Expandable Filters - controlled open for mobile/desktop */}
+          <details className="mb-6 group" open={filtersOpen}>
             <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-600 hover:text-slate-900 select-none">
               <svg className="w-4 h-4 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -700,7 +723,7 @@ export default function ResortsPage(){
             /* Grid View */
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
               {filteredResorts.map((resort) => (
-                <div key={resort.id} className="relative">
+                <div key={resort.id} className="relative reveal">
                   {/* Distance Badge when Near Me is active */}
                   {showNearby && position && resort.distance !== null && (
                     <div className="absolute top-3 left-3 z-10 px-2 py-1 bg-white/95 backdrop-blur-sm rounded-full shadow-md flex items-center gap-1">
@@ -734,7 +757,7 @@ export default function ResortsPage(){
                   {filteredResorts.map((resort) => (
                     <div 
                       key={resort.id}
-                      className={`relative transition-all cursor-pointer ${selectedMapResort === resort.id ? 'ring-2 ring-slate-900 rounded-2xl scale-[1.02]' : ''}`}
+                      className={`relative transition-all cursor-pointer reveal ${selectedMapResort === resort.id ? 'ring-2 ring-slate-900 rounded-2xl scale-[1.02]' : ''}`}
                       onClick={() => setSelectedMapResort(resort.id)}
                     >
                       {/* Distance Badge when Near Me is active */}

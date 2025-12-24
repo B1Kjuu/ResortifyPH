@@ -45,6 +45,22 @@ export default function ResortDetail({ params }: { params: { id: string } }){
   const bookingCardRef = useRef<HTMLDivElement | null>(null)
   const router = useRouter()
 
+  // Scroll reveal for in-view sections
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const elements = Array.from(document.querySelectorAll('.reveal'))
+    if (elements.length === 0) return
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) {
+          e.target.classList.add('in-view')
+        }
+      })
+    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 })
+    elements.forEach(el => io.observe(el))
+    return () => io.disconnect()
+  }, [])
+
   useEffect(() => {
     let mounted = true
 
@@ -372,7 +388,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
           {/* Main Content */}
           <div className="space-y-4">
             {/* Gallery */}
-            <div className="bg-white rounded-2xl p-3 shadow-sm border border-slate-100 space-y-3">
+            <div className="bg-white rounded-2xl p-3 shadow-sm border border-slate-100 space-y-3 reveal">
               <div className="relative w-full h-[320px] sm:h-[420px] rounded-xl overflow-hidden bg-gradient-to-br from-resort-200 to-resort-300">
                 {galleryImages.length > 0 ? (
                   <Image
@@ -405,7 +421,8 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                         key={idx}
                         type="button"
                         onClick={() => setActiveImage(idx)}
-                        className={`relative flex-shrink-0 w-24 h-16 rounded-lg overflow-hidden border snap-start ${activeImage === idx ? 'border-resort-500 ring-2 ring-resort-200' : 'border-slate-200'}`}
+                        className={`relative flex-shrink-0 w-24 h-16 rounded-lg overflow-hidden border snap-start fade-in-up ${activeImage === idx ? 'border-resort-500 ring-2 ring-resort-200' : 'border-slate-200'}`}
+                        style={{ animationDelay: `${idx * 60}ms` }}
                         aria-label={`Show photo ${idx + 1}`}
                       >
                         <Image src={img} alt={`Photo ${idx + 1}`} fill className="object-cover" sizes="96px" />
@@ -419,7 +436,8 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                         key={idx}
                         type="button"
                         onClick={() => setActiveImage(idx)}
-                        className={`relative h-18 rounded-lg overflow-hidden border ${activeImage === idx ? 'border-resort-500 ring-2 ring-resort-200' : 'border-slate-200'}`}
+                        className={`relative h-18 rounded-lg overflow-hidden border fade-in-up ${activeImage === idx ? 'border-resort-500 ring-2 ring-resort-200' : 'border-slate-200'}`}
+                        style={{ animationDelay: `${idx * 80}ms` }}
                         aria-label={`Show photo ${idx + 1}`}
                       >
                         <Image src={img} alt={`Photo ${idx + 1}`} fill className="object-cover" sizes="120px" />
@@ -431,7 +449,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
             </div>
 
             {/* Overview */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-5">
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-5 reveal">
               <div className="space-y-2">
                 <h1 className="text-3xl font-bold text-resort-900">{resort.name}</h1>
                 {/* Average Rating Badge */}
@@ -476,7 +494,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                 </div>
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-3 items-start">
+              <div className="grid sm:grid-cols-2 gap-3 items-stretch reveal">
                 <div className="bg-slate-50 rounded-xl p-4 space-y-2">
                   <p className="text-sm font-semibold text-slate-700">Check-in / Check-out</p>
                   <p className="text-sm text-slate-600">Check-in: {formatTime12h(resort.check_in_time || '14:00')}</p>
@@ -488,13 +506,13 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                   {resort.nearby_landmarks && <p className="text-sm text-slate-600">Nearby: {resort.nearby_landmarks}</p>}
                   {latestBookingId && (
                     <div className="pt-2">
-                      <ChatLink bookingId={latestBookingId} as="guest" label="Message Host" title={resort.name} />
+                      <ChatLink bookingId={latestBookingId} as="guest" label="Message Host" title={resort.name} variant="primary" fullWidth />
                     </div>
                   )}
 
                   {!latestBookingId && (
                     <div className="pt-2">
-                      <ChatLink resortId={params.id} as="guest" label="Message Host (Pre-booking)" title={resort.name} />
+                      <ChatLink resortId={params.id} as="guest" label="Message Host (Pre-booking)" title={resort.name} variant="primary" fullWidth />
                     </div>
                   )}
                   {!latestBookingId && (
@@ -537,7 +555,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                   <h3 className="text-lg font-semibold text-resort-900">Amenities</h3>
                   <div className="flex flex-wrap gap-2">
                     {resort.amenities.map((amenity: string, idx: number) => (
-                      <span key={idx} className="px-3 py-1.5 bg-resort-100 text-resort-800 rounded-lg text-xs font-medium">
+                      <span key={idx} className="px-3 py-1.5 bg-resort-100 text-resort-800 rounded-lg text-xs font-medium fade-in-up" style={{ animationDelay: `${idx * 50}ms` }}>
                         ✓ {amenity}
                       </span>
                     ))}
@@ -576,7 +594,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
           {/* Booking Card */}
           <div className="lg:col-span-1">
-            <div ref={bookingCardRef} className="bg-white rounded-2xl p-5 shadow-md border border-slate-100 lg:sticky lg:top-4 space-y-4">
+            <div ref={bookingCardRef} className="bg-white rounded-2xl p-5 shadow-md border border-slate-100 lg:sticky lg:top-4 space-y-4 reveal">
               <div className="flex items-baseline justify-between">
                 <h2 className="text-xl font-bold text-resort-900">Book Your Stay</h2>
                 <span className="text-sm text-slate-500">Flexible dates</span>
@@ -655,7 +673,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
     </div>
     {/* Mobile sticky action bar */}
     {resort?.status === 'approved' && (
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/85 backdrop-blur border-t border-slate-200">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/85 backdrop-blur border-t border-slate-200 fade-in-up">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="text-sm">
