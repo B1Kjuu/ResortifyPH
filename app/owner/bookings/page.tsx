@@ -4,7 +4,6 @@ import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import OwnerBookingsContent from '../../../components/OwnerBookingsContent'
 import { eachDayOfInterval } from 'date-fns'
-import { pipeProcessor } from 'zod/v4/core/json-schema-processors.cjs'
 
 export default function OwnerBookingsPage(){
   type Toast = { message: string; type: 'success' | 'error' | '' }
@@ -19,7 +18,6 @@ export default function OwnerBookingsPage(){
   const [selectedBookings, setSelectedBookings] = useState(new Set<string>())
   const calendarRef = React.useRef<HTMLDivElement | null>(null)
   const router = useRouter()
-pipeProcessor
   async function loadOwnerBookings(){
     if (!userId) return
 
