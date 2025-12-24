@@ -1,16 +1,24 @@
 'use client'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import SkeletonTable from '../../../components/SkeletonTable'
 import ChatLink from '../../../components/ChatLink'
+import { DayPicker } from 'react-day-picker'
+import 'react-day-picker/dist/style.css'
+import { eachDayOfInterval } from 'date-fns'
 
 export default function OwnerBookingsPage(){
   const [bookings, setBookings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [userId, setUserId] = useState('')
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | '' }>({ message: '', type: '' })
+  const [selectedResortId, setSelectedResortId] = useState<string>('all')
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [selectedDayBookings, setSelectedDayBookings] = useState<any[]>([])
+  const [hoverTooltip, setHoverTooltip] = useState<{ x: number, y: number, text: string } | null>(null)
+  const calendarRef = React.useRef<HTMLDivElement | null>(null)
   const router = useRouter()
 
   async function loadOwnerBookings(){
@@ -151,6 +159,52 @@ export default function OwnerBookingsPage(){
   const confirmedBookings = bookings.filter(b => b.status === 'confirmed')
   const rejectedBookings = bookings.filter(b => b.status === 'rejected')
 
+  const resortOptions = useMemo(() => {
+    const map = new Map<string,string>()
+    bookings.forEach(b => {
+      if (b.resort_id) map.set(b.resort_id, b.resort?.name || 'Resort')
+    })
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }))
+  }, [bookings])
+
+  const bookedDatesForCalendar = useMemo(() => {
+    const dates: Date[] = []
+    const seen = new Set<string>()
+    confirmedBookings
+      .filter(b => selectedResortId === 'all' || b.resort_id === selectedResortId)
+      .forEach(b => {
+        const start = new Date(b.date_from)
+        const end = new Date(b.date_to)
+        eachDayOfInterval({ start, end }).forEach(d => {
+          const key = d.toISOString().slice(0,10)
+          if (!seen.has(key)) {
+            seen.add(key)
+            dates.push(new Date(d.getFullYear(), d.getMonth(), d.getDate()))
+          }
+        })
+      })
+    return dates
+  }, [confirmedBookings, selectedResortId])
+
+  // Map each date (YYYY-MM-DD) to the bookings occurring on that day
+  const dateToBookings = useMemo(() => {
+    const map = new Map<string, any[]>()
+    confirmedBookings
+      .filter(b => selectedResortId === 'all' || b.resort_id === selectedResortId)
+      .forEach(b => {
+        const start = new Date(b.date_from)
+        const end = new Date(b.date_to)
+        eachDayOfInterval({ start, end }).forEach(d => {
+          const key = d.toISOString().slice(0,10)
+          const arr = map.get(key) || []
+          arr.push(b)
+          map.set(key, arr)
+        })
+      })
+    return map
+  }, [confirmedBookings, selectedResortId])
+
+
   return (
     <div className="w-full min-h-screen bg-gradient-to-b from-slate-50 to-white px-4 sm:px-6 lg:px-8 py-12">
       <div className="max-w-7xl mx-auto">
@@ -180,6 +234,107 @@ export default function OwnerBookingsPage(){
           </div>
         ) : (
           <>
+            {/* Calendar Overview */}
+            <section className="mb-12">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">🗓️</span>
+                  <h2 className="text-3xl font-bold text-slate-900">Bookings Calendar</h2>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-slate-600">Resort:</label>
+                  <select
+                    value={selectedResortId}
+                    onChange={(e) => setSelectedResortId(e.target.value)}
+                    className="px-3 py-2 border-2 border-slate-200 rounded-xl bg-white text-slate-900"
+                  >
+                    <option value="all">All resorts</option>
+                    {resortOptions.map(r => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="bg-white border-2 border-slate-200 rounded-2xl p-4">
+                <div ref={calendarRef} className="relative">
+                <DayPicker
+                  numberOfMonths={2}
+                  mode="single"
+                  disabled={bookedDatesForCalendar}
+                  modifiers={{ booked: bookedDatesForCalendar }}
+                  modifiersClassNames={{ booked: 'day-booked' }}
+                  styles={{ months: { display: 'flex', gap: '16px' } }}
+                  onDayClick={(day, modifiers) => {
+                    const key = day.toISOString().slice(0,10)
+                    const bookingsForDay = dateToBookings.get(key) || []
+                    if (!modifiers.booked || bookingsForDay.length === 0) return
+                    setSelectedDate(day)
+                    setSelectedDayBookings(bookingsForDay)
+                  }}
+                    onDayMouseEnter={(day, modifiers, e: any) => {
+                      const key = day.toISOString().slice(0,10)
+                      const bookingsForDay = dateToBookings.get(key) || []
+                      if (!modifiers.booked || bookingsForDay.length === 0) {
+                        setHoverTooltip(null)
+                        return
+                      }
+                      const summary = bookingsForDay.slice(0,3).map((b: any) => `${b.resort?.name || 'Resort'} — ${b.guest?.full_name || 'Guest'} (${b.date_from} → ${b.date_to})`).join('\n')
+                      const rect = calendarRef.current?.getBoundingClientRect()
+                      const x = rect ? e.clientX - rect.left + 12 : 0
+                      const y = rect ? e.clientY - rect.top + 12 : 0
+                      setHoverTooltip({ x, y, text: summary })
+                    }}
+                    onDayMouseLeave={() => setHoverTooltip(null)}
+                />
+                  {hoverTooltip && (
+                    <div
+                      className="absolute z-50 pointer-events-none bg-slate-900 text-white text-xs rounded-md px-2 py-1 shadow"
+                      style={{ left: hoverTooltip.x, top: hoverTooltip.y, whiteSpace: 'pre-line' }}
+                    >
+                      {hoverTooltip.text}
+                    </div>
+                  )}
+                </div>
+                <p className="text-sm text-slate-600 mt-2">Red-marked dates are already booked.</p>
+                {selectedDate && selectedDayBookings.length > 0 && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/40" onClick={() => { setSelectedDate(null); setSelectedDayBookings([]) }} />
+                    <div className="relative bg-white rounded-2xl border-2 border-slate-200 shadow-xl w-[95%] max-w-2xl p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <h3 className="text-2xl font-bold text-slate-900">Bookings on {selectedDate.toLocaleDateString()}</h3>
+                          <p className="text-slate-600">Click a booking to open chat</p>
+                        </div>
+                        <button
+                          className="px-3 py-2 rounded-lg border-2 border-slate-200 hover:bg-slate-50"
+                          onClick={() => { setSelectedDate(null); setSelectedDayBookings([]) }}
+                        >✖ Close</button>
+                      </div>
+                      <div className="space-y-4">
+                        {selectedDayBookings.map((b: any) => (
+                          <div key={b.id} className="border-2 border-slate-200 rounded-xl p-4">
+                            <div className="flex items-start justify-between gap-4">
+                              <div>
+                                <p className="text-sm text-slate-600">Resort</p>
+                                <p className="text-lg font-bold text-slate-900">{b.resort?.name}</p>
+                                <p className="text-sm text-slate-600 mt-1">👤 {b.guest?.full_name} — 📧 {b.guest?.email}</p>
+                                <p className="text-sm text-slate-700 mt-1">📅 {b.date_from} → {b.date_to}</p>
+                                <p className="text-sm text-slate-700 mt-1">👥 {b.guest_count} {b.guest_count === 1 ? 'guest' : 'guests'}</p>
+                              </div>
+                              <div className="flex flex-col items-end gap-2">
+                                <span className="text-xs px-2 py-1 rounded-lg border-2 ${b.status === 'confirmed' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-yellow-100 text-yellow-800 border-yellow-300'}">{b.status}</span>
+                                <ChatLink bookingId={b.id} as="owner" label="Open Chat" title={b.guest?.full_name || b.guest?.email || 'Guest'} />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
             {/* Pending Bookings */}
             <section className="mb-12">
               <div className="flex items-center gap-3 mb-6">

@@ -22,6 +22,9 @@ export default function ProfilePage(){
   const [newPassword, setNewPassword] = useState('')
   const [confirmNewPassword, setConfirmNewPassword] = useState('')
   const [changingPassword, setChangingPassword] = useState(false)
+  const [authUser, setAuthUser] = useState<any>(null)
+  const [sessionInfo, setSessionInfo] = useState<any>(null)
+  const [linking, setLinking] = useState<'google' | 'facebook' | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -34,6 +37,10 @@ export default function ProfilePage(){
           router.push('/auth/signin')
           return 
         }
+        setSessionInfo(session)
+
+        const { data: userData } = await supabase.auth.getUser()
+        setAuthUser(userData?.user || null)
 
         const { data: userProfile, error } = await supabase
           .from('profiles')
@@ -391,14 +398,87 @@ export default function ProfilePage(){
                   <span>🕒</span>
                   <span>Login Activity</span>
                 </label>
-                <div className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-600">Recent sessions tracking will appear here.</div>
+                <div className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-900">
+                  <div className="grid md:grid-cols-3 gap-3 text-sm">
+                    <div>
+                      <div className="font-semibold text-slate-700">Last sign-in</div>
+                      <div className="text-slate-600">{authUser?.last_sign_in_at ? new Date(authUser.last_sign_in_at).toLocaleString() : '—'}</div>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-slate-700">Session expires</div>
+                      <div className="text-slate-600">{sessionInfo?.expires_at ? new Date(sessionInfo.expires_at * 1000).toLocaleString() : '—'}</div>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-slate-700">Primary sign-in</div>
+                      <div className="text-slate-600">{authUser?.app_metadata?.provider ? (authUser.app_metadata.provider[0].toUpperCase() + authUser.app_metadata.provider.slice(1)) : 'Email'}</div>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
                   <span>🔗</span>
                   <span>Linked Accounts</span>
                 </label>
-                <div className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-600">Connect Google, Facebook, or Apple in a future update.</div>
+                <div className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white">
+                  <ul className="space-y-3">
+                    {['google','facebook'].map((p) => {
+                      const connected = authUser?.identities?.some((i: any) => i.provider === p)
+                      return (
+                        <li key={p} className="flex items-center justify-between">
+                          <div>
+                            <div className="font-semibold text-slate-800">{p === 'google' ? 'Google' : 'Facebook'}</div>
+                            <div className={`inline-block mt-1 px-2 py-1 rounded text-xs font-semibold ${connected ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-700'}`}>{connected ? 'Connected' : 'Not connected'}</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {!connected ? (
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    setLinking(p as 'google' | 'facebook')
+                                    const { error } = await supabase.auth.linkIdentity({ provider: p as any, options: { redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/profile` : undefined } })
+                                    if (error) throw error
+                                    const { data: userData } = await supabase.auth.getUser()
+                                    setAuthUser(userData?.user || null)
+                                    toast.success(`${p === 'google' ? 'Google' : 'Facebook'} linked`)
+                                  } catch (err: any) {
+                                    toast.error(err?.message || 'Failed to link account')
+                                  } finally {
+                                    setLinking(null)
+                                  }
+                                }}
+                                disabled={linking === (p as any)}
+                                className="px-4 py-2 rounded-xl bg-resort-600 text-white font-semibold hover:bg-resort-700 disabled:opacity-50"
+                              >
+                                {linking === p ? 'Linking…' : 'Connect'}
+                              </button>
+                            ) : (
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    const identity = authUser?.identities?.find((i: any) => i.provider === p)
+                                    if (!identity) return
+                                    const { error } = await supabase.auth.unlinkIdentity(identity)
+                                    if (error) throw error
+                                    const { data: userData } = await supabase.auth.getUser()
+                                    setAuthUser(userData?.user || null)
+                                    toast.success(`${p === 'google' ? 'Google' : 'Facebook'} disconnected`)
+                                  } catch (err: any) {
+                                    toast.error(err?.message || 'Failed to disconnect')
+                                  }
+                                }}
+                                className="px-4 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300"
+                              >
+                                Disconnect
+                              </button>
+                            )}
+                          </div>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                  <div className="mt-3 text-xs text-slate-500">Apple linking coming soon.</div>
+                </div>
               </div>
             </div>
             )}

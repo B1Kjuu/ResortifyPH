@@ -160,30 +160,7 @@ export default function Empire(){
           </Link>
         </div>
 
-        {/* Profile Info */}
-        <div className="bg-gradient-to-br from-resort-50 to-blue-50 border-2 border-resort-200 rounded-2xl p-8 shadow-sm">
-          <div className="flex items-center gap-3 mb-6">
-            <span className="text-3xl">👤</span>
-            <h3 className="text-2xl font-bold text-resort-900">Your Profile</h3>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6 text-slate-700">
-            <div>
-              <p className="text-sm font-semibold text-slate-600 mb-1">📧 Email Address</p>
-              <p className="text-lg font-bold text-slate-900">{profile?.email}</p>
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-600 mb-1">📝 Full Name</p>
-              <p className="text-lg font-bold text-slate-900">{profile?.full_name || 'Not set'}</p>
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-600 mb-1">🏨 Account Type</p>
-              <p className="text-lg font-bold text-resort-600">Resort Owner</p>
-            </div>
-          </div>
-          <Link href="/profile" className="mt-6 inline-block px-6 py-3 bg-gradient-to-r from-resort-500 to-blue-500 text-white rounded-xl font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all">
-            ✏️ Edit Profile
-          </Link>
-        </div>
+        {/* Owner profile quick card removed per request */}
       </div>
     </div>
   )
