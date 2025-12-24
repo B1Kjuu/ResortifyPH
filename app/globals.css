@@ -173,7 +173,9 @@ a:not([class]) {
 }
 
 /* Visually highlight booked/unavailable dates */
-.calendar-custom .rdp-day { position: relative; }
+.calendar-custom .rdp-day {
+  position: relative;
+}
 .calendar-custom .day-booked {
   background-color: #fee2e2 !important; /* subtle red wash */
   color: #991b1b !important;
