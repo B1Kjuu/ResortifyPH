@@ -23,13 +23,16 @@ export default function ForgotPasswordPage() {
     })
     setLoading(false)
 
+    // Supabase returns success even if the email does not exist to prevent account enumeration.
+    // We show a neutral message either way.
     if (error) {
+      // Only show specific error for obviously invalid emails
       toast.error(error.message)
       return
     }
 
     setEmailSent(true)
-    toast.success('Password reset link sent to your email!')
+    toast.success('If an account exists for this email, a reset link has been sent.')
   }
 
   return (
@@ -63,7 +66,7 @@ export default function ForgotPasswordPage() {
               <p className="text-sm font-semibold text-resort-500">Reset Password</p>
               <h1 className="text-2xl font-bold text-resort-900 mt-1">Forgot your password?</h1>
               <p className="text-slate-600 text-sm mt-2">
-                Enter your email and we'll send you a link to reset your password.
+                Enter your email and we'll send a reset link. If an account exists, you'll receive it shortly.
               </p>
             </>
           )}

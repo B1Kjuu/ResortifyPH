@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { Toaster } from 'sonner'
 import RouteLoadNudger from '../components/RouteLoadNudger'
+import AuthHashHandler from '../components/AuthHashHandler'
 
 export const metadata = {
   title: {
@@ -96,6 +97,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Footer />
         {/* Nudge SPA route changes to emit a synthetic load for E2E stability */}
         <RouteLoadNudger />
+        {/* Handle Supabase auth link hashes (expired, recovery, signup) */}
+        <AuthHashHandler />
         <Toaster position="top-right" richColors />
         {/* Provide nonce to Next internal scripts; suppress hydration warnings */}
         {nonce && (

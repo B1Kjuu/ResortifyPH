@@ -18,6 +18,10 @@ export default function ProfilePage(){
   const [message, setMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null)
   const [activeTab, setActiveTab] = useState<'personal' | 'account' | 'travel'>('personal')
   const [bookings, setBookings] = useState<any[]>([])
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmNewPassword, setConfirmNewPassword] = useState('')
+  const [changingPassword, setChangingPassword] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -303,9 +307,83 @@ export default function ProfilePage(){
                   <span>🔒</span>
                   <span>Password</span>
                 </label>
-                <div className="flex items-center gap-3">
-                  <span className="text-slate-600 text-sm">Manage your password and security settings.</span>
-                  <Link href="/auth/signin" className="px-4 py-2 rounded-xl bg-resort-600 text-white font-semibold hover:bg-resort-700">Change password</Link>
+                <div className="space-y-3">
+                  <span className="block text-slate-600 text-sm">Manage your password and security settings.</span>
+                  <div className="grid md:grid-cols-3 gap-3">
+                    <input
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="Current password"
+                      className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-900"
+                    />
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="New password (min 8 chars)"
+                      className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-900"
+                    />
+                    <input
+                      type="password"
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      placeholder="Confirm new password"
+                      className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-900"
+                    />
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={async () => {
+                        if (!currentPassword || !newPassword || !confirmNewPassword) {
+                          toast.error('Please fill out all password fields')
+                          return
+                        }
+                        if (newPassword.length < 8) {
+                          toast.error('New password must be at least 8 characters')
+                          return
+                        }
+                        if (newPassword !== confirmNewPassword) {
+                          toast.error('New passwords do not match')
+                          return
+                        }
+                        try {
+                          setChangingPassword(true)
+                          // Re-authenticate using current password to confirm identity
+                          const email = profile.email as string
+                          const { error: reauthError } = await supabase.auth.signInWithPassword({ email, password: currentPassword })
+                          if (reauthError) {
+                            toast.error('Current password is incorrect')
+                            setChangingPassword(false)
+                            return
+                          }
+                          const { error: updateError } = await supabase.auth.updateUser({ password: newPassword })
+                          setChangingPassword(false)
+                          if (updateError) {
+                            toast.error(updateError.message)
+                          } else {
+                            setCurrentPassword('')
+                            setNewPassword('')
+                            setConfirmNewPassword('')
+                            toast.success('Password updated successfully')
+                          }
+                        } catch (err: any) {
+                          setChangingPassword(false)
+                          toast.error(err?.message || 'Failed to change password')
+                        }
+                      }}
+                      disabled={changingPassword}
+                      className="px-5 py-2 rounded-xl bg-resort-600 text-white font-semibold hover:bg-resort-700 disabled:opacity-50"
+                    >
+                      {changingPassword ? 'Updating...' : 'Change password'}
+                    </button>
+                    <button
+                      onClick={() => { setCurrentPassword(''); setNewPassword(''); setConfirmNewPassword('') }}
+                      className="px-5 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300"
+                    >
+                      Clear
+                    </button>
+                  </div>
                 </div>
               </div>
               <div>
