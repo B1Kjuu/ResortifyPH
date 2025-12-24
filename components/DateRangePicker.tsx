@@ -25,6 +25,12 @@ export default function DateRangePicker({
   
   // Convert booked date strings to Date objects
   const disabledDates = bookedDates.map(dateStr => parseISO(dateStr))
+  // Only mark FUTURE booked dates in red; past dates stay simply disabled
+  const today = new Date(); today.setHours(0,0,0,0)
+  const futureBookedDates = disabledDates.filter(d => {
+    const dd = new Date(d); dd.setHours(0,0,0,0)
+    return dd >= today
+  })
   
   // Disable past dates and booked dates
   const disabledDays = [
@@ -102,7 +108,7 @@ export default function DateRangePicker({
         numberOfMonths={monthCount}
         className={`calendar-custom ${monthCount === 2 ? 'two-months' : ''}`}
         modifiers={{
-          booked: disabledDates,
+          booked: futureBookedDates,
         }}
         modifiersClassNames={{
           booked: 'day-booked',

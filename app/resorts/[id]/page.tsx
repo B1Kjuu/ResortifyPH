@@ -14,6 +14,20 @@ import { format } from 'date-fns'
 import ChatLink from '../../../components/ChatLink'
 
 export default function ResortDetail({ params }: { params: { id: string } }){
+  function formatTime12h(t?: string | null) {
+    try {
+      if (!t) return '—'
+      const parts = String(t).split(':')
+      const h = parseInt(parts[0] || '0', 10)
+      const m = parseInt(parts[1] || '0', 10)
+      const ampm = h >= 12 ? 'PM' : 'AM'
+      const hr12 = ((h + 11) % 12) + 1
+      const mm = Number.isFinite(m) ? String(m).padStart(2, '0') : '00'
+      return `${hr12}:${mm} ${ampm}`
+    } catch {
+      return String(t || '—')
+    }
+  }
   const [resort, setResort] = useState<any>(null)
   const [owner, setOwner] = useState<any>(null)
   const [user, setUser] = useState<any>(null)
@@ -462,11 +476,11 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                 </div>
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-3">
+              <div className="grid sm:grid-cols-2 gap-3 items-start">
                 <div className="bg-slate-50 rounded-xl p-4 space-y-2">
                   <p className="text-sm font-semibold text-slate-700">Check-in / Check-out</p>
-                  <p className="text-sm text-slate-600">Check-in: {resort.check_in_time || '2:00 PM'}</p>
-                  <p className="text-sm text-slate-600">Check-out: {resort.check_out_time || '12:00 PM'}</p>
+                  <p className="text-sm text-slate-600">Check-in: {formatTime12h(resort.check_in_time || '14:00')}</p>
+                  <p className="text-sm text-slate-600">Check-out: {formatTime12h(resort.check_out_time || '12:00')}</p>
                 </div>
                 <div className="bg-slate-50 rounded-xl p-4 space-y-2">
                   <p className="text-sm font-semibold text-slate-700">Contact</p>
