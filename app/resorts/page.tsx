@@ -52,6 +52,7 @@ export default function ResortsPage(){
   ]
   
   const [resorts, setResorts] = useState<any[]>([])
+  const [ratingsMap, setRatingsMap] = useState<Record<string, { avg: number, count: number }>>({})
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '')
   const [selectedLocation, setSelectedLocation] = useState(searchParams.get('location') || 'all')
@@ -109,7 +110,20 @@ export default function ResortsPage(){
         }
 
         if (mounted) {
-          setResorts(data || [])
+          setResorts(data || []);
+          // Fetch aggregated ratings for all resorts (simple client-side aggregation)
+          const { data: reviewsData } = await supabase
+            .from('reviews')
+            .select('resort_id, rating');
+          const ratings = (reviewsData || []).reduce((acc: any, row: any) => {
+            const key = row.resort_id
+            const cur = acc[key] || { avg: 0, count: 0 }
+            cur.avg = ((cur.avg * cur.count) + (row.rating || 0)) / (cur.count + 1)
+            cur.count = cur.count + 1
+            acc[key] = cur
+            return acc
+          }, {} as any)
+          setRatingsMap(ratings as Record<string, { avg: number, count: number }>)
           if (data && data.length > 0) {
             const prices = data.map(r => r.price || 0).filter((p) => Number.isFinite(p))
             const minPrice = Math.min(...prices)
@@ -192,7 +206,7 @@ export default function ResortsPage(){
 
   // Calculate distance for all resorts when position is available
   const resortsWithDistance = useMemo(() => {
-    if (!position) return resorts.map(r => ({ ...r, distance: null }))
+    if (!position) return resorts.map(r => ({ ...r, distance: null, rating: ratingsMap[r.id]?.avg || null, reviews_count: ratingsMap[r.id]?.count || 0 }))
     
     return resorts.map(resort => {
       let lat: number | null = null
@@ -209,12 +223,12 @@ export default function ResortsPage(){
         }
       }
       
-      if (lat === null || lng === null) return { ...resort, distance: null }
+      if (lat === null || lng === null) return { ...resort, distance: null, rating: ratingsMap[resort.id]?.avg || null, reviews_count: ratingsMap[resort.id]?.count || 0 }
       
       const distance = calculateDistance(position.latitude, position.longitude, lat, lng)
-      return { ...resort, distance }
+      return { ...resort, distance, rating: ratingsMap[resort.id]?.avg || null, reviews_count: ratingsMap[resort.id]?.count || 0 }
     })
-  }, [resorts, position])
+  }, [resorts, position, ratingsMap])
 
   const filteredResorts = useMemo(() => {
     const minPrice = priceRange[0]

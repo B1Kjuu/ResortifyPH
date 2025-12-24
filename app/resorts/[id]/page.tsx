@@ -1,9 +1,11 @@
 'use client'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { supabase } from '../../../lib/supabaseClient'
 import { getProvinceInfo } from '../../../lib/locations'
+import ReviewsList from '../../../components/ReviewsList'
+import ReviewForm from '../../../components/ReviewForm'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import DateRangePicker from '../../../components/DateRangePicker'
@@ -24,6 +26,9 @@ export default function ResortDetail({ params }: { params: { id: string } }){
   const [message, setMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null)
   const [quickExploreProvince, setQuickExploreProvince] = useState('')
   const [latestBookingId, setLatestBookingId] = useState<string | null>(null)
+  const [reviews, setReviews] = useState<any[]>([])
+  const [eligibleReviewBookingId, setEligibleReviewBookingId] = useState<string | null>(null)
+  const bookingCardRef = useRef<HTMLDivElement | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -111,6 +116,40 @@ export default function ResortDetail({ params }: { params: { id: string } }){
             .limit(1)
             .maybeSingle()
           setLatestBookingId(latestBooking?.id || null)
+
+          // Fetch reviews for this resort
+          const { data: reviewsData } = await supabase
+            .from('reviews')
+            .select('id, rating, title, content, created_at, guest_id, booking_id')
+            .eq('resort_id', params.id)
+            .order('created_at', { ascending: false })
+
+          if (mounted) {
+            setReviews(reviewsData || [])
+            setLoading(false)
+          }
+
+          // Eligibility: completed confirmed booking without an existing review
+          const { data: completedBooking } = await supabase
+            .from('bookings')
+            .select('id, date_to')
+            .eq('resort_id', params.id)
+            .eq('guest_id', session.user.id)
+            .eq('status', 'confirmed')
+            .lt('date_to', new Date().toISOString().slice(0,10))
+            .order('date_to', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+
+          if (completedBooking?.id) {
+            const { data: existing } = await supabase
+              .from('reviews')
+              .select('id')
+              .eq('booking_id', completedBooking.id)
+              .eq('guest_id', session.user.id)
+              .limit(1)
+            setEligibleReviewBookingId((existing && existing.length > 0) ? null : completedBooking.id)
+          }
         }
 
         if (mounted) {
@@ -300,7 +339,15 @@ export default function ResortDetail({ params }: { params: { id: string } }){
   const nights = selectedRange.from && selectedRange.to ? Math.ceil((selectedRange.to.getTime() - selectedRange.from.getTime()) / (1000 * 60 * 60 * 24)) : 0
   const totalCost = nights * nightlyRate
 
+  function scrollToBookingCard(){
+    const el = bookingCardRef.current
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
   return (
+    <>
     <div className="w-full min-h-screen bg-gradient-to-b from-resort-50 to-white px-4 sm:px-6 lg:px-10 py-10">
       <div className="max-w-6xl mx-auto space-y-6">
         <Link href="/resorts" className="text-sm text-resort-500 font-semibold inline-flex items-center gap-1 hover:text-resort-600">
@@ -336,18 +383,36 @@ export default function ResortDetail({ params }: { params: { id: string } }){
               </div>
 
               {galleryImages.length > 1 && (
-                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
-                  {galleryImages.slice(0, 5).map((img: string, idx: number) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => setActiveImage(idx)}
-                      className={`relative h-16 sm:h-18 rounded-lg overflow-hidden border ${activeImage === idx ? 'border-resort-500 ring-2 ring-resort-200' : 'border-slate-200'}`}
-                    >
-                      <Image src={img} alt={`Photo ${idx + 1}`} fill className="object-cover" sizes="120px" />
-                    </button>
-                  ))}
-                </div>
+                <>
+                  {/* Mobile: horizontal scroll thumbnails */}
+                  <div className="sm:hidden flex gap-2 overflow-x-auto snap-x snap-mandatory py-1">
+                    {galleryImages.slice(0, 8).map((img: string, idx: number) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setActiveImage(idx)}
+                        className={`relative flex-shrink-0 w-24 h-16 rounded-lg overflow-hidden border snap-start ${activeImage === idx ? 'border-resort-500 ring-2 ring-resort-200' : 'border-slate-200'}`}
+                        aria-label={`Show photo ${idx + 1}`}
+                      >
+                        <Image src={img} alt={`Photo ${idx + 1}`} fill className="object-cover" sizes="96px" />
+                      </button>
+                    ))}
+                  </div>
+                  {/* Desktop: grid thumbnails */}
+                  <div className="hidden sm:grid grid-cols-5 gap-2">
+                    {galleryImages.slice(0, 5).map((img: string, idx: number) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setActiveImage(idx)}
+                        className={`relative h-18 rounded-lg overflow-hidden border ${activeImage === idx ? 'border-resort-500 ring-2 ring-resort-200' : 'border-slate-200'}`}
+                        aria-label={`Show photo ${idx + 1}`}
+                      >
+                        <Image src={img} alt={`Photo ${idx + 1}`} fill className="object-cover" sizes="120px" />
+                      </button>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
 
@@ -355,6 +420,18 @@ export default function ResortDetail({ params }: { params: { id: string } }){
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-5">
               <div className="space-y-2">
                 <h1 className="text-3xl font-bold text-resort-900">{resort.name}</h1>
+                {/* Average Rating Badge */}
+                {reviews && reviews.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
+                      <span className="text-yellow-500">★</span>
+                      <span className="text-sm font-semibold text-slate-900">
+                        {Math.round((reviews.reduce((a,r)=>a+(r.rating||0),0)/reviews.length)*10)/10}
+                      </span>
+                    </div>
+                    <span className="text-xs text-slate-600">{reviews.length} review{reviews.length !== 1 ? 's' : ''}</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2 text-base text-slate-600">
                   <span>📍</span>
                   <span>{resort.location}</span>
@@ -400,6 +477,30 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                       <ChatLink bookingId={latestBookingId} as="guest" label="Message Host" title={resort.name} />
                     </div>
                   )}
+                    {/* Reviews Section */}
+                    <div className="space-y-5">
+                      <ReviewsList reviews={reviews} />
+                      {user && eligibleReviewBookingId ? (
+                        <ReviewForm
+                          resortId={params.id}
+                          bookingId={eligibleReviewBookingId}
+                          onSubmitted={async () => {
+                            const { data: reviewsData } = await supabase
+                              .from('reviews')
+                              .select('id, rating, title, content, created_at, guest_id, booking_id')
+                              .eq('resort_id', params.id)
+                              .order('created_at', { ascending: false })
+                            setReviews(reviewsData || [])
+                            setEligibleReviewBookingId(null)
+                          }}
+                        />
+                      ) : (
+                        <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                          <p className="text-sm text-slate-700">Only guests who completed a confirmed stay can write a review.</p>
+                        </div>
+                      )}
+                    </div>
+
                   {!latestBookingId && (
                     <div className="pt-2">
                       <ChatLink resortId={params.id} as="guest" label="Message Host (Pre-booking)" title={resort.name} />
@@ -460,7 +561,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
           {/* Booking Card */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl p-5 shadow-md border border-slate-100 sticky top-4 space-y-4">
+            <div ref={bookingCardRef} className="bg-white rounded-2xl p-5 shadow-md border border-slate-100 lg:sticky lg:top-4 space-y-4">
               <div className="flex items-baseline justify-between">
                 <h2 className="text-xl font-bold text-resort-900">Book Your Stay</h2>
                 <span className="text-sm text-slate-500">Flexible dates</span>
@@ -537,5 +638,31 @@ export default function ResortDetail({ params }: { params: { id: string } }){
         </div>
       </div>
     </div>
+    {/* Mobile sticky action bar */}
+    {resort?.status === 'approved' && (
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/85 backdrop-blur border-t border-slate-200">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="text-sm">
+              <p className="font-bold text-resort-900">₱{nightlyRate?.toLocaleString()}</p>
+              <p className="text-xs text-slate-600">per night</p>
+            </div>
+            {nights > 0 && (
+              <div className="text-xs text-slate-700">
+                <span className="font-semibold">{nights}</span> night{nights > 1 ? 's' : ''}
+              </div>
+            )}
+          </div>
+          <div className="flex-1" />
+          <button
+            onClick={scrollToBookingCard}
+            className="px-5 py-2.5 bg-resort-600 text-white rounded-xl font-semibold shadow hover:bg-resort-700"
+          >
+            Request to Book
+          </button>
+        </div>
+      </div>
+    )}
+    </>
   )
 }

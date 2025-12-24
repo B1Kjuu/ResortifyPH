@@ -242,14 +242,6 @@ export default function OwnerBookingsContent(props: Props){
                     </label>
                   )}
                 </div>
-                {selectedBookings.size > 0 && (
-                  <button
-                    onClick={bulkDeleteBookings}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold border-2 border-red-500 transition-all"
-                  >
-                    Delete Selected ({selectedBookings.size})
-                  </button>
-                )}
               </div>
 
               {pendingBookings.length === 0 ? (
@@ -381,14 +373,6 @@ export default function OwnerBookingsContent(props: Props){
                       Select All
                     </label>
                   </div>
-                  {selectedBookings.size > 0 && (
-                    <button
-                      onClick={bulkDeleteBookings}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold border-2 border-red-500 transition-all"
-                    >
-                      Delete Selected ({selectedBookings.size})
-                    </button>
-                  )}
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">

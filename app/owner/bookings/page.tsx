@@ -252,12 +252,15 @@ export default function OwnerBookingsPage(){
   const bookedDatesForCalendar = useMemo(() => {
     const dates: Date[] = []
     const seen = new Set<string>()
+    const today = new Date(); today.setHours(0,0,0,0)
     confirmedBookings
       .filter(b => selectedResortId === 'all' || b.resort_id === selectedResortId)
       .forEach(b => {
         const start = new Date(b.date_from)
         const end = new Date(b.date_to)
         eachDayOfInterval({ start, end }).forEach(d => {
+          // Only mark upcoming/current days; exclude past
+          if (d < today) return
           const key = d.toISOString().slice(0,10)
           if (!seen.has(key)) {
             seen.add(key)
