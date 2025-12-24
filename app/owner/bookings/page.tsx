@@ -261,14 +261,13 @@ export default function OwnerBookingsPage(){
                 <DayPicker
                   numberOfMonths={2}
                   mode="single"
-                  disabled={bookedDatesForCalendar}
                   modifiers={{ booked: bookedDatesForCalendar }}
                   modifiersClassNames={{ booked: 'day-booked' }}
                   styles={{ months: { display: 'flex', gap: '16px' } }}
                   onDayClick={(day, modifiers) => {
                     const key = day.toISOString().slice(0,10)
                     const bookingsForDay = dateToBookings.get(key) || []
-                    if (!modifiers.booked || bookingsForDay.length === 0) return
+                      if (!modifiers.booked || bookingsForDay.length === 0) return
                     setSelectedDate(day)
                     setSelectedDayBookings(bookingsForDay)
                   }}
