@@ -173,24 +173,29 @@ a:not([class]) {
 }
 
 /* Visually highlight booked/unavailable dates */
+.calendar-custom .rdp-day { position: relative; }
 .calendar-custom .day-booked {
-  background-color: #fca5a5 !important;
-  color: #7f1d1d !important;
-  position: relative;
-  font-weight: 700;
-  text-decoration: line-through;
-  opacity: 1 !important;
+  background-color: #fee2e2 !important; /* subtle red wash */
+  color: #991b1b !important;
+  font-weight: 600;
 }
-
+.calendar-custom .day-booked::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  background-color: #ef4444; /* red dot indicator */
+  border-radius: 9999px;
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+}
 .calendar-custom .day-booked:hover {
-  background-color: #f87171 !important;
-  cursor: not-allowed;
+  background-color: #fecaca !important;
 }
-
 .calendar-custom .rdp-day_disabled.day-booked {
-  background-color: #fca5a5 !important;
-  color: #7f1d1d !important;
-  opacity: 1 !important;
+  background-color: #fee2e2 !important;
+  color: #991b1b !important;
 }
 
 /* Compact two-month layout for narrow booking cards */
@@ -216,6 +221,12 @@ a:not([class]) {
   width: 36px;
   height: 36px;
   font-size: 0.82rem;
+}
+
+@media (max-width: 640px) {
+  .calendar-custom.two-months .rdp-months {
+    flex-direction: column; /* stack months on small screens */
+  }
 }
 
 /* Keep navigation buttons visually inside the header */
