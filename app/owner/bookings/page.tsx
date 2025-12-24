@@ -155,6 +155,28 @@ export default function OwnerBookingsPage(){
     }
   }
 
+  async function deleteBooking(bookingId: string){
+    try {
+      const ok = typeof window !== 'undefined' ? window.confirm('Delete this booking request? This cannot be undone.') : true
+      if (!ok) return
+      // Optimistic removal
+      setBookings(prev => prev.filter(b => b.id !== bookingId))
+      const { error } = await supabase
+        .from('bookings')
+        .delete()
+        .eq('id', bookingId)
+      if (error) {
+        setToast({ message: `Error: ${error.message}`, type: 'error' })
+        // revert by reloading
+        loadOwnerBookings()
+      } else {
+        setToast({ message: 'Booking deleted', type: 'success' })
+      }
+    } catch (err) {
+      setToast({ message: 'Error deleting booking', type: 'error' })
+    }
+  }
+
   const pendingBookings = bookings.filter(b => b.status === 'pending')
   const confirmedBookings = bookings.filter(b => b.status === 'confirmed')
   const rejectedBookings = bookings.filter(b => b.status === 'rejected')
@@ -212,12 +234,9 @@ export default function OwnerBookingsPage(){
           ← Back to Empire
         </Link>
 
-        <div className="mb-10">
-          <div className="flex items-center gap-3 mb-3">
-            <span className="text-5xl">📬</span>
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-resort-600 to-blue-600 bg-clip-text text-transparent">Booking Requests</h1>
-          </div>
-          <p className="text-lg text-slate-600 ml-20">Manage all booking requests for your resorts</p>
+        <div className="mb-10 fade-in-up">
+          <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-resort-600 to-blue-600 bg-clip-text text-transparent">Booking Requests</h1>
+          <p className="text-lg text-slate-600 mt-2">Manage all booking requests for your resorts</p>
         </div>
 
         {toast.message && (
@@ -235,10 +254,9 @@ export default function OwnerBookingsPage(){
         ) : (
           <>
             {/* Calendar Overview */}
-            <section className="mb-12">
+            <section className="mb-12 fade-in-up">
               <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl">🗓️</span>
+                <div>
                   <h2 className="text-3xl font-bold text-slate-900">Bookings Calendar</h2>
                 </div>
                 <div className="flex items-center gap-2">
@@ -335,9 +353,8 @@ export default function OwnerBookingsPage(){
               </div>
             </section>
             {/* Pending Bookings */}
-            <section className="mb-12">
+            <section className="mb-12 fade-in-up">
               <div className="flex items-center gap-3 mb-6">
-                <span className="text-3xl">⏳</span>
                 <h2 className="text-3xl font-bold text-slate-900">Pending Requests ({pendingBookings.length})</h2>
               </div>
 
@@ -384,6 +401,13 @@ export default function OwnerBookingsPage(){
                         >
                           ❌ Reject
                         </button>
+                        <button
+                          onClick={() => deleteBooking(booking.id)}
+                          className="px-4 py-3 bg-slate-100 text-slate-900 rounded-xl font-semibold hover:bg-slate-200 transition-all border-2 border-slate-300"
+                          title="Delete pending request"
+                        >
+                          Delete
+                        </button>
                         <ChatLink bookingId={booking.id} as="owner" label="Open Chat" title={booking.guest?.full_name || booking.guest?.email || 'Guest'} />
                       </div>
                     </div>
@@ -393,9 +417,8 @@ export default function OwnerBookingsPage(){
             </section>
 
             {/* Confirmed Bookings */}
-            <section className="mb-12">
+            <section className="mb-12 fade-in-up">
               <div className="flex items-center gap-3 mb-6">
-                <span className="text-3xl">✅</span>
                 <h2 className="text-3xl font-bold text-slate-900">Confirmed Bookings ({confirmedBookings.length})</h2>
               </div>
 
@@ -439,26 +462,31 @@ export default function OwnerBookingsPage(){
 
             {/* Rejected Bookings */}
             {rejectedBookings.length > 0 && (
-              <section>
+              <section className="fade-in-up">
                 <div className="flex items-center gap-3 mb-6">
-                  <span className="text-3xl">❌</span>
                   <h2 className="text-3xl font-bold text-slate-900">Rejected Bookings ({rejectedBookings.length})</h2>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
                   {rejectedBookings.map(booking => (
-                    <div key={booking.id} className="bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-300 rounded-2xl p-6 shadow-sm opacity-80">
+                    <div key={booking.id} className="bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-200 rounded-2xl p-6 shadow-sm">
                       <div className="flex justify-between items-start mb-4">
                         <div>
                           <h3 className="text-lg font-bold text-slate-900">{booking.resort?.name}</h3>
-                          <p className="text-sm text-slate-600 mt-1">👤 {booking.guest?.full_name}</p>
+                          <p className="text-sm text-slate-600 mt-1">{booking.guest?.full_name}</p>
                         </div>
-                        <span className="text-xs bg-red-100 text-red-800 px-3 py-1 rounded-lg font-bold border-2 border-red-300">❌ Rejected</span>
+                        <span className="text-xs bg-red-100 text-red-800 px-3 py-1 rounded-lg font-bold border-2 border-red-200">Rejected</span>
                       </div>
 
-                      <p className="text-sm text-slate-700">
-                        📅 {booking.date_from} → {booking.date_to}
+                      <p className="text-sm text-slate-700 mb-4">
+                        {booking.date_from} → {booking.date_to}
                       </p>
+                      <div className="flex justify-end">
+                        <button
+                          onClick={() => deleteBooking(booking.id)}
+                          className="px-3 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg border-2 border-red-500"
+                        >Delete</button>
+                      </div>
                     </div>
                   ))}
                 </div>

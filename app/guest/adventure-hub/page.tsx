@@ -140,7 +140,7 @@ export default function AdventureHub(){
     <div className="w-full min-h-screen bg-gradient-to-b from-slate-50 to-white px-4 sm:px-6 lg:px-8 py-12">
       <div className="max-w-7xl mx-auto">
         {/* Hero Section */}
-        <div className="mb-12">
+        <div className="mb-12 fade-in-up">
           <div className="flex items-center gap-3 mb-6">
             <span className="text-6xl">🌴</span>
             <div>
@@ -148,7 +148,7 @@ export default function AdventureHub(){
               <h1 className="text-5xl font-bold bg-gradient-to-r from-resort-600 to-blue-600 bg-clip-text text-transparent">Your Resort Adventure Hub</h1>
             </div>
           </div>
-          <div className="bg-white border-2 border-slate-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+          <div className="bg-white border-2 border-slate-200 rounded-2xl p-4 sm:p-6 shadow-sm fade-in-up">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 items-start">
               {/* Left: stacked controls + quick picks */}
               <div className="md:col-span-4 flex flex-col gap-3">
@@ -259,7 +259,7 @@ export default function AdventureHub(){
         </div>
 
         {/* Main Action Cards */}
-        <div className="grid md:grid-cols-2 gap-6 mb-12">
+        <div className="grid md:grid-cols-2 gap-6 mb-12 fade-in-up">
           {/* Browse Resorts Card */}
           <Link href="/resorts" className="group bg-white border-2 border-slate-200 rounded-2xl p-8 hover:shadow-2xl hover:border-resort-400 transition-all duration-300 transform hover:-translate-y-1">
             <div className="text-6xl mb-4 group-hover:scale-110 transition-transform">🏝️</div>
@@ -288,7 +288,7 @@ export default function AdventureHub(){
         </div>
 
         {/* Featured Categories */}
-        <div className="mb-12">
+        <div className="mb-12 fade-in-up">
           <h2 className="text-xl font-bold text-slate-900 mb-3">Featured Categories</h2>
           <div className="flex flex-wrap gap-2">
             {categories.map((cat) => {
@@ -313,7 +313,7 @@ export default function AdventureHub(){
         </div>
 
         {/* Trending Resorts */}
-        <div className="mb-12">
+        <div className="mb-12 fade-in-up">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-slate-900">Trending Resorts</h2>
             <Link href="/resorts" className="text-sm font-medium text-resort-600 hover:text-resort-700">View all →</Link>
@@ -365,7 +365,7 @@ export default function AdventureHub(){
             <h2 className="text-xl font-bold text-slate-900">Map Preview</h2>
             <Link href="/resorts?view=map" className="text-sm font-medium text-resort-600 hover:text-resort-700">Open full map →</Link>
           </div>
-          <div className="h-[260px] sm:h-[320px]">
+          <div className="h-[260px] sm:h-[320px] fade-in-up">
             <ResortMap
               resorts={trendingResorts}
               userPosition={geoSupported && position ? position : null}
@@ -375,7 +375,7 @@ export default function AdventureHub(){
         </div>
 
         {/* Profile & Quick Actions */}
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-3 gap-6 fade-in-up">
           {/* Profile Card */}
           <Link href="/profile" className="group bg-gradient-to-br from-resort-500 to-blue-500 text-white rounded-2xl p-8 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-2 border-resort-400">
             <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">👤</div>
