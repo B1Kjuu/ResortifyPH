@@ -491,29 +491,6 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                       <ChatLink bookingId={latestBookingId} as="guest" label="Message Host" title={resort.name} />
                     </div>
                   )}
-                    {/* Reviews Section */}
-                    <div className="space-y-5">
-                      <ReviewsList reviews={reviews} />
-                      {user && eligibleReviewBookingId ? (
-                        <ReviewForm
-                          resortId={params.id}
-                          bookingId={eligibleReviewBookingId}
-                          onSubmitted={async () => {
-                            const { data: reviewsData } = await supabase
-                              .from('reviews')
-                              .select('id, rating, title, content, created_at, guest_id, booking_id')
-                              .eq('resort_id', params.id)
-                              .order('created_at', { ascending: false })
-                            setReviews(reviewsData || [])
-                            setEligibleReviewBookingId(null)
-                          }}
-                        />
-                      ) : (
-                        <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                          <p className="text-sm text-slate-700">Only guests who completed a confirmed stay can write a review.</p>
-                        </div>
-                      )}
-                    </div>
 
                   {!latestBookingId && (
                     <div className="pt-2">
@@ -524,6 +501,30 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                     <p className="text-xs text-slate-500 pt-1">Chat becomes available after you request to book.</p>
                   )}
                 </div>
+              </div>
+
+              {/* Reviews Section - moved below grid to reduce tall right column whitespace */}
+              <div className="space-y-5">
+                <ReviewsList reviews={reviews} />
+                {user && eligibleReviewBookingId ? (
+                  <ReviewForm
+                    resortId={params.id}
+                    bookingId={eligibleReviewBookingId}
+                    onSubmitted={async () => {
+                      const { data: reviewsData } = await supabase
+                        .from('reviews')
+                        .select('id, rating, title, content, created_at, guest_id, booking_id')
+                        .eq('resort_id', params.id)
+                        .order('created_at', { ascending: false })
+                      setReviews(reviewsData || [])
+                      setEligibleReviewBookingId(null)
+                    }}
+                  />
+                ) : (
+                  <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                    <p className="text-sm text-slate-700">Only guests who completed a confirmed stay can write a review.</p>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
