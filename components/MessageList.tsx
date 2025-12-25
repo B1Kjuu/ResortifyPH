@@ -127,6 +127,28 @@ export default function MessageList({ messages, currentUserId, onReact }: Props)
           const profile = profiles[m.sender_id]
           const showAvatar = !mine && (idx === 0 || messages[idx - 1]?.sender_id !== m.sender_id)
           const isImage = m.attachment_url && m.attachment_type?.startsWith('image/')
+          const isSystem = typeof m.content === 'string' && (
+            m.content.startsWith('📌') ||
+            m.content.toLowerCase().startsWith('📌 system') ||
+            m.content.toLowerCase().includes('system:')
+          )
+
+          if (isSystem) {
+            // Skip rendering if it's the pinned one
+            const systems = messages.filter(mm => typeof mm.content === 'string' && (mm.content.startsWith('📌') || mm.content.toLowerCase().includes('system:')))
+            const pinned = systems.length ? systems[systems.length - 1] : null
+            if (pinned && pinned.id === m.id) return null
+            return (
+              <div key={m.id} className="flex justify-center">
+                <div className="w-full max-w-[95%] rounded-md border border-amber-200 bg-amber-50 text-amber-900 px-3 py-2 text-xs">
+                  <div className="flex items-start gap-2">
+                    <span aria-hidden>📌</span>
+                    <div className="whitespace-pre-wrap break-words">{m.content.replace(/^📌\s*/, '')}</div>
+                  </div>
+                </div>
+              </div>
+            )
+          }
 
           return (
             <div key={m.id} className={`flex gap-2 group ${mine ? 'justify-end' : 'justify-start'}`}>

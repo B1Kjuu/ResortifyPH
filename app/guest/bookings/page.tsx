@@ -5,6 +5,7 @@ import { supabase } from '../../../lib/supabaseClient'
 import ChatLink from '../../../components/ChatLink'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import DisclaimerBanner from '../../../components/DisclaimerBanner'
 
 export default function GuestBookingsPage(){
   const [bookings, setBookings] = useState<any[]>([])
@@ -57,6 +58,11 @@ export default function GuestBookingsPage(){
         <Link href="/guest/dashboard" className="text-sm text-resort-500 font-semibold mb-4 inline-block">← Back to Dashboard</Link>
         <h1 className="text-3xl font-bold text-resort-900">My Bookings</h1>
         <p className="text-slate-600">View and manage all your resort bookings</p>
+        <div className="mt-3">
+          <DisclaimerBanner title="Payment Notice">
+            Coordinate payment directly with the host in chat. ResortifyPH does not process payments.
+          </DisclaimerBanner>
+        </div>
       </div>
 
       {bookings.length === 0 ? (

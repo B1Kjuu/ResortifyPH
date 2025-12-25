@@ -12,6 +12,7 @@ import DateRangePicker from '../../../components/DateRangePicker'
 import LocationCombobox from '../../../components/LocationCombobox'
 import { format } from 'date-fns'
 import ChatLink from '../../../components/ChatLink'
+import DisclaimerBanner from '../../../components/DisclaimerBanner'
 
 export default function ResortDetail({ params }: { params: { id: string } }){
   function formatTime12h(t?: string | null) {
@@ -339,6 +340,12 @@ export default function ResortDetail({ params }: { params: { id: string } }){
               sender_id: user.id,
               content: `Hi! I'd like to book ${resort.name} from ${format(selectedRange.from, 'MMM dd, yyyy')} to ${format(selectedRange.to, 'MMM dd, yyyy')} for ${guests} ${guests === 1 ? 'guest' : 'guests'}. Looking forward to hearing from you!`,
             })
+            // Add system guidance message (acts like a pinned note)
+            await supabase.from('chat_messages').insert({
+              chat_id: chat.id,
+              sender_id: user.id,
+              content: '📌 System: Coordinate payment in chat; share payment details and receipt here.'
+            })
           }
         } catch (chatSetupError) {
           console.error('Chat setup error:', chatSetupError)
@@ -655,6 +662,8 @@ export default function ResortDetail({ params }: { params: { id: string } }){
               <p className="text-xs text-slate-500 text-center">
                 You won't be charged yet. The owner will review your request.
               </p>
+
+              <DisclaimerBanner className="mt-3" />
 
               <div className="border-t border-slate-100 pt-4 mt-2">
                 <p className="text-sm font-semibold text-slate-700 mb-2">Explore another province</p>

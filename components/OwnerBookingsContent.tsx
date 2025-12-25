@@ -4,6 +4,7 @@ import Link from 'next/link'
 import SkeletonTable from './SkeletonTable'
 import ChatLink from './ChatLink'
 import { DayPicker } from 'react-day-picker'
+import DisclaimerBanner from './DisclaimerBanner'
 
 type Props = {
   loading: boolean
@@ -30,6 +31,8 @@ type Props = {
   deleteBooking: (id: string) => void
   confirmBooking: (id: string) => void
   rejectBooking: (id: string) => void
+  updateVerificationDetails: (id: string, details: { method?: string; reference?: string; notes?: string }) => void
+  togglePaymentVerified: (id: string, verified: boolean) => void
 }
 
 export default function OwnerBookingsContent(props: Props){
@@ -39,13 +42,31 @@ export default function OwnerBookingsContent(props: Props){
     selectedDate, selectedDayBookings, setSelectedDate, setSelectedDayBookings,
     calendarRef, pendingBookings, confirmedBookings, rejectedBookings,
     selectedBookings, toggleSelect, toggleSelectAll, bulkDeleteBookings,
-    deleteBooking, confirmBooking, rejectBooking,
+    deleteBooking, confirmBooking, rejectBooking, updateVerificationDetails, togglePaymentVerified,
   } = props
 
-  const [viewMode, setViewMode] = React.useState<'upcoming' | 'history'>('upcoming')
+  // Top-level owner nav tabs
+  const [tab, setTab] = React.useState<'requests' | 'calendar' | 'confirmed' | 'history'>('requests')
+  const [showOnlyVerified, setShowOnlyVerified] = React.useState(false)
+  const [verificationEdits, setVerificationEdits] = React.useState<Record<string, { method: string; reference: string; notes: string }>>({})
+
+  const setEdit = (id: string, field: 'method' | 'reference' | 'notes', value: string) => {
+    setVerificationEdits(prev => ({
+      ...prev,
+      [id]: { method: prev[id]?.method || '', reference: prev[id]?.reference || '', notes: prev[id]?.notes || '', [field]: value }
+    }))
+  }
   const now = new Date()
   const upcomingConfirmed = confirmedBookings.filter(b => new Date(b.date_to) >= now)
   const pastConfirmed = confirmedBookings.filter(b => new Date(b.date_to) < now)
+
+  const pendingToShow = showOnlyVerified ? pendingBookings.filter(b => !!b.payment_verified_at) : pendingBookings
+  const upcomingToShow = showOnlyVerified ? upcomingConfirmed.filter(b => !!b.payment_verified_at) : upcomingConfirmed
+  const pastToShow = showOnlyVerified ? pastConfirmed.filter(b => !!b.payment_verified_at) : pastConfirmed
+
+  const pendingVerifiedCount = pendingBookings.filter(b => !!b.payment_verified_at).length
+  const upcomingVerifiedCount = upcomingConfirmed.filter(b => !!b.payment_verified_at).length
+  const pastVerifiedCount = pastConfirmed.filter(b => !!b.payment_verified_at).length
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-b from-slate-50 to-white px-4 sm:px-6 lg:px-8 py-12">
@@ -54,44 +75,44 @@ export default function OwnerBookingsContent(props: Props){
           ← Back to Empire
         </Link>
 
-        <div className="mb-10 fade-in-up flex items-center justify-between">
+        <div className="mb-6 fade-in-up flex items-center justify-between">
           <div>
-            <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-resort-600 to-blue-600 bg-clip-text text-transparent">Booking Requests</h1>
+            <h1 className="text-4xl sm:text-5xl font-bold leading-normal pb-1 break-words bg-gradient-to-r from-resort-600 to-blue-600 bg-clip-text text-transparent">Bookings</h1>
             <p className="text-lg text-slate-600 mt-2">Manage all booking requests for your resorts</p>
-            {/* Summary badges for Upcoming vs History */}
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setViewMode('upcoming')}
-                className={`flex items-center gap-2 rounded-2xl px-3 py-2 border-2 transition-all hover:bg-slate-50 cursor-pointer ${viewMode === 'upcoming' ? 'bg-resort-50 border-resort-300 ring-1 ring-resort-200' : 'bg-white border-slate-200'}`}
-                aria-pressed={viewMode === 'upcoming'}
-              >
-                <span className="text-xs font-semibold text-slate-700">Upcoming</span>
-                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-lg border border-yellow-200">Pending {pendingBookings.length}</span>
-                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-lg border border-green-200">Confirmed {upcomingConfirmed.length}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('history')}
-                className={`flex items-center gap-2 rounded-2xl px-3 py-2 border-2 transition-all hover:bg-slate-50 cursor-pointer ${viewMode === 'history' ? 'bg-resort-50 border-resort-300 ring-1 ring-resort-200' : 'bg-white border-slate-200'}`}
-                aria-pressed={viewMode === 'history'}
-              >
-                <span className="text-xs font-semibold text-slate-700">History</span>
-                <span className="text-xs bg-slate-200 text-slate-800 px-2 py-1 rounded-lg border border-slate-300">Past {pastConfirmed.length}</span>
-                <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-lg border border-red-200">Rejected {rejectedBookings.length}</span>
-              </button>
+            <div className="mt-3">
+              <DisclaimerBanner title="Owner Notice">
+                Confirm only after verifying offline payment in chat (e.g., GCash/Bank). Coordinate details and ask for a receipt screenshot before confirming.
+              </DisclaimerBanner>
+            </div>
+            {/* Owner Sub-Navbar */}
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {([
+                { key: 'requests', label: `Requests (${pendingBookings.length})` },
+                { key: 'calendar', label: 'Calendar' },
+                { key: 'confirmed', label: `Confirmed (${upcomingConfirmed.length})` },
+                { key: 'history', label: `History (${pastConfirmed.length + rejectedBookings.length})` },
+              ] as const).map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => setTab(t.key)}
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all ${tab === t.key ? 'bg-resort-600 text-white border-resort-500' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}
+                  aria-pressed={tab === t.key}
+                >
+                  {t.label}
+                </button>
+              ))}
+              <label className="ml-auto flex items-center gap-2 px-2 py-1 rounded-xl text-xs text-slate-700">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 rounded border-slate-300"
+                  checked={showOnlyVerified}
+                  onChange={(e) => setShowOnlyVerified(e.target.checked)}
+                />
+                Show only payment verified
+              </label>
             </div>
           </div>
-          <div className="flex items-center gap-2 bg-white border-2 border-slate-200 rounded-2xl p-1">
-            <button
-              onClick={() => setViewMode('upcoming')}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${viewMode === 'upcoming' ? 'bg-resort-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
-            >Upcoming</button>
-            <button
-              onClick={() => setViewMode('history')}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${viewMode === 'history' ? 'bg-resort-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
-            >History</button>
-          </div>
+          {/* Right-side stats removed for cleaner header */}
         </div>
 
         {toast.message && (
@@ -125,7 +146,7 @@ export default function OwnerBookingsContent(props: Props){
                 Delete Selected
               </button>
             </div>
-            {viewMode === 'upcoming' && (
+            {tab === 'calendar' && (
             <section className="mb-12 fade-in-up">
               <div className="flex items-center justify-between mb-6">
                 <div>
@@ -225,11 +246,11 @@ export default function OwnerBookingsContent(props: Props){
             </section>
             )}
 
-            {viewMode === 'upcoming' && (
+            {tab === 'requests' && (
             <section className="mb-12 fade-in-up">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-3xl font-bold text-slate-900">Pending Requests ({pendingBookings.length})</h2>
+                  <h2 className="text-3xl font-bold text-slate-900">Pending Requests ({pendingToShow.length})</h2>
                   {pendingBookings.length > 0 && (
                     <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
                       <input
@@ -244,15 +265,15 @@ export default function OwnerBookingsContent(props: Props){
                 </div>
               </div>
 
-              {pendingBookings.length === 0 ? (
+              {pendingToShow.length === 0 ? (
                 <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center">
                   <p className="text-lg font-bold text-slate-900 mb-2">No pending requests</p>
                   <p className="text-slate-600">Your pending booking queue is empty</p>
                 </div>
               ) : (
                 <div className="grid md:grid-cols-2 gap-6">
-                  {pendingBookings.map(booking => (
-                    <div key={booking.id} className="bg-white border-2 border-yellow-300 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all">
+                  {pendingToShow.map(booking => (
+                    <div key={booking.id} className={`bg-white border-2 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all ${booking.payment_verified_at ? 'border-emerald-300' : 'border-yellow-300'}`}>
                       <div className="flex items-start gap-3 mb-4">
                         <input
                           type="checkbox"
@@ -268,6 +289,9 @@ export default function OwnerBookingsContent(props: Props){
                               <p className="text-sm text-slate-600">📧 {booking.guest?.email}</p>
                             </div>
                             <span className="text-xs bg-yellow-100 text-yellow-800 px-3 py-1 rounded-lg font-bold border-2 border-yellow-300">⏳ Pending</span>
+                            {booking.payment_verified_at && (
+                              <span className="ml-2 text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-lg border border-emerald-200">✔ Verified</span>
+                            )}
                           </div>
 
                           <div className="bg-yellow-50 rounded-xl p-4 mb-4 border border-yellow-100">
@@ -304,6 +328,60 @@ export default function OwnerBookingsContent(props: Props){
                             </button>
                             <ChatLink bookingId={booking.id} as="owner" label="Open Chat" title={booking.guest?.full_name || booking.guest?.email || 'Guest'} />
                           </div>
+                          <p className="text-xs text-slate-500 mt-2">Coordinate payment in chat; confirm only after verifying proof.</p>
+                          <label className="mt-2 inline-flex items-center gap-2 text-xs text-slate-600">
+                            <input
+                              type="checkbox"
+                              className="w-4 h-4 rounded border-slate-300"
+                              checked={!!booking.payment_verified_at}
+                              onChange={(e) => togglePaymentVerified(booking.id, e.target.checked)}
+                            />
+                            Mark payment verified
+                            {booking.payment_verified_at && (
+                              <span className="ml-1 text-[10px] text-slate-500">({new Date(booking.payment_verified_at).toLocaleDateString()})</span>
+                            )}
+                          </label>
+                          <details className="mt-3">
+                            <summary className="text-xs text-slate-700 cursor-pointer select-none">Verification details</summary>
+                            <div className="mt-2 grid sm:grid-cols-3 gap-2">
+                            <select
+                              className="px-2 py-2 rounded-lg border border-slate-300 text-xs"
+                              value={verificationEdits[booking.id]?.method ?? booking.payment_method ?? ''}
+                              onChange={(e) => setEdit(booking.id, 'method', e.target.value)}
+                            >
+                              <option value="">Method</option>
+                              <option value="GCash">GCash</option>
+                              <option value="Bank Transfer">Bank Transfer</option>
+                              <option value="Other">Other</option>
+                            </select>
+                            <input
+                              type="text"
+                              className="px-2 py-2 rounded-lg border border-slate-300 text-xs"
+                              placeholder="Reference #"
+                              value={verificationEdits[booking.id]?.reference ?? booking.payment_reference ?? ''}
+                              onChange={(e) => setEdit(booking.id, 'reference', e.target.value)}
+                            />
+                            <input
+                              type="text"
+                              className="px-2 py-2 rounded-lg border border-slate-300 text-xs"
+                              placeholder="Notes"
+                              value={verificationEdits[booking.id]?.notes ?? booking.verified_notes ?? ''}
+                              onChange={(e) => setEdit(booking.id, 'notes', e.target.value)}
+                            />
+                            <div className="sm:col-span-3 flex justify-end">
+                              <button
+                                className="text-xs px-3 py-2 rounded-lg border-2 border-slate-300 bg-white hover:bg-slate-50"
+                                onClick={() => updateVerificationDetails(booking.id, {
+                                  method: verificationEdits[booking.id]?.method ?? booking.payment_method ?? undefined,
+                                  reference: verificationEdits[booking.id]?.reference ?? booking.payment_reference ?? undefined,
+                                  notes: verificationEdits[booking.id]?.notes ?? booking.verified_notes ?? undefined,
+                                })}
+                              >
+                                Save verification details
+                              </button>
+                            </div>
+                            </div>
+                          </details>
                         </div>
                       </div>
                     </div>
@@ -313,21 +391,21 @@ export default function OwnerBookingsContent(props: Props){
             </section>
             )}
 
-            {viewMode === 'upcoming' && (
+            {tab === 'confirmed' && (
             <section className="mb-12 fade-in-up">
               <div className="flex items-center gap-3 mb-6">
-                <h2 className="text-3xl font-bold text-slate-900">Confirmed Bookings ({upcomingConfirmed.length})</h2>
+                <h2 className="text-3xl font-bold text-slate-900">Confirmed Bookings ({upcomingToShow.length})</h2>
               </div>
 
-              {upcomingConfirmed.length === 0 ? (
+              {upcomingToShow.length === 0 ? (
                 <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center">
                   <p className="text-lg font-bold text-slate-900 mb-2">No upcoming confirmed bookings</p>
                   <p className="text-slate-600">Future confirmed stays will appear here</p>
                 </div>
               ) : (
                 <div className="grid md:grid-cols-2 gap-6">
-                  {upcomingConfirmed.map(booking => (
-                    <div key={booking.id} className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all">
+                  {upcomingToShow.map(booking => (
+                    <div key={booking.id} className={`bg-gradient-to-br from-green-50 to-emerald-50 border-2 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all ${booking.payment_verified_at ? 'border-emerald-400' : 'border-green-300'}`}>
                       <div className="flex justify-between items-start mb-4">
                         <div>
                           <h3 className="text-lg font-bold text-slate-900">{booking.resort?.name}</h3>
@@ -335,6 +413,9 @@ export default function OwnerBookingsContent(props: Props){
                           <p className="text-sm text-slate-600">📧 {booking.guest?.email}</p>
                         </div>
                         <span className="text-xs bg-green-100 text-green-800 px-3 py-1 rounded-lg font-bold border-2 border-green-300">✅ Confirmed</span>
+                        {booking.payment_verified_at && (
+                          <span className="ml-2 text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-lg border border-emerald-200">✔ Verified</span>
+                        )}
                       </div>
 
                       <div className="bg-white rounded-xl p-4 border border-green-100">
@@ -347,9 +428,62 @@ export default function OwnerBookingsContent(props: Props){
                         <p className="text-sm text-slate-600 mt-2 italic">
                           ✓ Confirmed: {new Date(booking.created_at).toLocaleDateString()}
                         </p>
-                        <div className="mt-3 flex justify-end">
+                        <div className="mt-3 flex items-center justify-between">
                           <ChatLink bookingId={booking.id} as="owner" label="Open Chat" title={booking.guest?.full_name || booking.guest?.email || 'Guest'} />
+                          <label className="inline-flex items-center gap-2 text-xs text-slate-600">
+                            <input
+                              type="checkbox"
+                              className="w-4 h-4 rounded border-slate-300"
+                              checked={!!booking.payment_verified_at}
+                              onChange={(e) => togglePaymentVerified(booking.id, e.target.checked)}
+                            />
+                            Payment verified
+                            {booking.payment_verified_at && (
+                              <span className="ml-1 text-[10px] text-slate-500">({new Date(booking.payment_verified_at).toLocaleDateString()})</span>
+                            )}
+                          </label>
                         </div>
+                        <details className="mt-3">
+                          <summary className="text-xs text-slate-700 cursor-pointer select-none">Verification details</summary>
+                          <div className="mt-2 grid sm:grid-cols-3 gap-2">
+                          <select
+                            className="px-2 py-2 rounded-lg border border-slate-300 text-xs"
+                            value={verificationEdits[booking.id]?.method ?? booking.payment_method ?? ''}
+                            onChange={(e) => setEdit(booking.id, 'method', e.target.value)}
+                          >
+                            <option value="">Method</option>
+                            <option value="GCash">GCash</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="Other">Other</option>
+                          </select>
+                          <input
+                            type="text"
+                            className="px-2 py-2 rounded-lg border border-slate-300 text-xs"
+                            placeholder="Reference #"
+                            value={verificationEdits[booking.id]?.reference ?? booking.payment_reference ?? ''}
+                            onChange={(e) => setEdit(booking.id, 'reference', e.target.value)}
+                          />
+                          <input
+                            type="text"
+                            className="px-2 py-2 rounded-lg border border-slate-300 text-xs"
+                            placeholder="Notes"
+                            value={verificationEdits[booking.id]?.notes ?? booking.verified_notes ?? ''}
+                            onChange={(e) => setEdit(booking.id, 'notes', e.target.value)}
+                          />
+                          <div className="sm:col-span-3 flex justify-end">
+                            <button
+                              className="text-xs px-3 py-2 rounded-lg border-2 border-slate-300 bg-white hover:bg-slate-50"
+                              onClick={() => updateVerificationDetails(booking.id, {
+                                method: verificationEdits[booking.id]?.method ?? booking.payment_method ?? undefined,
+                                reference: verificationEdits[booking.id]?.reference ?? booking.payment_reference ?? undefined,
+                                notes: verificationEdits[booking.id]?.notes ?? booking.verified_notes ?? undefined,
+                              })}
+                            >
+                              Save verification details
+                            </button>
+                          </div>
+                          </div>
+                        </details>
                       </div>
                     </div>
                   ))}
@@ -358,7 +492,7 @@ export default function OwnerBookingsContent(props: Props){
             </section>
             )}
 
-            {viewMode === 'history' && rejectedBookings.length > 0 && (
+            {tab === 'history' && rejectedBookings.length > 0 && (
               <section className="fade-in-up">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
@@ -412,21 +546,42 @@ export default function OwnerBookingsContent(props: Props){
             )}
 
             {/* Past Bookings (completed stays) */}
-            {viewMode === 'history' && pastConfirmed.length > 0 && (
+            {tab === 'history' && pastToShow.length > 0 && (
               <section className="fade-in-up mt-12">
-                <div className="flex items-center gap-3 mb-6">
-                  <h2 className="text-3xl font-bold text-slate-900">Past Bookings ({pastConfirmed.length})</h2>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-3xl font-bold text-slate-900">Past Bookings ({pastToShow.length})</h2>
+                    <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={pastToShow.every(b => selectedBookings.has(b.id))}
+                        onChange={() => toggleSelectAll(pastToShow)}
+                        className="w-4 h-4 rounded border-slate-300"
+                      />
+                      Select All
+                    </label>
+                  </div>
+                  <div className="text-xs text-slate-600">Use bulk delete at top to remove selected</div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-6">
-                  {pastConfirmed.map(booking => (
-                    <div key={booking.id} className="bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-slate-200 rounded-2xl p-6 shadow-sm">
+                  {pastToShow.map(booking => (
+                    <div key={booking.id} className={`bg-gradient-to-br from-slate-50 to-slate-100 border-2 rounded-2xl p-6 shadow-sm ${booking.payment_verified_at ? 'border-emerald-300' : 'border-slate-200'}`}>
                       <div className="flex justify-between items-start mb-4">
-                        <div>
+                        <div className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedBookings.has(booking.id)}
+                            onChange={() => toggleSelect(booking.id)}
+                            className="w-5 h-5 mt-1 rounded border-slate-300 cursor-pointer"
+                          />
                           <h3 className="text-lg font-bold text-slate-900">{booking.resort?.name}</h3>
                           <p className="text-sm text-slate-600 mt-1">👤 {booking.guest?.full_name}</p>
                           <p className="text-sm text-slate-600">📧 {booking.guest?.email}</p>
                         </div>
                         <span className="text-xs bg-slate-200 text-slate-800 px-3 py-1 rounded-lg font-bold border-2 border-slate-300">Completed</span>
+                        {booking.payment_verified_at && (
+                          <span className="ml-2 text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-lg border border-emerald-200">✔ Verified</span>
+                        )}
                       </div>
                       <div className="bg-white rounded-xl p-4 border border-slate-200">
                         <p className="text-sm text-slate-700 mb-2">📅 <span className="font-bold">{booking.date_from}</span> → <span className="font-bold">{booking.date_to}</span></p>

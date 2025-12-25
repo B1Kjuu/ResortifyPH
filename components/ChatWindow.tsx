@@ -66,6 +66,12 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
             }
           } else {
             chatRow = created as Chat
+            // Add system guidance once on creation
+            await supabase.from('chat_messages').insert({
+              chat_id: (chatRow as Chat).id,
+              sender_id: uid,
+              content: '📌 System: Coordinate payment in chat; share payment details and receipt here.'
+            })
           }
         }
       } else if (resortId) {
@@ -96,6 +102,12 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
             }
           } else {
             chatRow = created as Chat
+            // Add system guidance once on creation
+            await supabase.from('chat_messages').insert({
+              chat_id: (chatRow as Chat).id,
+              sender_id: uid,
+              content: '📌 System: Coordinate payment in chat; share payment details and receipt here.'
+            })
           }
           // Owner will join when they open the chat (self-join policy)
         }
@@ -331,6 +343,16 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
     }
   }
 
+  // Latest system guidance message to pin globally above the list
+  const pinnedGuidance = useMemo(() => {
+    if (!messages || messages.length === 0) return null
+    const systems = messages.filter(m => typeof m.content === 'string' && (m.content.startsWith('📌') || m.content.toLowerCase().includes('system:')))
+    if (systems.length === 0) return null
+    const last = systems[systems.length - 1]
+    const text = (last.content || '').replace(/^📌\s*/,'')
+    return { id: last.id, text }
+  }, [messages])
+
   return (
     <div className="flex h-full min-h-[400px] w-full flex-col rounded-md border">
       <div className="flex items-center justify-between border-b px-4 py-2 bg-gray-50">
@@ -342,6 +364,10 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
               {onlineUsers.length} online
             </div>
           )}
+          <div className="text-xs text-amber-700 flex items-center gap-1 mt-0.5">
+            <span aria-hidden>💳</span>
+            Share payment instructions and receipt here.
+          </div>
         </div>
         {chat && (
           <div className="text-xs text-gray-500">Chat ID: {chat.id.slice(0, 8)}</div>
@@ -358,13 +384,21 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
         <div className="flex flex-1 items-center justify-center text-sm text-gray-500">Sign in to chat.</div>
       ) : (
         <>
+          {pinnedGuidance && (
+            <div className="border-b bg-amber-100 text-amber-900 px-4 py-2 text-xs">
+              <div className="flex items-start gap-2">
+                <span aria-hidden>📌</span>
+                <div className="whitespace-pre-wrap break-words font-medium">{pinnedGuidance.text}</div>
+              </div>
+            </div>
+          )}
           <MessageList messages={messages} currentUserId={userId} onReact={handleReaction} />
           {typingUsers.length > 0 && (
             <div className="px-4 py-2 text-xs text-gray-500 italic border-t">
               {typingUsers.length === 1 ? 'Someone is' : `${typingUsers.length} people are`} typing...
             </div>
           )}
-          <MessageInput onSend={handleSend} chatId={chat?.id} />
+          <MessageInput onSend={handleSend} chatId={chat?.id} participantRole={participantRole} />
         </>
       )}
     </div>

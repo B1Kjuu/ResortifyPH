@@ -31,7 +31,7 @@ export default function OwnerBookingsPage(){
         return
       }
 
-      // Map RPC rows to UI shape
+      // Map RPC rows to UI shape (RPC now includes verification fields)
       const enrichedBookings = (rpcData || []).map((row: any) => ({
         id: row.booking_id,
         resort_id: row.resort_id,
@@ -41,10 +41,15 @@ export default function OwnerBookingsPage(){
         guest_count: row.guest_count,
         status: row.status,
         created_at: row.created_at,
+        // Payment verification fields
+        payment_verified_at: row.payment_verified_at ?? null,
+        payment_method: row.payment_method ?? null,
+        payment_reference: row.payment_reference ?? null,
+        verified_by: row.verified_by ?? null,
+        verified_notes: row.verified_notes ?? null,
         resort: { id: row.resort_id, name: row.resort_name },
         guest: { id: row.guest_id, full_name: row.guest_full_name, email: row.guest_email }
       }))
-
       setBookings(enrichedBookings)
     } catch (err) {
       console.error('Load bookings error:', err)
@@ -179,6 +184,27 @@ export default function OwnerBookingsPage(){
     }
   }
 
+  async function togglePaymentVerified(bookingId: string, verified: boolean){
+    try {
+      // Optimistic update
+      setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, payment_verified_at: verified ? new Date().toISOString() : null } : b))
+      const { error } = await supabase
+        .from('bookings')
+        .update({ payment_verified_at: verified ? new Date().toISOString() : null })
+        .eq('id', bookingId)
+
+      if (error) {
+        setToast({ message: `Error: ${error.message}`, type: 'error' })
+        // revert
+        setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, payment_verified_at: !verified ? new Date().toISOString() : null } : b))
+      } else {
+        setToast({ message: verified ? 'Payment marked verified' : 'Payment verification cleared', type: 'success' })
+      }
+    } catch (err) {
+      setToast({ message: 'Error updating payment verification', type: 'error' })
+    }
+  }
+
   async function bulkDeleteBookings(){
     if (selectedBookings.size === 0) return
     const ok = typeof window !== 'undefined' ? window.confirm(`Delete ${selectedBookings.size} booking request(s)? This cannot be undone.`) : true
@@ -204,6 +230,48 @@ export default function OwnerBookingsPage(){
     } catch (err) {
       setToast({ message: 'Error deleting bookings', type: 'error' })
       loadOwnerBookings()
+    }
+  }
+
+  async function updateVerificationDetails(bookingId: string, details: { method?: string; reference?: string; notes?: string }){
+    try {
+      // Build partial payload only for provided fields to avoid null overwrites
+      const payload: any = { verified_by: userId || null }
+      const optimistic: any = {}
+      if (Object.prototype.hasOwnProperty.call(details, 'method')) {
+        payload.payment_method = details.method
+        optimistic.payment_method = details.method
+      }
+      if (Object.prototype.hasOwnProperty.call(details, 'reference')) {
+        payload.payment_reference = details.reference
+        optimistic.payment_reference = details.reference
+      }
+      if (Object.prototype.hasOwnProperty.call(details, 'notes')) {
+        payload.verified_notes = details.notes
+        optimistic.verified_notes = details.notes
+      }
+
+      // Optimistic update
+      setBookings(prev => prev.map(b => b.id === bookingId ? {
+        ...b,
+        ...optimistic,
+        verified_by: userId || b.verified_by || null,
+      } : b))
+
+      const { error } = await supabase
+        .from('bookings')
+        .update(payload)
+        .eq('id', bookingId)
+
+      if (error) {
+        setToast({ message: `Error: ${error.message}`, type: 'error' })
+        // reload to revert
+        loadOwnerBookings()
+      } else {
+        setToast({ message: 'Verification details saved', type: 'success' })
+      }
+    } catch (err) {
+      setToast({ message: 'Error saving verification details', type: 'error' })
     }
   }
 
@@ -315,6 +383,8 @@ export default function OwnerBookingsPage(){
       deleteBooking={deleteBooking}
       confirmBooking={confirmBooking}
       rejectBooking={rejectBooking}
+      updateVerificationDetails={updateVerificationDetails}
+      togglePaymentVerified={togglePaymentVerified}
     />
   )
 }

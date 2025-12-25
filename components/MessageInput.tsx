@@ -8,9 +8,10 @@ type Props = {
   disabled?: boolean
   chatId?: string
   onTyping?: () => void
+  participantRole?: 'guest' | 'owner' | 'admin'
 }
 
-export default function MessageInput({ onSend, disabled, chatId, onTyping }: Props) {
+export default function MessageInput({ onSend, disabled, chatId, onTyping, participantRole = 'guest' }: Props) {
   const [value, setValue] = useState("")
   const [sending, setSending] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -155,6 +156,98 @@ export default function MessageInput({ onSend, disabled, chatId, onTyping }: Pro
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
           </svg>
         </button>
+
+        {/* Role-aware payment templates */}
+        {participantRole === 'owner' && (
+          <button
+            className="shrink-0 px-2 py-1.5 rounded-md border border-amber-300 bg-amber-50 text-amber-800 text-xs hover:bg-amber-100 transition-colors disabled:opacity-50"
+            onClick={() => {
+              const template = [
+                'Here are my payment details:',
+                '- Method: GCash / Bank Transfer',
+                '- Account Name: [Your Name]',
+                '- Account Number: [GCash/Bank #]',
+                '- Amount: ₱[amount]',
+                '',
+                'Please send a receipt screenshot here and include your booking dates.'
+              ].join('\n')
+              setValue((prev) => prev?.trim() ? prev + '\n\n' + template : template)
+              handleTyping()
+            }}
+            disabled={disabled || sending || uploading}
+            title="Insert payment details"
+            aria-label="Insert payment details"
+          >
+            💳 Share payment details
+          </button>
+        )}
+
+        {participantRole === 'guest' && (
+          <button
+            className="shrink-0 px-2 py-1.5 rounded-md border border-emerald-300 bg-emerald-50 text-emerald-800 text-xs hover:bg-emerald-100 transition-colors disabled:opacity-50"
+            onClick={() => {
+              const template = [
+                'Payment sent via [GCash/Bank].',
+                'Amount: ₱[amount]',
+                'Reference #: [GCash ref / bank txn]',
+                '',
+                'Attached is my receipt screenshot.'
+              ].join('\n')
+              setValue((prev) => prev?.trim() ? prev + '\n\n' + template : template)
+              handleTyping()
+            }}
+            disabled={disabled || sending || uploading}
+            title="Insert receipt note"
+            aria-label="Insert receipt note"
+          >
+            📸 Receipt note
+          </button>
+        )}
+
+        {participantRole === 'admin' && (
+          <div className="flex items-center gap-1">
+            <button
+              className="shrink-0 px-2 py-1.5 rounded-md border border-amber-300 bg-amber-50 text-amber-800 text-xs hover:bg-amber-100 transition-colors disabled:opacity-50"
+              onClick={() => {
+                const template = [
+                  'Here are my payment details:',
+                  '- Method: GCash / Bank Transfer',
+                  '- Account Name: [Your Name]',
+                  '- Account Number: [GCash/Bank #]',
+                  '- Amount: ₱[amount]',
+                  '',
+                  'Please send a receipt screenshot here and include your booking dates.'
+                ].join('\n')
+                setValue((prev) => prev?.trim() ? prev + '\n\n' + template : template)
+                handleTyping()
+              }}
+              disabled={disabled || sending || uploading}
+              title="Insert payment details"
+              aria-label="Insert payment details"
+            >
+              💳 Share payment details
+            </button>
+            <button
+              className="shrink-0 px-2 py-1.5 rounded-md border border-emerald-300 bg-emerald-50 text-emerald-800 text-xs hover:bg-emerald-100 transition-colors disabled:opacity-50"
+              onClick={() => {
+                const template = [
+                  'Payment sent via [GCash/Bank].',
+                  'Amount: ₱[amount]',
+                  'Reference #: [GCash ref / bank txn]',
+                  '',
+                  'Attached is my receipt screenshot.'
+                ].join('\n')
+                setValue((prev) => prev?.trim() ? prev + '\n\n' + template : template)
+                handleTyping()
+              }}
+              disabled={disabled || sending || uploading}
+              title="Insert receipt note"
+              aria-label="Insert receipt note"
+            >
+              📸 Receipt note
+            </button>
+          </div>
+        )}
 
         <textarea
           className="flex-1 resize-none rounded-md border border-gray-300 p-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
