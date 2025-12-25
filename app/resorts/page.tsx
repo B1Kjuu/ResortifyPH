@@ -35,6 +35,10 @@ export default function ResortsPage(){
       // Observe existing and soon-to-render elements
       observeAll()
       setTimeout(observeAll, 0)
+      // Fallback: force-show reveals if observer doesn't trigger (e.g., browsers/issues)
+      setTimeout(() => {
+        document.querySelectorAll('.reveal').forEach((el) => (el as HTMLElement).classList.add('in-view'))
+      }, 250)
     } catch {}
     setMounted(true)
     // Nudge test environments by signaling "load" quickly after mount
@@ -611,9 +615,10 @@ export default function ResortsPage(){
               More filters (dates, price, amenities)
             </summary>
             
-            <div className="mt-4 p-4 bg-slate-50 rounded-xl space-y-4">
-              {/* Date Range */}
-              <div className="grid sm:grid-cols-2 gap-3 md:gap-4">
+            <div className="mt-4 p-4 bg-slate-50 rounded-xl">
+              <div className="max-w-3xl mx-auto space-y-4">
+                {/* Date Range */}
+                <div className="grid sm:grid-cols-2 gap-2 md:gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">Check-in</label>
                   <DatePicker
@@ -674,47 +679,48 @@ export default function ResortsPage(){
                       <button
                         key={amenity}
                         type="button"
-                        onClick={() => {
-                          if (active) {
-                            setSelectedAmenities(selectedAmenities.filter(a => a !== amenity))
-                          } else {
-                            setSelectedAmenities([...selectedAmenities, amenity])
-                          }
-                        }}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                          active 
-                            ? 'bg-resort-500 border-resort-500 text-white' 
-                            : 'bg-white border-slate-300 text-slate-700 hover:border-resort-400'
-                        }`}
-                      >
-                        {amenity}
-                      </button>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1.5">Check-out</label>
+                            <DatePicker
+                              selected={dateTo}
+                              onChange={(date) => setDateTo(date)}
+                              selectsEnd
+                              startDate={dateFrom}
+                              endDate={dateTo}
+                              minDate={dateFrom || new Date()}
+                              dateFormat="MMM d, yyyy"
+                              placeholderText="Select date"
+                              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400"
+                            />
+                          </div>
+                        </div>
                     )
-                  })}
-                </div>
-              </div>
-            </div>
-          </details>
-
-          {/* Results Count */}
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm text-slate-600">
-              Showing <span className="font-semibold text-slate-900">{filteredResorts.length}</span> resort{filteredResorts.length !== 1 ? 's' : ''}
-            </p>
-            
-            {/* Mobile View Toggle */}
-            <div className="flex md:hidden items-center gap-1 bg-slate-100 rounded-lg p-1">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-white shadow-sm' : ''}`}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                </svg>
-              </button>
-              <button
-                onClick={() => setViewMode('map')}
-                className={`p-1.5 rounded ${viewMode === 'map' ? 'bg-white shadow-sm' : ''}`}
+                        {/* Price Range */}
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-600 mb-2">
+                            Price: ₱{priceRange[0].toLocaleString()} - ₱{priceRange[1].toLocaleString()}
+                          </label>
+                          {priceBounds[0] !== priceBounds[1] ? (
+                            <div>
+                              <Slider
+                                range
+                                min={priceBounds[0]}
+                                max={priceBounds[1]}
+                                value={priceRange}
+                                onChange={(value) => setPriceRange(value as [number, number])}
+                                trackStyle={[{ backgroundColor: '#0ea5e9', height: 4 }]}
+                                handleStyle=[
+                                  { borderColor: '#0ea5e9', height: 16, width: 16, marginTop: -6, backgroundColor: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' },
+                                  { borderColor: '#0ea5e9', height: 16, width: 16, marginTop: -6, backgroundColor: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }
+                                ]
+                                railStyle={{ backgroundColor: '#e2e8f0', height: 4 }}
+                              />
+                            </div>
+                          ) : (
+                            <div className="h-2 bg-slate-200 rounded w-full animate-pulse" />
+                          )}
+                        </div>
+                      </div>
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
@@ -738,7 +744,7 @@ export default function ResortsPage(){
             /* Grid View */
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
               {filteredResorts.map((resort) => (
-                <div key={resort.id} className="relative reveal">
+                <div key={resort.id} className="relative">
                   {/* Distance Badge when Near Me is active */}
                   {showNearby && position && resort.distance !== null && (
                     <div className="absolute top-3 left-3 z-10 px-2 py-1 bg-white/95 backdrop-blur-sm rounded-full shadow-md flex items-center gap-1">
@@ -772,7 +778,7 @@ export default function ResortsPage(){
                   {filteredResorts.map((resort) => (
                     <div 
                       key={resort.id}
-                      className={`relative transition-all cursor-pointer reveal ${selectedMapResort === resort.id ? 'ring-2 ring-slate-900 rounded-2xl scale-[1.02]' : ''}`}
+                      className={`relative transition-all cursor-pointer ${selectedMapResort === resort.id ? 'ring-2 ring-slate-900 rounded-2xl scale-[1.02]' : ''}`}
                       onClick={() => setSelectedMapResort(resort.id)}
                     >
                       {/* Distance Badge when Near Me is active */}
