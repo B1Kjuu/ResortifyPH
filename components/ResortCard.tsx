@@ -46,7 +46,7 @@ export default function ResortCard({ resort, compact = false }: Props){
   return (
     <Link href={`/resorts/${resort.id}`}>
       <article 
-        className="group cursor-pointer h-full reveal"
+        className="group cursor-pointer h-full"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >

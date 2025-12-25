@@ -286,13 +286,14 @@ export default function Navbar(){
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <button
+          {/* Hide mobile Filters button to declutter navbar */}
+          {/* <button
             onClick={() => setShowMobileFilters(true)}
             className="lg:hidden px-3 py-1.5 text-sm font-semibold text-slate-600 bg-slate-100 rounded-full hover:bg-slate-200 transition whitespace-nowrap"
             aria-label="Open quick filters"
           >
             Filters
-          </button>
+          </button> */}
           {authChecked && user ? (
             <>
               {/* Role Switcher */}

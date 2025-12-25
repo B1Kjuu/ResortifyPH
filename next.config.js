@@ -10,14 +10,30 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
   statsFilename: 'bundle-stats.json'
 })
 
+// Resolve Supabase hostname from env so Next/Image accepts actual project host
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+let supabaseHostname = null
+try {
+  if (supabaseUrl) supabaseHostname = new URL(supabaseUrl).hostname
+} catch {}
+
 const nextConfig = {
   images: {
     remotePatterns: [
+      // Fallback to the previously used host (kept for safety)
       {
         protocol: 'https',
         hostname: 'xbyxreqfoiwvpfrkopur.supabase.co',
         pathname: '/storage/v1/object/public/**'
-      }
+      },
+      // Allow images from the current Supabase project host (from env)
+      ...(supabaseHostname ? [{
+        protocol: 'https',
+        hostname: supabaseHostname,
+        pathname: '/storage/v1/object/public/**'
+      }] : []),
+      // Optional: enable common avatar providers if needed later
+      // { protocol: 'https', hostname: 'lh3.googleusercontent.com', pathname: '/**' }
     ]
   },
   async headers() {

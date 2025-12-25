@@ -388,7 +388,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
           {/* Main Content */}
           <div className="space-y-4">
             {/* Gallery */}
-            <div className="bg-white rounded-2xl p-3 shadow-sm border border-slate-100 space-y-3 reveal">
+            <div className="bg-white rounded-2xl p-3 shadow-sm border border-slate-100 space-y-3">
               <div className="relative w-full h-[320px] sm:h-[420px] rounded-xl overflow-hidden bg-gradient-to-br from-resort-200 to-resort-300">
                 {galleryImages.length > 0 ? (
                   <Image
@@ -398,6 +398,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                     className="object-cover"
                     sizes="(min-width: 1024px) 65vw, 100vw"
                     priority
+                    unoptimized
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-6xl">🏖️</div>
@@ -449,7 +450,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
             </div>
 
             {/* Overview */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-5 reveal">
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-5">
               <div className="space-y-2">
                 <h1 className="text-3xl font-bold text-resort-900">{resort.name}</h1>
                 {/* Average Rating Badge */}
@@ -494,7 +495,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                 </div>
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-3 items-stretch reveal">
+              <div className="grid sm:grid-cols-2 gap-3 items-stretch">
                 <div className="bg-slate-50 rounded-xl p-4 space-y-2">
                   <p className="text-sm font-semibold text-slate-700">Check-in / Check-out</p>
                   <p className="text-sm text-slate-600">Check-in: {formatTime12h(resort.check_in_time || '14:00')}</p>
@@ -594,7 +595,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
           {/* Booking Card */}
           <div className="lg:col-span-1">
-            <div ref={bookingCardRef} className="bg-white rounded-2xl p-5 shadow-md border border-slate-100 lg:sticky lg:top-4 space-y-4 reveal">
+            <div ref={bookingCardRef} className="bg-white rounded-2xl p-5 shadow-md border border-slate-100 lg:sticky lg:top-4 space-y-4">
               <div className="flex items-baseline justify-between">
                 <h2 className="text-xl font-bold text-resort-900">Book Your Stay</h2>
                 <span className="text-sm text-slate-500">Flexible dates</span>
