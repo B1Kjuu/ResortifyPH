@@ -11,6 +11,7 @@ import LocationCombobox from '../../components/LocationCombobox'
 import ResortMap from '../../components/ResortMap'
 import { supabase } from '../../lib/supabaseClient'
 import { getProvinceCoordinates } from '../../lib/locations'
+import { getCityToProvinceMap } from '../../lib/psgcClient'
 import { useGeolocation, calculateDistance, formatDistance } from '../../hooks/useGeolocation'
 
 
@@ -248,6 +249,13 @@ export default function ResortsPage(){
   }, [dateFrom, dateTo, resorts])
 
   // Calculate distance for all resorts when position is available
+  const [cityProvinceMap, setCityProvinceMap] = useState<Map<string, string> | null>(null)
+  useEffect(() => {
+    let mounted = true
+    getCityToProvinceMap().then((m) => { if (mounted) setCityProvinceMap(m) })
+    return () => { mounted = false }
+  }, [])
+
   const resortsWithDistance = useMemo(() => {
     if (!position) return resorts.map(r => ({ ...r, distance: null, rating: ratingsMap[r.id]?.avg || null, reviews_count: ratingsMap[r.id]?.count || 0 }))
     
@@ -259,7 +267,14 @@ export default function ResortsPage(){
         lat = resort.latitude
         lng = resort.longitude
       } else {
-        const coords = getProvinceCoordinates(resort.location)
+        // Try province first
+        let coords = getProvinceCoordinates(resort.location)
+        // If not found, try city→province map
+        if (!coords && cityProvinceMap) {
+          const key = (resort.location || '').trim().normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+          const province = cityProvinceMap.get(key)
+          if (province) coords = getProvinceCoordinates(province)
+        }
         if (coords) {
           lat = coords.lat
           lng = coords.lng
@@ -271,7 +286,7 @@ export default function ResortsPage(){
       const distance = calculateDistance(position.latitude, position.longitude, lat, lng)
       return { ...resort, distance, rating: ratingsMap[resort.id]?.avg || null, reviews_count: ratingsMap[resort.id]?.count || 0 }
     })
-  }, [resorts, position, ratingsMap])
+  }, [resorts, position, ratingsMap, cityProvinceMap])
 
   const filteredResorts = useMemo(() => {
     const minPrice = priceRange[0]
@@ -281,7 +296,8 @@ export default function ResortsPage(){
       const searchText = `${resort.name || ''} ${resort.location || ''} ${resort.description || ''}`.toLowerCase()
       const matchesSearch = searchText.includes(searchTerm.toLowerCase())
 
-      const matchesLocation = selectedLocation === 'all' || resort.location === selectedLocation
+      const normalize = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+      const matchesLocation = selectedLocation === 'all' || normalize(resort.location || '').includes(normalize(selectedLocation))
 
       const matchesType = selectedType === 'all' || resort.type === selectedType
 
@@ -410,6 +426,48 @@ export default function ResortsPage(){
               </button>
             </div>
           </div>
+          {/* Mobile View Mode Toggle */}
+          <div className="md:hidden mt-3 flex items-center gap-1 bg-slate-100 rounded-xl p-1 w-full">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                viewMode === 'grid'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+              Grid
+            </button>
+            <button
+              onClick={() => setViewMode('split')}
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                viewMode === 'split'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7" />
+              </svg>
+              Split
+            </button>
+            <button
+              onClick={() => setViewMode('map')}
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                viewMode === 'map'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+              </svg>
+              Map
+            </button>
+          </div>
         </div>
         
         {/* Category Chips - Airbnb Style */}
@@ -484,7 +542,7 @@ export default function ResortsPage(){
           )}
 
           {/* Compact Filters Bar */}
-          <div className="overflow-x-auto scrollbar-hide">
+          <div className="overflow-x-auto overflow-y-visible scrollbar-hide">
             <div className="flex items-center gap-3 mb-6 flex-nowrap md:flex-wrap">
             {/* Near Me Button - Subtle toggle */}
             {mounted && geoSupported && (
@@ -584,6 +642,18 @@ export default function ResortsPage(){
               <option value="price-asc">Price ↑</option>
               <option value="price-desc">Price ↓</option>
             </select>
+
+            {/* Show Total toggle */}
+            <button
+              type="button"
+              onClick={() => setShowTotalPrice(v => !v)}
+              className={`flex-shrink-0 px-3 py-2 h-10 min-w-[90px] rounded-lg text-sm font-medium border transition-colors ${
+                showTotalPrice ? 'bg-resort-600 text-white border-resort-600' : 'bg-white text-slate-700 border-slate-300 hover:border-resort-400'
+              }`}
+              aria-pressed={showTotalPrice}
+            >
+              Total
+            </button>
 
             {/* Clear Filters - always visible for tests */}
             <button
@@ -727,7 +797,7 @@ export default function ResortsPage(){
                       <span className="text-xs font-semibold text-emerald-700">{formatDistance(resort.distance)}</span>
                     </div>
                   )}
-                  <ResortCard resort={resort} />
+                  <ResortCard resort={resort} nights={(dateFrom && dateTo) ? Math.ceil((dateTo.getTime() - dateFrom.getTime())/(1000*60*60*24)) : 0} showTotalPrice={showTotalPrice} />
                 </div>
               ))}
             </div>

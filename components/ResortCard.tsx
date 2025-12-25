@@ -14,9 +14,11 @@ function isNewListing(createdAt: string) {
 type Props = {
   resort: any
   compact?: boolean
+  nights?: number
+  showTotalPrice?: boolean
 }
 
-export default function ResortCard({ resort, compact = false }: Props){
+export default function ResortCard({ resort, compact = false, nights = 0, showTotalPrice = false }: Props){
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
@@ -170,6 +172,11 @@ export default function ResortCard({ resort, compact = false }: Props){
               </span>
             )}
           </div>
+          {showTotalPrice && nights > 0 && resort.price ? (
+            <div className="mt-0.5 text-xs text-slate-600">
+              Total for {nights} night{nights > 1 ? 's' : ''}: <span className="font-semibold text-slate-900">₱{(nights * (resort.price || 0)).toLocaleString()}</span>
+            </div>
+          ) : null}
         </div>
       </article>
     </Link>
