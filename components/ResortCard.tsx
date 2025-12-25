@@ -1,7 +1,8 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useFavorites } from '../hooks/useFavorites'
 
 // Helper to check if listing is new (within last 14 days)
 function isNewListing(createdAt: string) {
@@ -20,8 +21,9 @@ type Props = {
 
 export default function ResortCard({ resort, compact = false, nights = 0, showTotalPrice = false }: Props){
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
-  const [isWishlisted, setIsWishlisted] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
+  const { ready, isFavorite, toggleFavorite } = useFavorites()
+  const isFavorited = useMemo(() => (resort?.id ? isFavorite(resort.id) : false), [isFavorite, resort?.id])
   
   const images = resort.images?.length > 0 
     ? resort.images 
@@ -39,10 +41,12 @@ export default function ResortCard({ resort, compact = false, nights = 0, showTo
     setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))
   }
   
-  const handleWishlist = (e: React.MouseEvent) => {
+  const handleFavorite = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    setIsWishlisted(!isWishlisted)
+    if (resort?.id) {
+      toggleFavorite(resort.id)
+    }
   }
   
   return (
@@ -101,14 +105,16 @@ export default function ResortCard({ resort, compact = false, nights = 0, showTo
             </div>
           )}
           
-          {/* Wishlist Heart */}
+          {/* Favorite Heart */}
           <button 
-            onClick={handleWishlist}
+            onClick={handleFavorite}
             className="absolute top-3 right-3 p-2 transition-transform hover:scale-110"
+            aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+            title={!ready ? 'Sign in to favorite' : (isFavorited ? 'Favorited' : 'Favorite')}
           >
             <svg 
               className={`w-6 h-6 drop-shadow-md transition-colors ${
-                isWishlisted ? 'text-red-500 fill-red-500' : 'text-white fill-white/20 stroke-white'
+                isFavorited ? 'text-red-500 fill-red-500' : 'text-white fill-white/20 stroke-white'
               }`} 
               fill="currentColor"
               stroke="currentColor"

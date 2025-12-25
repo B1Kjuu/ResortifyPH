@@ -509,9 +509,9 @@ export default function ProfilePage(){
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
                   <span>💚</span>
-                  <span>Wishlist</span>
+                  <span>Favorites</span>
                 </label>
-                <div className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-600">Save favorite resorts — coming soon.</div>
+                <div className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-600">Your favorited resorts will appear here.</div>
               </div>
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
