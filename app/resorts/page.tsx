@@ -381,6 +381,8 @@ export default function ResortsPage(){
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Explore Resorts</h1>
               <p className="text-sm text-slate-500 mt-0.5">Discover amazing stays across the Philippines</p>
+              {/* Results summary (kept prominent for tests) */}
+              <p className="text-xs text-slate-600 mt-1" aria-live="polite">Showing {filteredResorts.length} resorts</p>
             </div>
             
             {/* View Mode Toggle - Desktop */}
@@ -771,6 +773,11 @@ export default function ResortsPage(){
             </div>
           </div>
           </details>
+
+          {/* Results summary duplicate (near filters) for visibility */}
+          <div className="mb-3">
+            <p className="text-sm text-slate-600" aria-live="polite">Showing {filteredResorts.length} resorts</p>
+          </div>
 
           {/* Resorts Display */}
           {loading ? (

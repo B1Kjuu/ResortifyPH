@@ -18,6 +18,8 @@ export default function ProfilePage(){
   const [message, setMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null)
   const [activeTab, setActiveTab] = useState<'personal' | 'account' | 'travel'>('personal')
   const [bookings, setBookings] = useState<any[]>([])
+  const [favorites, setFavorites] = useState<any[]>([])
+  const [favoritesLoading, setFavoritesLoading] = useState<boolean>(true)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmNewPassword, setConfirmNewPassword] = useState('')
@@ -66,6 +68,23 @@ export default function ProfilePage(){
             .eq('guest_id', session.user.id)
             .order('created_at', { ascending: false })
           setBookings(userBookings || [])
+
+          // Load favorites joined with resorts
+          const { data: favs, error: favError } = await supabase
+            .from('favorites')
+            .select('resort:resorts(id, name, location, price, images)')
+            .eq('user_id', session.user.id)
+          if (favError) {
+            console.error('Favorites error:', favError)
+            setFavorites([])
+          } else {
+            // Flatten and filter valid resorts
+            const resorts = (favs || [])
+              .map((f: any) => f.resort)
+              .filter((r: any) => r && r.id)
+            setFavorites(resorts)
+          }
+          setFavoritesLoading(false)
           setLoading(false)
         }
       } catch (err) {
@@ -511,7 +530,32 @@ export default function ProfilePage(){
                   <span>💚</span>
                   <span>Favorites</span>
                 </label>
-                <div className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-600">Your favorited resorts will appear here.</div>
+                {favoritesLoading ? (
+                  <div className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-600">Loading favorites…</div>
+                ) : favorites.length === 0 ? (
+                  <div className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-600">No favorites yet. Tap the heart on a resort to add it.</div>
+                ) : (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {favorites.map((r: any) => (
+                      <Link key={r.id} href={`/resorts/${r.id}`} className="flex items-center gap-3 p-4 border-2 border-slate-200 rounded-xl bg-white hover:border-resort-300 transition">
+                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
+                          {Array.isArray(r.images) && r.images.length > 0 ? (
+                            <img src={r.images[0]} alt={r.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-slate-400">🏝️</div>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-semibold text-resort-900 truncate">{r.name}</div>
+                          <div className="text-sm text-slate-600 truncate">{r.location || '—'}</div>
+                          {r.price != null && (
+                            <div className="text-xs text-slate-500">From ₱{r.price}</div>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">

@@ -33,6 +33,10 @@ type Props = {
   rejectBooking: (id: string) => void
   updateVerificationDetails: (id: string, details: { method?: string; reference?: string; notes?: string }) => void
   togglePaymentVerified: (id: string, verified: boolean) => void
+  approveCancellation: (id: string) => void
+  declineCancellation: (id: string) => void
+  bulkApproveCancellations: () => void
+  bulkDeclineCancellations: () => void
 }
 
 export default function OwnerBookingsContent(props: Props){
@@ -43,11 +47,13 @@ export default function OwnerBookingsContent(props: Props){
     calendarRef, pendingBookings, confirmedBookings, rejectedBookings,
     selectedBookings, toggleSelect, toggleSelectAll, bulkDeleteBookings,
     deleteBooking, confirmBooking, rejectBooking, updateVerificationDetails, togglePaymentVerified,
+    approveCancellation, declineCancellation, bulkApproveCancellations, bulkDeclineCancellations,
   } = props
 
   // Top-level owner nav tabs
-  const [tab, setTab] = React.useState<'requests' | 'calendar' | 'confirmed' | 'history'>('requests')
+  const [tab, setTab] = React.useState<'requests' | 'calendar' | 'confirmed' | 'cancellations' | 'history'>('requests')
   const [showOnlyVerified, setShowOnlyVerified] = React.useState(false)
+  const [showOnlyCancellations, setShowOnlyCancellations] = React.useState(false)
   const [verificationEdits, setVerificationEdits] = React.useState<Record<string, { method: string; reference: string; notes: string }>>({})
 
   const setEdit = (id: string, field: 'method' | 'reference' | 'notes', value: string) => {
@@ -61,8 +67,12 @@ export default function OwnerBookingsContent(props: Props){
   const pastConfirmed = confirmedBookings.filter(b => new Date(b.date_to) < now)
 
   const pendingToShow = showOnlyVerified ? pendingBookings.filter(b => !!b.payment_verified_at) : pendingBookings
-  const upcomingToShow = showOnlyVerified ? upcomingConfirmed.filter(b => !!b.payment_verified_at) : upcomingConfirmed
-  const pastToShow = showOnlyVerified ? pastConfirmed.filter(b => !!b.payment_verified_at) : pastConfirmed
+  let upcomingToShow = showOnlyVerified ? upcomingConfirmed.filter(b => !!b.payment_verified_at) : upcomingConfirmed
+  let pastToShow = showOnlyVerified ? pastConfirmed.filter(b => !!b.payment_verified_at) : pastConfirmed
+  if (showOnlyCancellations) {
+    upcomingToShow = upcomingToShow.filter(b => b.cancellation_status === 'requested')
+    pastToShow = pastToShow.filter(b => b.cancellation_status === 'requested')
+  }
 
   const pendingVerifiedCount = pendingBookings.filter(b => !!b.payment_verified_at).length
   const upcomingVerifiedCount = upcomingConfirmed.filter(b => !!b.payment_verified_at).length
@@ -90,6 +100,7 @@ export default function OwnerBookingsContent(props: Props){
                 { key: 'requests', label: `Requests (${pendingBookings.length})` },
                 { key: 'calendar', label: 'Calendar' },
                 { key: 'confirmed', label: `Confirmed (${upcomingConfirmed.length})` },
+                { key: 'cancellations', label: 'Cancellations' },
                 { key: 'history', label: `History (${pastConfirmed.length + rejectedBookings.length})` },
               ] as const).map((t) => (
                 <button
@@ -109,6 +120,15 @@ export default function OwnerBookingsContent(props: Props){
                   onChange={(e) => setShowOnlyVerified(e.target.checked)}
                 />
                 Show only payment verified
+              </label>
+              <label className="flex items-center gap-2 px-2 py-1 rounded-xl text-xs text-slate-700">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 rounded border-slate-300"
+                  checked={showOnlyCancellations}
+                  onChange={(e) => setShowOnlyCancellations(e.target.checked)}
+                />
+                Show only cancellations
               </label>
             </div>
           </div>
@@ -205,7 +225,7 @@ export default function OwnerBookingsContent(props: Props){
                     </div>
                   )}
                 </div>
-                <p className="text-sm text-slate-600 mt-2">Red-marked dates are already booked.</p>
+                <p className="text-sm text-slate-600 mt-2">Upcoming red-marked dates are already booked.</p>
                 {selectedDate && selectedDayBookings.length > 0 && (
                   <div className="fixed inset-0 z-50 flex items-center justify-center">
                     <div className="absolute inset-0 bg-black/40" onClick={() => { setSelectedDate(null); setSelectedDayBookings([]) }} />
@@ -232,7 +252,10 @@ export default function OwnerBookingsContent(props: Props){
                                 <p className="text-sm text-slate-700 mt-1">👥 {b.guest_count} {b.guest_count === 1 ? 'guest' : 'guests'}</p>
                               </div>
                               <div className="flex flex-col items-end gap-2">
-                                <span className={"text-xs px-2 py-1 rounded-lg border-2 " + (b.status === 'confirmed' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-yellow-100 text-yellow-800 border-yellow-300')}>{b.status}</span>
+                                  <span className={"text-xs px-2 py-1 rounded-lg border-2 " + (b.status === 'confirmed' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-yellow-100 text-yellow-800 border-yellow-300')}>{b.status}</span>
+                                  {b.cancellation_status === 'requested' && (
+                                    <span className="text-[10px] bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-lg border border-yellow-200">⚠ Cancellation requested</span>
+                                  )}
                                 <ChatLink bookingId={b.id} as="owner" label="Open Chat" title={b.guest?.full_name || b.guest?.email || 'Guest'} />
                               </div>
                             </div>
@@ -416,6 +439,9 @@ export default function OwnerBookingsContent(props: Props){
                         {booking.payment_verified_at && (
                           <span className="ml-2 text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-lg border border-emerald-200">✔ Verified</span>
                         )}
+                        {booking.cancellation_status === 'requested' && (
+                          <span className="ml-2 text-[10px] bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-lg border border-yellow-200">⚠ Cancellation requested</span>
+                        )}
                       </div>
 
                       <div className="bg-white rounded-xl p-4 border border-green-100">
@@ -425,6 +451,9 @@ export default function OwnerBookingsContent(props: Props){
                         <p className="text-sm text-slate-700">
                           👥 <span className="font-bold">{booking.guest_count} {booking.guest_count === 1 ? 'guest' : 'guests'}</span>
                         </p>
+                        {booking.cancellation_status === 'requested' && (
+                          <p className="text-sm text-yellow-700 mt-2">Guest requested cancellation{booking.cancellation_reason ? ` — ${booking.cancellation_reason}` : ''}.</p>
+                        )}
                         <p className="text-sm text-slate-600 mt-2 italic">
                           ✓ Confirmed: {new Date(booking.created_at).toLocaleDateString()}
                         </p>
@@ -443,6 +472,18 @@ export default function OwnerBookingsContent(props: Props){
                             )}
                           </label>
                         </div>
+                        {booking.cancellation_status === 'requested' && (
+                          <div className="mt-3 flex items-center gap-2">
+                            <button
+                              onClick={() => approveCancellation(booking.id)}
+                              className="px-3 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg border-2 border-red-500"
+                            >Approve Cancellation</button>
+                            <button
+                              onClick={() => declineCancellation(booking.id)}
+                              className="px-3 py-2 text-xs font-semibold bg-slate-100 text-slate-900 rounded-lg border-2 border-slate-300 hover:bg-slate-200"
+                            >Decline</button>
+                          </div>
+                        )}
                         <details className="mt-3">
                           <summary className="text-xs text-slate-700 cursor-pointer select-none">Verification details</summary>
                           <div className="mt-2 grid sm:grid-cols-3 gap-2">
@@ -489,6 +530,94 @@ export default function OwnerBookingsContent(props: Props){
                   ))}
                 </div>
               )}
+            </section>
+            )}
+
+            {/* Cancellations Tab */}
+            {tab === 'cancellations' && (
+            <section className="mb-12 fade-in-up">
+              {(() => {
+                const isRequested = (b: any) => (b.cancellation_status === 'requested') || (!!b.cancellation_requested_at) || (!!b.cancellation_reason && b.cancellation_reason.length > 0)
+                const cancellationList = [...upcomingConfirmed, ...pastConfirmed].filter(isRequested)
+                return (
+                  <>
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-3">
+                        <h2 className="text-3xl font-bold text-slate-900">Cancellation Requests ({cancellationList.length})</h2>
+                        {cancellationList.length > 0 && (
+                          <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={cancellationList.every(b => selectedBookings.has(b.id))}
+                              onChange={() => toggleSelectAll(cancellationList)}
+                              className="w-4 h-4 rounded border-slate-300"
+                            />
+                            Select All
+                          </label>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={bulkApproveCancellations}
+                          disabled={[...selectedBookings].filter(id => cancellationList.some(b => b.id === id)).length === 0}
+                          className={`px-4 py-2 rounded-xl font-semibold border-2 transition-all ${[...selectedBookings].filter(id => cancellationList.some(b => b.id === id)).length === 0 ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 text-white border-red-500'}`}
+                        >Approve Selected</button>
+                        <button
+                          onClick={bulkDeclineCancellations}
+                          disabled={[...selectedBookings].filter(id => cancellationList.some(b => b.id === id)).length === 0}
+                          className={`px-4 py-2 rounded-xl font-semibold border-2 transition-all ${[...selectedBookings].filter(id => cancellationList.some(b => b.id === id)).length === 0 ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-slate-100 text-slate-900 border-slate-300 hover:bg-slate-200'}`}
+                        >Decline Selected</button>
+                      </div>
+                    </div>
+
+                    {cancellationList.length === 0 ? (
+                      <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center">
+                        <p className="text-lg font-bold text-slate-900 mb-2">No cancellation requests</p>
+                        <p className="text-slate-600">Guests' cancellation requests will appear here</p>
+                      </div>
+                    ) : (
+                      <div className="grid md:grid-cols-2 gap-6">
+                        {cancellationList.map(booking => (
+                          <div key={booking.id} className="bg-white border-2 rounded-2xl p-6 shadow-sm">
+                            <div className="flex items-start gap-3 mb-4">
+                              <input
+                                type="checkbox"
+                                checked={selectedBookings.has(booking.id)}
+                                onChange={() => toggleSelect(booking.id)}
+                                className="w-5 h-5 mt-1 rounded border-slate-300 cursor-pointer"
+                              />
+                              <div className="flex-1">
+                                <div className="flex justify-between items-start mb-2">
+                                  <div>
+                                    <h3 className="text-lg font-bold text-slate-900">{booking.resort?.name}</h3>
+                                    <p className="text-sm text-slate-600">👤 {booking.guest?.full_name} — 📧 {booking.guest?.email}</p>
+                                  </div>
+                                  <span className="text-[10px] bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-lg border border-yellow-200">⚠ Cancellation requested</span>
+                                </div>
+                                <p className="text-sm text-slate-700 mb-2">📅 {booking.date_from} → {booking.date_to}</p>
+                                {booking.cancellation_reason && (
+                                  <p className="text-sm text-slate-700">Reason: {booking.cancellation_reason}</p>
+                                )}
+                                <div className="mt-3 flex items-center gap-2 justify-end">
+                                  <button
+                                    onClick={() => approveCancellation(booking.id)}
+                                    className="px-3 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg border-2 border-red-500"
+                                  >Approve</button>
+                                  <button
+                                    onClick={() => declineCancellation(booking.id)}
+                                    className="px-3 py-2 text-xs font-semibold bg-slate-100 text-slate-900 rounded-lg border-2 border-slate-300 hover:bg-slate-200"
+                                  >Decline</button>
+                                  <ChatLink bookingId={booking.id} as="owner" label="Open Chat" title={booking.guest?.full_name || booking.guest?.email || 'Guest'} />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
             </section>
             )}
 
@@ -589,6 +718,18 @@ export default function OwnerBookingsContent(props: Props){
                         <div className="mt-3 flex justify-end">
                           <ChatLink bookingId={booking.id} as="owner" label="Open Chat" title={booking.guest?.full_name || booking.guest?.email || 'Guest'} />
                         </div>
+                        {booking.cancellation_status === 'requested' && (
+                          <div className="mt-3 flex items-center gap-2">
+                            <button
+                              onClick={() => approveCancellation(booking.id)}
+                              className="px-3 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg border-2 border-red-500"
+                            >Approve Cancellation</button>
+                            <button
+                              onClick={() => declineCancellation(booking.id)}
+                              className="px-3 py-2 text-xs font-semibold bg-slate-100 text-slate-900 rounded-lg border-2 border-slate-300 hover:bg-slate-200"
+                            >Decline</button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}

@@ -34,6 +34,12 @@ export default function AdventureHub(){
   const [trendingResorts, setTrendingResorts] = useState<any[]>([])
   const [trendLoading, setTrendLoading] = useState(true)
 
+  // Favorites & Reviews
+  const [favorites, setFavorites] = useState<any[]>([])
+  const [favoritesLoading, setFavoritesLoading] = useState<boolean>(true)
+  const [myReviews, setMyReviews] = useState<any[]>([])
+  const [reviewsLoading, setReviewsLoading] = useState<boolean>(true)
+
   // Map preview (uses geolocation if available)
   const { position, supported: geoSupported, requestLocation, loading: geoLoading } = useGeolocation()
   const nearbyResorts = useMemo(() => {
@@ -99,6 +105,52 @@ export default function AdventureHub(){
     // Optionally dispatch load for SPA navigation tests
     setTimeout(() => { try { window.dispatchEvent(new Event('load')) } catch {} }, 0)
     
+    return () => { mounted = false }
+  }, [])
+
+  // Fetch favorites and reviews for the guest
+  useEffect(() => {
+    let mounted = true
+    async function fetchGuestData(){
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.user) return
+        // Favorites joined to resorts
+        const { data: favs, error: favError } = await supabase
+          .from('favorites')
+          .select('resort:resorts(id, name, location, price, images)')
+          .eq('user_id', session.user.id)
+        if (!mounted) return
+        if (favError) {
+          console.error('Favorites fetch error:', favError)
+          setFavorites([])
+        } else {
+          const resorts = (favs || []).map((f: any) => f.resort).filter((r: any) => r && r.id)
+          setFavorites(resorts)
+        }
+        setFavoritesLoading(false)
+
+        // User reviews joined to resorts
+        const { data: revs, error: revError } = await supabase
+          .from('reviews')
+          .select('id, rating, comment, created_at, resorts:resorts(id, name)')
+          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false })
+          .limit(6)
+        if (!mounted) return
+        if (revError) {
+          console.error('Reviews fetch error:', revError)
+          setMyReviews([])
+        } else {
+          setMyReviews(revs || [])
+        }
+        setReviewsLoading(false)
+      } catch (e) {
+        console.error('Guest favorites/reviews error:', e)
+        if (mounted) { setFavoritesLoading(false); setReviewsLoading(false) }
+      }
+    }
+    fetchGuestData()
     return () => { mounted = false }
   }, [])
 
@@ -386,18 +438,61 @@ export default function AdventureHub(){
             </span>
           </Link>
 
-          {/* Favorites - Coming Soon */}
-          <div className="bg-white border-2 border-dashed border-slate-300 rounded-2xl p-8 flex flex-col items-center justify-center text-center opacity-60">
-            <div className="text-5xl mb-3">❤️</div>
-            <h3 className="text-lg font-bold text-slate-700 mb-1">Favorites</h3>
-            <p className="text-xs text-slate-500">Coming Soon</p>
+          {/* Favorites Preview */}
+          <div className="bg-white border-2 border-slate-200 rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-bold text-slate-900">Favorites</h3>
+              <Link href="/profile" className="text-xs font-semibold text-resort-600 hover:text-resort-700">Manage →</Link>
+            </div>
+            {favoritesLoading ? (
+              <div className="text-sm text-slate-600">Loading favorites…</div>
+            ) : favorites.length === 0 ? (
+              <div className="text-sm text-slate-600">No favorites yet. Tap the heart on a resort to add it.</div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {favorites.slice(0,6).map((r: any) => (
+                  <Link key={r.id} href={`/resorts/${r.id}`} className="flex items-center gap-3 p-3 border border-slate-200 rounded-xl hover:border-resort-300 transition">
+                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
+                      {Array.isArray(r.images) && r.images.length > 0 ? (
+                        <img src={r.images[0]} alt={r.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-slate-400">🏝️</div>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-semibold text-slate-900 truncate">{r.name}</div>
+                      <div className="text-xs text-slate-600 truncate">{r.location || '—'}</div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Reviews - Coming Soon */}
-          <div className="bg-white border-2 border-dashed border-slate-300 rounded-2xl p-8 flex flex-col items-center justify-center text-center opacity-60">
-            <div className="text-5xl mb-3">⭐</div>
-            <h3 className="text-lg font-bold text-slate-700 mb-1">Reviews</h3>
-            <p className="text-xs text-slate-500">Coming Soon</p>
+          {/* Reviews Preview */}
+          <div className="bg-white border-2 border-slate-200 rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-bold text-slate-900">Reviews</h3>
+              <Link href="/profile" className="text-xs font-semibold text-resort-600 hover:text-resort-700">Manage →</Link>
+            </div>
+            {reviewsLoading ? (
+              <div className="text-sm text-slate-600">Loading reviews…</div>
+            ) : myReviews.length === 0 ? (
+              <div className="text-sm text-slate-600">You have not posted any reviews yet.</div>
+            ) : (
+              <div className="space-y-3">
+                {myReviews.slice(0,6).map((rev: any) => (
+                  <div key={rev.id} className="p-3 border border-slate-200 rounded-xl">
+                    <div className="flex items-center justify-between">
+                      <div className="font-semibold text-slate-900">{rev.resorts?.name || 'Resort'}</div>
+                      <div className="text-xs text-slate-600">{new Date(rev.created_at).toLocaleDateString()}</div>
+                    </div>
+                    <div className="text-sm text-slate-700">Rating: {rev.rating}/5</div>
+                    {rev.comment && (<div className="text-sm text-slate-600 mt-1">“{rev.comment}”</div>)}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

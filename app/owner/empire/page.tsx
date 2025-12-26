@@ -126,12 +126,15 @@ export default function Empire(){
   const bookedDatesForCalendar = useMemo(() => {
     const dates: Date[] = []
     const seen = new Set<string>()
+    const today = new Date(); today.setHours(0,0,0,0)
     confirmedBookings
       .filter(b => selectedResortId === 'all' || b.resort_id === selectedResortId)
       .forEach(b => {
         const start = new Date(b.date_from)
         const end = new Date(b.date_to)
         eachDayOfInterval({ start, end }).forEach(d => {
+          // Exclude past dates; only mark today and upcoming
+          if (d < today) return
           const key = d.toISOString().slice(0,10)
           if (!seen.has(key)) {
             seen.add(key)
@@ -293,7 +296,7 @@ export default function Empire(){
                 </div>
               )}
             </div>
-            <p className="text-sm text-slate-600 mt-2">Red-marked dates are already booked.</p>
+            <p className="text-sm text-slate-600 mt-2">Upcoming red-marked dates are already booked.</p>
             {selectedDate && selectedDayBookings.length > 0 && (
               <div className="fixed inset-0 z-50 flex items-center justify-center">
                 <div className="absolute inset-0 bg-black/40" onClick={() => { setSelectedDate(null); setSelectedDayBookings([]) }} />

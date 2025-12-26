@@ -41,6 +41,10 @@ export default function OwnerBookingsPage(){
         guest_count: row.guest_count,
         status: row.status,
         created_at: row.created_at,
+        // Cancellation fields (if present in RPC)
+        cancellation_status: row.cancellation_status ?? null,
+        cancellation_requested_at: row.cancellation_requested_at ?? null,
+        cancellation_reason: row.cancellation_reason ?? null,
         // Payment verification fields
         payment_verified_at: row.payment_verified_at ?? null,
         payment_method: row.payment_method ?? null,
@@ -128,6 +132,20 @@ export default function OwnerBookingsPage(){
         setToast({ message: 'Booking confirmed!', type: 'success' })
         // rely on realtime to refresh; as a fallback, refresh after a short delay
         setTimeout(() => loadOwnerBookings(), 500)
+        try {
+          const booking = bookings.find(b => b.id === bookingId)
+          if (booking?.guest?.id) {
+            const { notify } = await import('../../../lib/notifications')
+            await notify({
+              userId: booking.guest.id,
+              type: 'booking_confirmed',
+              title: 'Your booking was confirmed',
+              body: `${booking.resort?.name || 'Resort'} — ${booking.date_from} to ${booking.date_to}`,
+              link: `/guest/trips/${bookingId}`,
+              metadata: { bookingId }
+            })
+          }
+        } catch (e) { console.warn('Notify failed:', e) }
       }
     } catch (err) {
       setToast({ message: 'Error confirming booking', type: 'error' })
@@ -151,9 +169,95 @@ export default function OwnerBookingsPage(){
         setToast({ message: 'Booking rejected', type: 'success' })
         // rely on realtime to refresh; as a fallback, refresh after a short delay
         setTimeout(() => loadOwnerBookings(), 500)
+        try {
+          const booking = bookings.find(b => b.id === bookingId)
+          if (booking?.guest?.id) {
+            const { notify } = await import('../../../lib/notifications')
+            await notify({
+              userId: booking.guest.id,
+              type: 'booking_rejected',
+              title: 'Your booking was rejected',
+              body: `${booking.resort?.name || 'Resort'} — ${booking.date_from} to ${booking.date_to}`,
+              link: `/guest/trips/${bookingId}`,
+              metadata: { bookingId }
+            })
+          }
+        } catch (e) { console.warn('Notify failed:', e) }
       }
     } catch (err) {
       setToast({ message: 'Error rejecting booking', type: 'error' })
+    }
+  }
+
+  // Approve guest cancellation request: mark booking cancelled and set status accordingly
+  async function approveCancellation(bookingId: string){
+    try {
+      // Optimistic update
+      setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'cancelled', cancellation_status: 'approved' } : b))
+      const { error } = await supabase
+        .from('bookings')
+        .update({ status: 'cancelled', cancellation_status: 'approved' })
+        .eq('id', bookingId)
+
+      if (error) {
+        setToast({ message: `Error: ${error.message}`, type: 'error' })
+        // revert
+        loadOwnerBookings()
+      } else {
+        setToast({ message: 'Cancellation approved', type: 'success' })
+        try {
+          const booking = bookings.find(b => b.id === bookingId)
+          if (booking?.guest?.id) {
+            const { notify } = await import('../../../lib/notifications')
+            await notify({
+              userId: booking.guest.id,
+              type: 'cancellation_approved',
+              title: 'Your cancellation was approved',
+              body: `${booking.resort?.name || 'Resort'} — ${booking.date_from} to ${booking.date_to}`,
+              link: `/guest/trips/${bookingId}`,
+              metadata: { bookingId }
+            })
+          }
+        } catch (e) { console.warn('Notify failed:', e) }
+      }
+    } catch (err) {
+      setToast({ message: 'Error approving cancellation', type: 'error' })
+    }
+  }
+
+  // Decline guest cancellation request: keep booking confirmed but mark declined
+  async function declineCancellation(bookingId: string){
+    try {
+      // Optimistic update
+      setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, cancellation_status: 'declined' } : b))
+      const { error } = await supabase
+        .from('bookings')
+        .update({ cancellation_status: 'declined' })
+        .eq('id', bookingId)
+
+      if (error) {
+        setToast({ message: `Error: ${error.message}`, type: 'error' })
+        // revert
+        loadOwnerBookings()
+      } else {
+        setToast({ message: 'Cancellation declined', type: 'success' })
+        try {
+          const booking = bookings.find(b => b.id === bookingId)
+          if (booking?.guest?.id) {
+            const { notify } = await import('../../../lib/notifications')
+            await notify({
+              userId: booking.guest.id,
+              type: 'cancellation_declined',
+              title: 'Your cancellation was declined',
+              body: `${booking.resort?.name || 'Resort'} — ${booking.date_from} to ${booking.date_to}`,
+              link: `/guest/trips/${bookingId}`,
+              metadata: { bookingId }
+            })
+          }
+        } catch (e) { console.warn('Notify failed:', e) }
+      }
+    } catch (err) {
+      setToast({ message: 'Error declining cancellation', type: 'error' })
     }
   }
 
@@ -199,6 +303,22 @@ export default function OwnerBookingsPage(){
         setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, payment_verified_at: !verified ? new Date().toISOString() : null } : b))
       } else {
         setToast({ message: verified ? 'Payment marked verified' : 'Payment verification cleared', type: 'success' })
+        if (verified) {
+          try {
+            const booking = bookings.find(b => b.id === bookingId)
+            if (booking?.guest?.id) {
+              const { notify } = await import('../../../lib/notifications')
+              await notify({
+                userId: booking.guest.id,
+                type: 'payment_verified',
+                title: 'Payment marked verified',
+                body: `${booking.resort?.name || 'Resort'} — ${booking.date_from} to ${booking.date_to}`,
+                link: `/guest/trips/${bookingId}`,
+                metadata: { bookingId }
+              })
+            }
+          } catch (e) { console.warn('Notify failed:', e) }
+        }
       }
     } catch (err) {
       setToast({ message: 'Error updating payment verification', type: 'error' })
@@ -305,6 +425,52 @@ export default function OwnerBookingsPage(){
     })
   }
 
+  async function bulkApproveCancellations(){
+    const ids = bookings.filter(b => selectedBookings.has(b.id) && b.cancellation_status === 'requested').map(b => b.id)
+    if (ids.length === 0) return
+    const ok = typeof window !== 'undefined' ? window.confirm(`Approve cancellation for ${ids.length} booking(s)?`) : true
+    if (!ok) return
+    try {
+      setBookings(prev => prev.map(b => ids.includes(b.id) ? { ...b, status: 'cancelled', cancellation_status: 'approved' } : b))
+      const { error } = await supabase
+        .from('bookings')
+        .update({ status: 'cancelled', cancellation_status: 'approved' })
+        .in('id', ids)
+      if (error) {
+        setToast({ message: `Error: ${error.message}`, type: 'error' })
+        loadOwnerBookings()
+      } else {
+        setToast({ message: `${ids.length} cancellation(s) approved`, type: 'success' })
+      }
+    } catch (err) {
+      setToast({ message: 'Error approving cancellations', type: 'error' })
+      loadOwnerBookings()
+    }
+  }
+
+  async function bulkDeclineCancellations(){
+    const ids = bookings.filter(b => selectedBookings.has(b.id) && b.cancellation_status === 'requested').map(b => b.id)
+    if (ids.length === 0) return
+    const ok = typeof window !== 'undefined' ? window.confirm(`Decline cancellation for ${ids.length} booking(s)?`) : true
+    if (!ok) return
+    try {
+      setBookings(prev => prev.map(b => ids.includes(b.id) ? { ...b, cancellation_status: 'declined' } : b))
+      const { error } = await supabase
+        .from('bookings')
+        .update({ cancellation_status: 'declined' })
+        .in('id', ids)
+      if (error) {
+        setToast({ message: `Error: ${error.message}`, type: 'error' })
+        loadOwnerBookings()
+      } else {
+        setToast({ message: `${ids.length} cancellation(s) declined`, type: 'success' })
+      }
+    } catch (err) {
+      setToast({ message: 'Error declining cancellations', type: 'error' })
+      loadOwnerBookings()
+    }
+  }
+
   const pendingBookings = bookings.filter(b => b.status === 'pending')
   const confirmedBookings = bookings.filter(b => b.status === 'confirmed')
   const rejectedBookings = bookings.filter(b => b.status === 'rejected')
@@ -385,6 +551,10 @@ export default function OwnerBookingsPage(){
       rejectBooking={rejectBooking}
       updateVerificationDetails={updateVerificationDetails}
       togglePaymentVerified={togglePaymentVerified}
+      approveCancellation={approveCancellation}
+      declineCancellation={declineCancellation}
+      bulkApproveCancellations={bulkApproveCancellations}
+      bulkDeclineCancellations={bulkDeclineCancellations}
     />
   )
 }

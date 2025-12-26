@@ -93,6 +93,9 @@ export default function GuestBookingsPage(){
                   <ChatLink resortId={booking.resort_id} as="guest" label="Ask Resort" title={booking.resorts?.name || undefined} />
                 </div>
                 <div className="flex items-center gap-2">
+                  <Link href={`/guest/trips/${booking.id}`} className="inline-flex items-center rounded-md border px-3 py-1 text-sm bg-slate-50 text-slate-700 hover:bg-slate-100">
+                    View Details
+                  </Link>
                   <ChatLink bookingId={booking.id} as="guest" label="Message Host" title={booking.resorts?.name || undefined} />
                   {booking.status === 'pending' && (
                     <button

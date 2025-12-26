@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { supabase } from '../lib/supabaseClient'
 import LocationCombobox from './LocationCombobox'
+import NotificationsBell from './NotificationsBell'
 
 export default function Navbar(){
   const [user, setUser] = useState<any>(null)
@@ -217,6 +218,11 @@ export default function Navbar(){
             </Link>
           )}
           {authChecked && user && userRole === 'guest' && (
+            <Link href="/guest/adventure-hub" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
+              Adventure Hub
+            </Link>
+          )}
+          {authChecked && user && userRole === 'guest' && (
             <Link href="/guest/trips" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
               My Trips
             </Link>
@@ -297,6 +303,7 @@ export default function Navbar(){
           {authChecked && user ? (
             <>
               {/* Role Switcher */}
+                            <NotificationsBell />
               <div className="flex items-center gap-0.5 bg-slate-100 rounded-lg p-0.5">
                 <button
                   onClick={() => handleRoleSwitch('guest')}
@@ -392,6 +399,9 @@ export default function Navbar(){
               >
                 Chats
               </Link>
+            )}
+            {authChecked && user && userRole === 'guest' && (
+              <Link href="/guest/adventure-hub" onClick={() => setShowMobileMenu(false)} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">Adventure Hub</Link>
             )}
             {authChecked && user && userRole === 'guest' && (
               <Link href="/guest/trips" onClick={() => setShowMobileMenu(false)} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">My Trips</Link>
