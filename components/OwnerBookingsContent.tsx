@@ -484,6 +484,9 @@ export default function OwnerBookingsContent(props: Props){
                             >Decline</button>
                           </div>
                         )}
+                        {booking.cancellation_status === 'requested' && (
+                          <p className="mt-2 text-[10px] text-slate-600">Approve only after reviewing payment/refund conditions coordinated in chat.</p>
+                        )}
                         <details className="mt-3">
                           <summary className="text-xs text-slate-700 cursor-pointer select-none">Verification details</summary>
                           <div className="mt-2 grid sm:grid-cols-3 gap-2">
@@ -609,6 +612,7 @@ export default function OwnerBookingsContent(props: Props){
                                   >Decline</button>
                                   <ChatLink bookingId={booking.id} as="owner" label="Open Chat" title={booking.guest?.full_name || booking.guest?.email || 'Guest'} />
                                 </div>
+                                <p className="mt-2 text-[10px] text-slate-600">If payment was collected, follow your refund policy and coordinate details in chat before approving.</p>
                               </div>
                             </div>
                           </div>
