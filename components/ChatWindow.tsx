@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import supabase from '../lib/supabaseClient'
 import MessageInput from './MessageInput'
 import MessageList from './MessageList'
+import ReportButton from './ReportButton'
 import type { Chat, ChatMessage } from '../types/chat'
 
 type Props = {
@@ -370,7 +371,10 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
           </div>
         </div>
         {chat && (
-          <div className="text-xs text-gray-500">Chat ID: {chat.id.slice(0, 8)}</div>
+          <div className="flex items-center gap-2">
+            <div className="text-xs text-gray-500">Chat ID: {chat.id.slice(0, 8)}</div>
+            <ReportButton chatId={chat.id} />
+          </div>
         )}
       </div>
       {sendError && (

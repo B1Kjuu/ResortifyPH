@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { supabase } from '../../../lib/supabaseClient'
 import { getProvinceInfo } from '../../../lib/locations'
 import { useRouter } from 'next/navigation'
+import DisclaimerBanner from '../../../components/DisclaimerBanner'
 
 const SEASON_BUCKETS = [
   { key: 'Holiday Escapes', label: 'Holiday Escapes (Dec-Feb)', months: [12, 1, 2] },
@@ -29,6 +30,7 @@ export default function CommandCenter(){
     SEASON_BUCKETS.map(bucket => ({ season: bucket.key, label: bucket.label, count: 0 }))
   )
   const [loading, setLoading] = useState(true)
+  const [reports, setReports] = useState<any[]>([])
   const router = useRouter()
 
   useEffect(() => {
@@ -88,11 +90,19 @@ export default function CommandCenter(){
         count: seasonalMap.get(bucket.key) || 0,
       }))
 
+      // Load open reports for moderation queue
+      const { data: openReports } = await supabase
+        .from('reports')
+        .select('id, reporter_id, chat_id, message_id, target_user_id, reason, status, created_at')
+        .in('status', ['open','in_review'])
+        .order('created_at', { ascending: false })
+
       if (mounted) {
         setStats(statsData)
         setRegionStats(topRegions)
         setBookingRegionStats(bookingRegionArray)
         setSeasonalStats(seasonalArray)
+        setReports(openReports || [])
       }
     }
     
@@ -158,11 +168,24 @@ export default function CommandCenter(){
         }
       )
       .subscribe()
+
+    // Subscribe to reports changes
+    const reportsSubscription = supabase
+      .channel('admin_reports')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'reports' },
+        () => {
+          loadStats()
+        }
+      )
+      .subscribe()
     
     return () => { 
       mounted = false
       resortsSubscription.unsubscribe()
       bookingsSubscription.unsubscribe()
+      reportsSubscription.unsubscribe()
     }
   }, [])
 
@@ -181,6 +204,11 @@ export default function CommandCenter(){
             <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Moderation Command Center</h1>
           </div>
           <p className="text-lg text-slate-600 ml-20">Oversee listings, approvals, and ensure platform excellence</p>
+          <div className="mt-4 ml-20">
+            <DisclaimerBanner title="Admin Notice">
+              Review user reports promptly. Coordinate with owners/guests as needed, and mark status once actioned.
+            </DisclaimerBanner>
+          </div>
         </div>
 
         {/* Stats */}
@@ -322,6 +350,54 @@ export default function CommandCenter(){
             )}
           </div>
         </div>
+
+        {/* Reports Moderation Queue */}
+        <section className="mb-12">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-3xl">🚨</span>
+            <div>
+              <p className="text-sm font-semibold text-red-500 uppercase tracking-wide">Reports</p>
+              <h3 className="text-2xl font-bold text-slate-900">Open & In-Review Reports ({reports.length})</h3>
+            </div>
+          </div>
+          {reports.length === 0 ? (
+            <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center">
+              <p className="text-lg font-bold text-slate-900 mb-2">No reports yet</p>
+              <p className="text-slate-600">Newly submitted user reports will appear here</p>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-6">
+              {reports.map((r) => (
+                <div key={r.id} className="bg-white border-2 border-red-200 rounded-2xl p-6 shadow-sm">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <p className="text-xs text-slate-600">Report ID</p>
+                      <p className="text-sm font-semibold text-slate-900">{r.id}</p>
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded-lg font-bold border ${r.status === 'open' ? 'bg-red-100 text-red-800 border-red-200' : 'bg-yellow-100 text-yellow-800 border-yellow-200'}`}>{r.status}</span>
+                  </div>
+                  <p className="text-sm text-slate-700 mb-2">Reason: {r.reason}</p>
+                  <p className="text-xs text-slate-600">Chat: {r.chat_id ? r.chat_id.slice(0,8) : 'N/A'}</p>
+                  <p className="text-xs text-slate-600">Reporter: {r.reporter_id?.slice(0,8)}</p>
+                  <div className="mt-3 flex items-center gap-2 justify-end">
+                    <button
+                      className="px-3 py-2 text-xs rounded-lg border-2 border-yellow-500 bg-yellow-600 text-white"
+                      onClick={async () => { await supabase.from('reports').update({ status: 'in_review' }).eq('id', r.id) }}
+                    >Mark In-Review</button>
+                    <button
+                      className="px-3 py-2 text-xs rounded-lg border-2 border-green-500 bg-green-600 text-white"
+                      onClick={async () => { await supabase.from('reports').update({ status: 'resolved' }).eq('id', r.id) }}
+                    >Resolve</button>
+                    <button
+                      className="px-3 py-2 text-xs rounded-lg border-2 border-slate-300 bg-slate-100 text-slate-900"
+                      onClick={async () => { await supabase.from('reports').update({ status: 'rejected' }).eq('id', r.id) }}
+                    >Reject</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 
         {/* Actions */}
         <div className="grid md:grid-cols-2 gap-6 mb-10">
