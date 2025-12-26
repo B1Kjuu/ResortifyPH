@@ -1,5 +1,6 @@
 'use client'
 import React, { useEffect, useState } from 'react'
+import DisclaimerBanner from '../../../components/DisclaimerBanner'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
@@ -39,6 +40,11 @@ export default function GuestDashboard(){
         <p className="text-sm text-resort-500 font-semibold mb-2">Welcome Back</p>
         <h1 className="text-4xl font-bold text-resort-900 mb-2">Your Resort Adventure Hub</h1>
         <p className="text-lg text-slate-600">Discover amazing resorts, manage bookings, and create unforgettable memories</p>
+        <div className="mt-4">
+          <DisclaimerBanner title="Payment Notice">
+            ResortifyPH does not process payments. Coordinate payment directly with the host inside chat and verify details before sending money.
+          </DisclaimerBanner>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">

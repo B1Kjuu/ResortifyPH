@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import ImageUploader from '../../../../components/ImageUploader'
 import LocationCombobox from '../../../../components/LocationCombobox'
+import DisclaimerBanner from '../../../../components/DisclaimerBanner'
 import { getProvinceInfo } from '../../../../lib/locations'
 import { supabase } from '../../../../lib/supabaseClient'
 import { useRouter, useParams } from 'next/navigation'
@@ -211,6 +212,11 @@ export default function EditResort(){
             <h1 className="text-4xl font-bold bg-gradient-to-r from-resort-600 to-blue-600 bg-clip-text text-transparent">Edit Resort</h1>
           </div>
           <p className="text-lg text-slate-600 pl-14">Update your resort details and information.</p>
+          <div className="mt-4 pl-14">
+            <DisclaimerBanner title="Owner Payment Notice">
+              ResortifyPH does not process payments. Please share payment details with guests in chat and verify incoming transfers before confirming stays.
+            </DisclaimerBanner>
+          </div>
         </div>
 
         <form onSubmit={handleUpdate} className="bg-white border-2 border-slate-200 rounded-2xl shadow-lg p-8 space-y-6">

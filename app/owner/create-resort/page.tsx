@@ -13,6 +13,7 @@ import LocationPicker from '../../../components/LocationPicker'
 import { getProvinceInfo } from '../../../lib/locations'
 import { supabase } from '../../../lib/supabaseClient'
 import { resortSchema, type ResortInput } from '../../../lib/validations'
+import DisclaimerBanner from '../../../components/DisclaimerBanner'
 
 const AMENITIES = [
   'Pool',
@@ -246,6 +247,11 @@ export default function CreateResort() {
           <p className="text-lg text-slate-600 pl-14">
             Submit your resort for approval. Fill in all details carefully.
           </p>
+          <div className="mt-4 pl-14">
+            <DisclaimerBanner title="Owner Payment Notice">
+              ResortifyPH does not process payments. Please share payment details with guests in chat and verify incoming transfers before confirming stays.
+            </DisclaimerBanner>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="bg-white border-2 border-slate-200 rounded-2xl shadow-lg p-8 space-y-6">

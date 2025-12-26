@@ -355,7 +355,7 @@ export default function Home(){
                 <span className="flex items-center gap-2"><FiShield className="text-resort-600" /> Is payment secure?</span>
                 <FiChevronDown className="faq-caret text-slate-500" />
               </summary>
-              <p className="mt-3 text-sm text-slate-600">Yes. All transactions are processed through trusted payment gateways with TLS encryption, tokenization, and fraud checks. We never store full card details, and you’ll see a secure indicator on checkout pages.</p>
+              <p className="mt-3 text-sm text-slate-600">We don’t process payments on-site. Coordinate payment details directly with the host in chat, and verify amounts and accounts before sending money. We’ll add in-site payment options later once the platform has more traction.</p>
             </Reveal>
 
             <Reveal as="details" className="faq-item p-5">

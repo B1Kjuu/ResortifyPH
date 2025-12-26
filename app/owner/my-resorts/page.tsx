@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
+import DisclaimerBanner from '../../../components/DisclaimerBanner'
 
 export default function MyResorts(){
   const [resorts, setResorts] = useState<any[]>([])
@@ -45,6 +46,11 @@ export default function MyResorts(){
             <div>
               <h1 className="text-4xl font-bold text-slate-900">My Resorts</h1>
               <p className="text-lg text-slate-600 mt-1">Manage your resort listings</p>
+              <div className="mt-4">
+                <DisclaimerBanner title="Owner Payment Notice">
+                  ResortifyPH does not process payments. Please share payment details with guests in chat and verify incoming transfers before confirming stays.
+                </DisclaimerBanner>
+              </div>
             </div>
           </div>
           <Link href="/owner/create-resort" className="px-8 py-4 bg-gradient-to-r from-resort-500 to-blue-500 text-white rounded-xl font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all border-2 border-resort-400 whitespace-nowrap">

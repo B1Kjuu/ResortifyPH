@@ -38,7 +38,7 @@ export default function HelpCenterPage() {
         },
         {
           q: "What payment methods are accepted?",
-          a: "We accept various payment methods including credit/debit cards, bank transfers, and digital wallets."
+          a: "ResortifyPH does not process payments on-site. Coordinate payment directly with the host in chat, and verify details before sending money via your preferred method (e.g., bank transfer, e-wallet). In-site payment options may be introduced later."
         }
       ]
     },

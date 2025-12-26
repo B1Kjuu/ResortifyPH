@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { DayPicker } from 'react-day-picker'
 import 'react-day-picker/dist/style.css'
 import { eachDayOfInterval } from 'date-fns'
+import DisclaimerBanner from '../../../components/DisclaimerBanner'
 
 export default function Empire(){
   const [profile, setProfile] = useState<any>(null)
@@ -168,6 +169,11 @@ export default function Empire(){
         <div className="mb-12 fade-in-up">
           <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-resort-600 to-blue-600 bg-clip-text text-transparent">Your Resort Empire</h1>
           <p className="text-lg text-slate-600 mt-2">Manage listings, track submissions, and grow your business</p>
+          <div className="mt-4">
+            <DisclaimerBanner title="Owner Payment Notice">
+              ResortifyPH does not process payments. Please share payment details with guests in chat and verify incoming transfers before confirming stays.
+            </DisclaimerBanner>
+          </div>
         </div>
 
         {/* Stats */}

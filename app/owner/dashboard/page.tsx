@@ -1,5 +1,6 @@
 'use client'
 import React, { useEffect, useState } from 'react'
+import DisclaimerBanner from '../../../components/DisclaimerBanner'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
@@ -50,6 +51,11 @@ export default function OwnerDashboard(){
         <p className="text-sm text-resort-500 font-semibold mb-2">Resort Management</p>
         <h1 className="text-4xl font-bold text-resort-900 mb-2">Your Resort Empire</h1>
         <p className="text-lg text-slate-600">Manage listings, track submissions, and grow your business</p>
+        <div className="mt-4">
+          <DisclaimerBanner title="Owner Payment Notice">
+            ResortifyPH does not process payments. Please share payment details with guests in chat and verify incoming transfers before confirming stays.
+          </DisclaimerBanner>
+        </div>
       </div>
 
       {/* Stats */}
