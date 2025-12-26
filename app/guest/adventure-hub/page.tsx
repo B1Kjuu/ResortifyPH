@@ -133,8 +133,8 @@ export default function AdventureHub(){
         // User reviews joined to resorts
         const { data: revs, error: revError } = await supabase
           .from('reviews')
-          .select('id, rating, comment, created_at, resorts:resorts(id, name)')
-          .eq('user_id', session.user.id)
+          .select('id, rating, content, created_at, resorts:resorts(id, name)')
+          .eq('guest_id', session.user.id)
           .order('created_at', { ascending: false })
           .limit(6)
         if (!mounted) return
@@ -488,7 +488,7 @@ export default function AdventureHub(){
                       <div className="text-xs text-slate-600">{new Date(rev.created_at).toLocaleDateString()}</div>
                     </div>
                     <div className="text-sm text-slate-700">Rating: {rev.rating}/5</div>
-                    {rev.comment && (<div className="text-sm text-slate-600 mt-1">“{rev.comment}”</div>)}
+                    {rev.content && (<div className="text-sm text-slate-600 mt-1">“{rev.content}”</div>)}
                   </div>
                 ))}
               </div>

@@ -21,6 +21,7 @@ export default function Navbar(){
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const isAdminContext = isAdmin && pathname?.startsWith('/admin')
 
   useEffect(() => {
     let mounted = true
@@ -209,7 +210,7 @@ export default function Navbar(){
           <Link href="/resorts" prefetch={false} onClick={handleExploreClick} className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
             Explore
           </Link>
-          {authChecked && user && (
+          {authChecked && user && !isAdminContext && (
             <Link
               href={userRole === 'owner' ? '/owner/chats' : '/guest/chats'}
               className="text-sm font-medium text-slate-600 hover:text-resort-600 transition"
@@ -217,17 +218,17 @@ export default function Navbar(){
               Chats
             </Link>
           )}
-          {authChecked && user && userRole === 'guest' && (
+          {authChecked && user && userRole === 'guest' && !isAdminContext && (
             <Link href="/guest/adventure-hub" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
               Adventure Hub
             </Link>
           )}
-          {authChecked && user && userRole === 'guest' && (
+          {authChecked && user && userRole === 'guest' && !isAdminContext && (
             <Link href="/guest/trips" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
               My Trips
             </Link>
           )}
-          {authChecked && user && userRole === 'owner' && (
+          {authChecked && user && userRole === 'owner' && !isAdminContext && (
             <>
               <Link href="/owner/empire" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
                 Empire
@@ -303,29 +304,31 @@ export default function Navbar(){
           {authChecked && user ? (
             <>
               {/* Role Switcher */}
-                            <NotificationsBell />
-              <div className="flex items-center gap-0.5 bg-slate-100 rounded-lg p-0.5">
-                <button
-                  onClick={() => handleRoleSwitch('guest')}
-                  className={`px-2 py-1.5 text-xs font-medium rounded-md transition ${
-                    userRole === 'guest' 
-                      ? 'bg-resort-600 text-white' 
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Guest
-                </button>
-                <button
-                  onClick={() => handleRoleSwitch('owner')}
-                  className={`px-2 py-1.5 text-xs font-medium rounded-md transition ${
-                    userRole === 'owner' 
-                      ? 'bg-resort-600 text-white' 
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Host
-                </button>
-              </div>
+              <NotificationsBell />
+              {!isAdminContext && (
+                <div className="flex items-center gap-0.5 bg-slate-100 rounded-lg p-0.5">
+                  <button
+                    onClick={() => handleRoleSwitch('guest')}
+                    className={`px-2 py-1.5 text-xs font-medium rounded-md transition ${
+                      userRole === 'guest' 
+                        ? 'bg-resort-600 text-white' 
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Guest
+                  </button>
+                  <button
+                    onClick={() => handleRoleSwitch('owner')}
+                    className={`px-2 py-1.5 text-xs font-medium rounded-md transition ${
+                      userRole === 'owner' 
+                        ? 'bg-resort-600 text-white' 
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Host
+                  </button>
+                </div>
+              )}
 
               <Link
                 href="/profile"
@@ -391,7 +394,7 @@ export default function Navbar(){
 
           <nav className="space-y-2">
             <Link href="/resorts" onClick={(e) => { setShowMobileMenu(false); handleExploreClick(e) }} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">Explore</Link>
-            {authChecked && user && (
+            {authChecked && user && !isAdminContext && (
               <Link
                 href={userRole === 'owner' ? '/owner/chats' : '/guest/chats'}
                 onClick={() => setShowMobileMenu(false)}
@@ -400,13 +403,13 @@ export default function Navbar(){
                 Chats
               </Link>
             )}
-            {authChecked && user && userRole === 'guest' && (
+            {authChecked && user && userRole === 'guest' && !isAdminContext && (
               <Link href="/guest/adventure-hub" onClick={() => setShowMobileMenu(false)} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">Adventure Hub</Link>
             )}
-            {authChecked && user && userRole === 'guest' && (
+            {authChecked && user && userRole === 'guest' && !isAdminContext && (
               <Link href="/guest/trips" onClick={() => setShowMobileMenu(false)} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">My Trips</Link>
             )}
-            {authChecked && user && userRole === 'owner' && (
+            {authChecked && user && userRole === 'owner' && !isAdminContext && (
               <>
                 <Link href="/owner/empire" onClick={() => setShowMobileMenu(false)} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">Empire</Link>
                 <Link href="/owner/my-resorts" onClick={() => setShowMobileMenu(false)} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">My Properties</Link>
