@@ -10,13 +10,13 @@
 
 You now have **5 active guides + 1 index:**
 
-| Document                      | Purpose            | Read Time | When to Use        |
-| ----------------------------- | ------------------ | --------- | ------------------ |
-| **PRODUCTION_ROADMAP.md**     | Technical specs    | 60 min    | During development |
-| **IMPLEMENTATION_GUIDE.md**   | Copy-paste code    | 40 min    | Week 1-2 coding    |
-| **DEVELOPMENT_PRIORITIES.md** | Planning tools     | 30 min    | Project management |
-| **SYSTEM_REVIEW.md**          | System status      | 20 min    | Quick reference    |
-| **DOCUMENTATION_INDEX.md**    | Navigation         | 10 min    | Finding answers    |
+| Document                      | Purpose         | Read Time | When to Use        |
+| ----------------------------- | --------------- | --------- | ------------------ |
+| **PRODUCTION_ROADMAP.md**     | Technical specs | 60 min    | During development |
+| **IMPLEMENTATION_GUIDE.md**   | Copy-paste code | 40 min    | Week 1-2 coding    |
+| **DEVELOPMENT_PRIORITIES.md** | Planning tools  | 30 min    | Project management |
+| **SYSTEM_REVIEW.md**          | System status   | 20 min    | Quick reference    |
+| **DOCUMENTATION_INDEX.md**    | Navigation      | 10 min    | Finding answers    |
 
 **Total reading time: ~2 hours**
 

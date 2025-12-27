@@ -20,20 +20,20 @@ ResortifyPH is a **vacation rental platform** like Airbnb, specifically designed
 
 ## 📊 Current Status vs Airbnb
 
-| Feature Area            | Status      | Completeness                                  |
-| ----------------------- | ----------- | --------------------------------------------- |
-| **User Authentication** | ✅ Complete | 100%                                          |
-| **Resort Listings**     | ✅ Complete | 100%                                          |
-| **Basic Booking**       | ✅ Complete | 60% (payment deferred)                        |
-| **Payment Processing**  | ⏸️ Deferred | 0% (post-MVP)                                 |
+| Feature Area            | Status      | Completeness                                   |
+| ----------------------- | ----------- | ---------------------------------------------- |
+| **User Authentication** | ✅ Complete | 100%                                           |
+| **Resort Listings**     | ✅ Complete | 100%                                           |
+| **Basic Booking**       | ✅ Complete | 60% (payment deferred)                         |
+| **Payment Processing**  | ⏸️ Deferred | 0% (post-MVP)                                  |
 | **Visual Calendars**    | ⚠️ Partial  | 30% (date-range picker; full availability TBD) |
-| **Reviews & Ratings**   | ✅ MVP      | 60% (eligibility + submission/display)        |
-| **Messaging System**    | ✅ MVP      | 70% (chat, soft-deletes, audit logs)          |
-| **Search & Discovery**  | ✅ Improved | 60% (map picker, address cleaning, search UX) |
-| **Host Analytics**      | ❌ MISSING  | 0%                                            |
-| **Form Validation**     | ⚠️ Basic    | 40% (core flows covered)                      |
-| **Error Handling**      | ✅ Improved | 60% (toasts + resilient navigation)           |
-| **Admin Panel**         | ✅ Enhanced | 60% (approvals + audit visibility)            |
+| **Reviews & Ratings**   | ✅ MVP      | 60% (eligibility + submission/display)         |
+| **Messaging System**    | ✅ MVP      | 70% (chat, soft-deletes, audit logs)           |
+| **Search & Discovery**  | ✅ Improved | 60% (map picker, address cleaning, search UX)  |
+| **Host Analytics**      | ❌ MISSING  | 0%                                             |
+| **Form Validation**     | ⚠️ Basic    | 40% (core flows covered)                       |
+| **Error Handling**      | ✅ Improved | 60% (toasts + resilient navigation)            |
+| **Admin Panel**         | ✅ Enhanced | 60% (approvals + audit visibility)             |
 
 **Overall:** Core MVP >50% implemented; payments deferred post-MVP
 
