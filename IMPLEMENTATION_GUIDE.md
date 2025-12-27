@@ -1,8 +1,10 @@
-# Quick Start: Implement High-Impact Features This Week
+# Quick Start: Implement High-Impact Features (Updated)
 
 ## 🎯 Goal
 
-Transform ResortifyPH from "MVP" to "production-ready" by addressing critical gaps
+Transform ResortifyPH from "MVP" to "production-ready" by addressing critical gaps.
+
+Note: Payments are currently deferred. Focus areas are chat integrity (audit + soft-deletes), Favorites, Reviews, stable navigation/e2e, and admin moderation tightening. Payment steps in this guide are optional until traction.
 
 ---
 

@@ -141,7 +141,7 @@ START → Week 1 → Week 2 → Week 3-4 → Week 5-6 → Week 7-8 → Week 9-12
   │        │       └─ Calendar Component
   │        └─ Form Validation + Payment Setup
   │
-  └─ Current: 60% features, 0% payment
+   └─ Current: Reviews + Messaging shipped; payment deferred
 
 BLOCKERS REMOVED BY WEEK 2:
 ✅ Payment processing (Stripe)

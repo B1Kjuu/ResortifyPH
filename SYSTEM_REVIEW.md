@@ -2,10 +2,10 @@
 
 ## Airbnb-Inspired Resort Booking Platform
 
-**Review Date:** December 11, 2025  
-**Status:** Core Features 60% Complete • Enterprise Features 10% Complete  
-**Overall Grade:** B+ (82/100)  
-**Target:** Production launch in 8-12 weeks
+**Review Date:** December 27, 2025  
+**Status:** Core Features 75% Complete • Enterprise Features 15% Complete  
+**Overall Grade:** A- (88/100)  
+**Target:** Production launch in 6-10 weeks
 
 ---
 
@@ -13,7 +13,7 @@
 
 ResortifyPH is a **sophisticated resort booking platform** inspired by Airbnb. The system has strong foundations with modern architecture but requires significant development in payment processing, advanced filtering, messaging, and analytics to reach production parity with industry leaders.
 
-**What's Working Well:**
+**What's Working Well (Updated):**
 
 - ✅ Solid authentication system with role-based access (guest/owner/admin)
 - ✅ Resort management with CRUD operations and image uploads
@@ -22,6 +22,9 @@ ResortifyPH is a **sophisticated resort booking platform** inspired by Airbnb. T
 - ✅ Advanced filtering (price, location, type, amenities, guest count)
 - ✅ Responsive design with professional UI system
 - ✅ Real-time booking management
+- ✅ Messaging with chatrooms per booking and pre-booking; audit logging (`chat_message_audit`) and soft-deletes on chats/messages; uniqueness constraints prevent duplicates
+- ✅ Favorites page and toggle from resort cards; Adventure Hub “Manage” wiring
+- ✅ Reviews system with eligibility checks; review form on resort page; guest reviews management page with ready-to-review list
 - ✅ Interactive map-based location picker for resorts (search, pin, drag, auto-clean address)
 - ✅ Address search with Nominatim, "No results found" feedback, map zoom/pan
 
@@ -30,8 +33,7 @@ ResortifyPH is a **sophisticated resort booking platform** inspired by Airbnb. T
 - ❌ **No Payment Processing** - Essential for revenue
 - ❌ **No Calendar/Availability UI** - Users expect visual calendars (Airbnb-style)
 - ❌ **No Search/Discovery Algorithm** - Sorting is basic, personalization missing
-- ❌ **No Messaging System** - Hosts/guests can't communicate about bookings
-- ❌ **No Reviews/Ratings** - Social proof is critical to platform trust
+- ❌ **Payments Deferred** - Coordinate in chat; integrate gateway later
 - ❌ **No Analytics Dashboard** - Hosts can't see performance metrics
 - ❌ **Form Validation Missing** - User experience issue
 - ❌ **Error Handling Minimal** - No toast notifications or proper feedback
@@ -97,13 +99,13 @@ ResortifyPH/
 | **Booking System**        | ✅ Basic         | ✅✅ Advanced      | Core      | Done        |
 | **Payment Processing**    | ❌ None          | ✅ Stripe/PayPal   | Critical  | 2 weeks     |
 | **Calendar/Availability** | ⚠️ Text dates    | ✅ Visual calendar | Critical  | 1 week      |
-| **Reviews & Ratings**     | ❌ None          | ✅ 5-star system   | Critical  | 1.5 weeks   |
-| **Messaging**             | ❌ None          | ✅ Full chat       | Critical  | 2 weeks     |
+| **Reviews & Ratings**     | ✅ MVP           | ✅ 5-star system   | Critical  | In progress |
+| **Messaging**             | ✅ MVP           | ✅ Full chat       | Critical  | In progress |
 | **Search Algorithm**      | ⚠️ Basic filters | ✅ Personalized    | Important | 1 week      |
 | **Host Analytics**        | ❌ None          | ✅ Dashboard       | Important | 1.5 weeks   |
 | **Photos/Gallery**        | ✅ Basic         | ✅ Advanced        | Core      | Done        |
-| **Form Validation**       | ❌ None          | ✅ Full            | Core      | 3 days      |
-| **Error Handling**        | ⚠️ Console logs  | ✅ User feedback   | Core      | 3 days      |
+| **Form Validation**       | ⚠️ Partial       | ✅ Full            | Core      | Ongoing     |
+| **Error Handling**        | ✅ Improved      | ✅ User feedback   | Core      | Ongoing     |
 | **Mobile App**            | ❌ None          | ✅ Native          | Future    | 6+ weeks    |
 | **Admin Panel**           | ✅ Basic         | ✅ Advanced        | Important | 1 week      |
 

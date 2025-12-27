@@ -1,99 +1,46 @@
-# ResortifyPH - Complete Documentation Index
+# ResortifyPH — Documentation Index (Updated)
 
-**Updated Assessment: December 11, 2025**  
-**Your Goal:** Build an Airbnb-competitor for Philippine resorts  
-**Status:** 35% feature-complete, 8-12 weeks to production launch
+Updated: December 27, 2025
 
----
+This index reflects the current system. Strategic comparison docs and outdated summaries were removed. Start here:
 
-## 📚 Documentation Overview
+## Start Here
 
-You now have **6 comprehensive documents** to guide your development:
+- README.md — Active overview, setup, features, and e2e usage
+- SYSTEM_REVIEW.md — Production-grade review (updated: chat, reviews, favorites)
 
-### 🎯 START HERE
+## Key Guides
 
-#### **README_UPDATED.md** (This is your executive summary!)
+- IMPLEMENTATION_GUIDE.md — Code references and patterns; payments deferred for now
+- PRODUCTION_ROADMAP.md — Technical plan and checklists; aligns with current deferrals
+- DESIGN_SYSTEM_GUIDE.md — UI patterns, navigation stability, and testing hooks
+- DEVELOPMENT_PRIORITIES.md — Priority matrix and timelines
+- ACTION_CHECKLIST.md — Week-by-week action items
 
-- What's complete vs what's missing
-- Your competitive advantage
-- Investment summary
-- 90-day action plan
-- Go/no-go checklist
-- **Read this first (20 min)**
+## Planning
 
-#### **AIRBNB_COMPARISON.md** (Strategic overview)
+- DEVELOPMENT_PRIORITIES.md — Priorities and timelines; adjust for payments later
 
-- Feature comparison table
-- What changed from MVP assessment
-- Month-by-month roadmap
-- Success criteria
-- **Read this second (15 min)**
+## Removed (archived)
 
----
+- Executive summaries and comparison docs were removed from the repo to avoid duplication. See README.md and SYSTEM_REVIEW.md for active content.
 
-### 🛠️ IMPLEMENTATION DETAILS
+## Notes
 
-#### **PRODUCTION_ROADMAP.md** (Detailed technical plan)
+- Payments are deferred; coordinate payment in chat.
+- Navigation avoids adding Favorites to Navbar; manage via Adventure Hub.
+- Trips: Upcoming excludes rejected; History shows past/rejected.
+- Reviews: eligibility banner on resort pages; management page lists ready-to-review stays.
 
-- Each critical feature with full specs:
-  - Database schema
-  - Component breakdown
-  - Implementation logic
-  - Effort estimates
-  - Map-based location picker, address cleaning, and search UX
-- 5 Critical Path features
-- 5 High Priority features
-- 2 Important features
-- Pre-launch checklist
-- **Reference this during development (ongoing)**
-
-#### **IMPLEMENTATION_GUIDE.md** (Copy-paste code!)
-
-- Ready-to-use code for:
-  - Form validation with Zod
-  - Stripe payment integration (full)
-  - Calendar component
-  - Toast notifications
-  - Map-based location picker, address cleaning, and search UX
-  - Example implementations
-- Step-by-step instructions
-- Environment variable setup
-- Testing checklist
-- **Use this for Week 1-2 implementation (coding)**
-
----
-
-### 📊 PLANNING & PRIORITIZATION
-
-#### **DEVELOPMENT_PRIORITIES.md** (Visual guides)
-
-- Priority vs Effort matrix
-- Timeline visualization
-- Feature dependency map
-- Code effort breakdown
-- Risk assessment
-- Team structure recommendations
-- Resource checklist
-- Success metrics
-- **Use for project planning (Trello/Asana)**
-
-#### **PRODUCTION_ROADMAP.md** (Already listed above, but also includes)
-
-- Go-live checklist
-- Post-launch priorities
-- Development timeline
-- Cost estimates by feature
-- **Reference for planning meetings**
-
----
+Keep this index concise and focused on active documentation.
 
 ## 🎓 How to Use These Documents
 
 ### Week 1 Planning
 
 ```
-1. Read README_UPDATED.md (20 min)
-2. Read AIRBNB_COMPARISON.md (15 min)
+1. Read README.md (20 min)
+2. Read SYSTEM_REVIEW.md (15-20 min)
 3. Skim IMPLEMENTATION_GUIDE.md sections 1-3 (30 min)
 4. Start Task 1: Form Validation (see IMPLEMENTATION_GUIDE.md)
 ```
@@ -113,7 +60,7 @@ You now have **6 comprehensive documents** to guide your development:
 1. Check DEVELOPMENT_PRIORITIES.md for next task
 2. Refer to PRODUCTION_ROADMAP.md for specs
 3. Use IMPLEMENTATION_GUIDE.md for code templates
-4. Track progress against timeline in AIRBNB_COMPARISON.md
+4. Track progress against timeline in PRODUCTION_ROADMAP.md
 ```
 
 ### Status Reporting
@@ -131,7 +78,7 @@ You now have **6 comprehensive documents** to guide your development:
 
 ### "I want to understand what we're building"
 
-→ **AIRBNB_COMPARISON.md** + **README_UPDATED.md**
+→ **README.md** + **SYSTEM_REVIEW.md**
 
 ### "I want to start coding this week"
 
@@ -147,7 +94,7 @@ You now have **6 comprehensive documents** to guide your development:
 
 ### "I'm stuck and need help"
 
-→ **README_UPDATED.md** → "Next Milestone Check-in"
+→ **README.md** → "Notes & next steps"
 
 ### "What should I prioritize?"
 
@@ -155,7 +102,7 @@ You now have **6 comprehensive documents** to guide your development:
 
 ### "What's our timeline?"
 
-→ **AIRBNB_COMPARISON.md** → Month-by-month breakdown
+→ **PRODUCTION_ROADMAP.md** → Week-by-week breakdown
 
 ### "How much will this cost?"
 
@@ -179,24 +126,21 @@ You now have **6 comprehensive documents** to guide your development:
 
 ### What's Missing ❌ (Critical for Launch)
 
-- Payment processing (Stripe) - Week 1
-- Form validation & error feedback - Week 1
-- Calendar component - Week 2
-- Reviews & ratings system - Weeks 3-4
-- Real-time messaging - Weeks 5-6
+- Payment processing (Stripe) - Deferred post-MVP
+- Calendar availability UI - Partial; full visual calendar pending
 - Host analytics dashboard - Week 7
 
-**Progress to Launch: +40% of features needed**
+**Progress to Launch: rising; core MVP >50% implemented**
 
 ### Timeline
 
 ```
-Week 1:  Form validation + Payment setup
-Week 2:  Calendar component + Booking checkout
-Week 3:  Reviews system (part 1)
-Week 4:  Reviews system (part 2) + Admin moderation
-Week 5:  Messaging system (part 1)
-Week 6:  Messaging system (part 2) + Notifications
+Week 1:  Form validation + Navigation stability
+Week 2:  Calendar component (partial) + Booking checkout UX
+Week 3:  Reviews system (eligibility + submission/display)
+Week 4:  Reviews system (owner responses + moderation)
+Week 5:  Messaging system (chat + soft-deletes + audit)
+Week 6:  Messaging system (presence/typing later) + Notifications
 Week 7:  Host analytics dashboard
 Week 8:  Performance + Bug fixes + Polish
 Week 9-12: QA testing + Beta launch → Production
@@ -222,7 +166,7 @@ Week 9-12: QA testing + Beta launch → Production
 
 ### Day 1-2: Planning
 
-- [ ] Read README_UPDATED.md + AIRBNB_COMPARISON.md
+- [ ] Read README.md + SYSTEM_REVIEW.md
 - [ ] Create Stripe account (free)
 - [ ] Set up project tracking (Trello/Asana)
 - [ ] Assign developers if not already
@@ -239,7 +183,7 @@ Week 9-12: QA testing + Beta launch → Production
 - [ ] Follow Task 1 in IMPLEMENTATION_GUIDE.md (Form Validation)
 - [ ] Test form validation on resort creation
 - [ ] Add toast notifications for errors
-- [ ] Test payment endpoint creation
+- [ ] Harden navigation and URL syncing per DESIGN_SYSTEM_GUIDE.md
 
 ### Day 5-7: Quality
 
@@ -253,10 +197,10 @@ Week 9-12: QA testing + Beta launch → Production
 ## 📞 Common Questions Answered
 
 **Q: Which document should I read first?**  
-A: README_UPDATED.md (executive overview), then AIRBNB_COMPARISON.md
+A: README.md (overview), then SYSTEM_REVIEW.md
 
 **Q: Do I need to read all of these?**  
-A: Not at once. Start with README_UPDATED + AIRBNB_COMPARISON, then refer to others as needed.
+A: Not at once. Start with README.md + SYSTEM_REVIEW.md, then refer to others as needed.
 
 **Q: Which document has the code?**  
 A: IMPLEMENTATION_GUIDE.md - copy-paste ready for Week 1 tasks
@@ -271,25 +215,24 @@ A: DEVELOPMENT_PRIORITIES.md has success metrics for each week
 A: All documents show effort in hours - adjust team size to match timeline
 
 **Q: How do I know we're on track?**  
-A: README_UPDATED.md "Next Milestone Check-in" - compare actual vs expected
+A: SYSTEM_REVIEW.md summary - compare actual vs expected
 
 **Q: I have a question not in these docs?**  
-A: See README_UPDATED.md "Questions I Can Answer" section
+A: See README.md "Notes & next steps" section
 
 ---
 
 ## 📊 Document Cross-References
 
-### If you're reading README_UPDATED.md...
+### If you're reading README.md...
 
-- For detailed timeline → See AIRBNB_COMPARISON.md
+- For detailed timeline → See PRODUCTION_ROADMAP.md
 - For code implementation → See IMPLEMENTATION_GUIDE.md
-- For detailed specs → See PRODUCTION_ROADMAP.md
 - For prioritization → See DEVELOPMENT_PRIORITIES.md
 
-### If you're reading AIRBNB_COMPARISON.md...
+### If you're reading SYSTEM_REVIEW.md...
 
-- For investment details → See README_UPDATED.md
+- For investment details → See README.md
 - For code → See IMPLEMENTATION_GUIDE.md
 - For week-by-week tasks → See DEVELOPMENT_PRIORITIES.md
 
@@ -317,8 +260,8 @@ A: See README_UPDATED.md "Questions I Can Answer" section
 
 ### Reading Phase
 
-- [ ] README_UPDATED.md (20 min)
-- [ ] AIRBNB_COMPARISON.md (15 min)
+- [ ] README.md (20 min)
+- [ ] SYSTEM_REVIEW.md (15-20 min)
 - [ ] PRODUCTION_ROADMAP.md (skim for your role - 30 min)
 - [ ] IMPLEMENTATION_GUIDE.md (skim - 20 min)
 - [ ] DEVELOPMENT_PRIORITIES.md (skim - 20 min)

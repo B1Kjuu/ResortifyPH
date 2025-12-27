@@ -331,7 +331,7 @@
 ### Guide Documents
 
 - [x] DESIGN_SYSTEM_GUIDE.md - Complete design system reference
-- [x] DESIGN_UPDATE_SUMMARY.md - Comprehensive update overview
+- [x] DESIGN_SYSTEM_GUIDE.md - Comprehensive update overview
 - [x] DESIGN_COMPLETION_CHECKLIST.md - This document
 
 ## Known Considerations

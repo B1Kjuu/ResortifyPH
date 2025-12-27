@@ -38,6 +38,18 @@ Used for: Main CTAs, primary buttons, header gradients
 - Auto-filled address field, cleans non-Latin characters
 - User can click map, drag marker, or use current location
 
+### Navigation Patterns
+
+- Prefer standard Next.js `Link` for navigation; avoid custom click handlers
+- Ensure cross-browser stability (Firefox/WebKit) by not intercepting default link behavior
+- Use deterministic `data-testid` on loading/async UI to stabilize tests
+
+### URL Syncing for Filters
+
+- Use `router.replace` to update query params without full navigation
+- Mirror changes via `history.replaceState` for immediate URL feedback
+- Optionally dispatch a synthetic `load` event to align test timing in Firefox
+
 ### Buttons
 
 **Primary Button (CTA)**

@@ -8,16 +8,14 @@
 
 ## 📚 DOCUMENTATION CREATED
 
-You now have **6 comprehensive guides + 1 index:**
+You now have **5 active guides + 1 index:**
 
 | Document                      | Purpose            | Read Time | When to Use        |
 | ----------------------------- | ------------------ | --------- | ------------------ |
-| **README_UPDATED.md**         | Executive summary  | 20 min    | START HERE         |
-| **AIRBNB_COMPARISON.md**      | Strategic overview | 15 min    | Week 1 planning    |
 | **PRODUCTION_ROADMAP.md**     | Technical specs    | 60 min    | During development |
 | **IMPLEMENTATION_GUIDE.md**   | Copy-paste code    | 40 min    | Week 1-2 coding    |
 | **DEVELOPMENT_PRIORITIES.md** | Planning tools     | 30 min    | Project management |
-| **VISUAL_SUMMARY.md**         | Visual guides      | 20 min    | Quick reference    |
+| **SYSTEM_REVIEW.md**          | System status      | 20 min    | Quick reference    |
 | **DOCUMENTATION_INDEX.md**    | Navigation         | 10 min    | Finding answers    |
 
 **Total reading time: ~2 hours**
@@ -28,8 +26,8 @@ You now have **6 comprehensive guides + 1 index:**
 
 ### READING (Day 1)
 
-- [ ] Read README_UPDATED.md (20 min)
-- [ ] Read AIRBNB_COMPARISON.md (15 min)
+- [ ] Read README.md (20 min)
+- [ ] Read SYSTEM_REVIEW.md (15 min)
 - [ ] Skim IMPLEMENTATION_GUIDE.md Task 1 (15 min)
 - [ ] Assign team members to documents
 - **Total: 50 min**
@@ -86,15 +84,13 @@ npm install react-hook-form zod @hookform/resolvers sonner stripe
 - [ ] Demo to team/stakeholders
 - **Total: 5 hours**
 
-### SETUP PAYMENT (Day 6-7)
+### TESTING & STABILITY (Day 6-7)
 
-- [ ] Follow IMPLEMENTATION_GUIDE.md Task 2 (Stripe Setup)
-  - [ ] Create `/app/api/stripe/create-payment-intent/route.ts`
-  - [ ] Create `/app/api/stripe/webhooks/route.ts`
-  - [ ] Test with curl/Postman
-- [ ] Create payment form component
-- [ ] Test Stripe test card: `4242 4242 4242 4242`
-- **Total: 10 hours (2 days)**
+- [ ] Run e2e across Chromium/Firefox/WebKit
+- [ ] Verify navigation via standard `Link` is stable
+- [ ] Confirm resorts filters sync URL deterministically
+- [ ] Ensure favorites loading shows test hook (`data-testid`)
+- **Total: 6 hours**
 
 ### WEEK 1 WRAP-UP (Day 7)
 
@@ -379,32 +375,31 @@ WEEKS 8-12 (20% = ₱80,000)
 ### For Project Manager
 
 - [ ] DEVELOPMENT_PRIORITIES.md (timeline + metrics)
-- [ ] VISUAL_SUMMARY.md (quick reference)
+- [ ] SYSTEM_REVIEW.md (quick reference)
 - [ ] This checklist (tracking progress)
 
 ### For Backend Developer
 
 - [ ] PRODUCTION_ROADMAP.md (database schemas)
 - [ ] IMPLEMENTATION_GUIDE.md (code templates)
-- [ ] README_UPDATED.md (overall context)
+- [ ] README.md (overall context)
 
 ### For Frontend Developer
 
 - [ ] IMPLEMENTATION_GUIDE.md (components to build)
 - [ ] DEVELOPMENT_PRIORITIES.md (priorities)
-- [ ] VISUAL_SUMMARY.md (quick reference)
+- [ ] SYSTEM_REVIEW.md (quick reference)
 
 ### For QA/Tester
 
 - [ ] DEVELOPMENT_PRIORITIES.md (success metrics)
 - [ ] This checklist (what to test)
-- [ ] README_UPDATED.md (go-live checklist)
+- [ ] SYSTEM_REVIEW.md (go-live checklist)
 
 ### For Stakeholders
 
-- [ ] README_UPDATED.md (overview)
-- [ ] AIRBNB_COMPARISON.md (strategy)
-- [ ] VISUAL_SUMMARY.md (high-level view)
+- [ ] README.md (overview)
+- [ ] SYSTEM_REVIEW.md (status)
 
 ---
 
@@ -566,7 +561,7 @@ Readiness:   ██████████ 100%  🚀 LAUNCH!
 
 ### Question about timeline?
 
-→ See AIRBNB_COMPARISON.md or VISUAL_SUMMARY.md
+→ See PRODUCTION_ROADMAP.md or SYSTEM_REVIEW.md
 
 ### Need to know what to code?
 
@@ -582,11 +577,11 @@ Readiness:   ██████████ 100%  🚀 LAUNCH!
 
 ### Unsure about next steps?
 
-→ See README_UPDATED.md "Action Items"
+→ See README.md "Notes & next steps"
 
 ### Need quick reference?
 
-→ See VISUAL_SUMMARY.md
+→ See SYSTEM_REVIEW.md
 
 ### Lost in documentation?
 
@@ -598,8 +593,8 @@ Readiness:   ██████████ 100%  🚀 LAUNCH!
 
 ```
 RIGHT NOW:
-1. Read README_UPDATED.md (20 min)
-2. Read AIRBNB_COMPARISON.md (15 min)
+1. Read README.md (20 min)
+2. Read SYSTEM_REVIEW.md (15 min)
 3. Create Stripe account (1 hour)
 4. Install packages (5 min)
 
