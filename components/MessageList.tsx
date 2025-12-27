@@ -150,6 +150,8 @@ export default function MessageList({ messages, currentUserId, onReact }: Props)
             )
           }
 
+          const canDelete = mine
+          const deleted = (m as any).deleted_at != null
           return (
             <div key={m.id} className={`flex gap-2 group ${mine ? 'justify-end' : 'justify-start'}`}>
               {!mine && (
@@ -177,8 +179,12 @@ export default function MessageList({ messages, currentUserId, onReact }: Props)
                   </div>
                 )}
                 
-                <div className={`rounded-lg px-3 py-2 text-sm ${mine ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-900'}`}>
-                  {m.content && <div className="whitespace-pre-wrap break-words">{m.content}</div>}
+                <div className={`rounded-lg px-3 py-2 text-sm ${deleted ? 'bg-gray-50 text-gray-400 italic' : mine ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-900'}`}>
+                  {deleted ? (
+                    <div className="whitespace-pre-wrap break-words">Message deleted</div>
+                  ) : (
+                    m.content && <div className="whitespace-pre-wrap break-words">{m.content}</div>
+                  )}
                   
                   {isImage && (
                     <div className="mt-2">
@@ -215,7 +221,7 @@ export default function MessageList({ messages, currentUserId, onReact }: Props)
                     </a>
                   )}
                   
-                  <div className={`flex items-center gap-1.5 mt-1 text-[10px] ${mine ? 'text-blue-100' : 'text-gray-500'}`}>
+                  <div className={`flex items-center gap-1.5 mt-1 text-[10px] ${deleted ? 'text-gray-300' : mine ? 'text-blue-100' : 'text-gray-500'}`}>
                     <span>{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     {mine && m.read_at && (
                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -230,7 +236,7 @@ export default function MessageList({ messages, currentUserId, onReact }: Props)
                 {renderReactions(m.id)}
                 
                 {/* Quick reaction bar */}
-                {onReact && (
+                {onReact && !deleted && (
                   <div className="flex gap-0.5 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     {quickReactions.map(emoji => (
                       <button
@@ -242,6 +248,29 @@ export default function MessageList({ messages, currentUserId, onReact }: Props)
                         {emoji}
                       </button>
                     ))}
+                  </div>
+                )}
+
+                {/* Delete message (self) */}
+                {canDelete && !deleted && (
+                  <div className="mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      className="text-[11px] text-red-700 hover:underline"
+                      title="Delete message"
+                      onClick={async () => {
+                        try {
+                          await supabase
+                            .from('chat_messages')
+                            .update({ deleted_at: new Date().toISOString() })
+                            .eq('id', m.id)
+                        } catch (e) {
+                          console.error('Message delete failed:', e)
+                          alert('Failed to delete message')
+                        }
+                      }}
+                    >
+                      Delete
+                    </button>
                   </div>
                 )}
               </div>

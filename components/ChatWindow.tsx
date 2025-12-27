@@ -160,12 +160,18 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
         user_id: uid,
         role: participantRole,
       } as any, { onConflict: 'chat_id,user_id', ignoreDuplicates: true })
+        // restore visibility if previously deleted by this user
+      await supabase
+        .from('chat_participants')
+        .update({ deleted_at: null })
+        .match({ chat_id: chatRow.id, user_id: uid })
 
       // Fetch messages
       const { data: msgs } = await supabase
         .from('chat_messages')
         .select('*')
         .eq('chat_id', chatRow.id)
+        .is('deleted_at', null)
         .order('created_at', { ascending: true })
       if (mounted) setMessages((msgs || []) as ChatMessage[])
       // Mark unread as read for this user
@@ -207,6 +213,19 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
           // Mark read if incoming from others while viewing
           if (userId && record.sender_id !== userId) {
             supabase.from('chat_messages').update({ read_at: new Date().toISOString() }).eq('id', record.id)
+          }
+        })
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `chat_id=eq.${chatRow.id}`,
+        }, (payload) => {
+          const updated = payload.new as any
+          const wasDeleted = !!updated.deleted_at
+          setMessages((prev) => prev.map(m => m.id === updated.id ? { ...m, ...updated } : m).filter(m => !m.deleted_at))
+          if (wasDeleted) {
+            console.log('🗑️ Message marked deleted:', updated.id)
           }
         })
         .on('postgres_changes', {
@@ -374,6 +393,28 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
           <div className="flex items-center gap-2">
             <div className="text-xs text-gray-500">Chat ID: {chat.id.slice(0, 8)}</div>
             <ReportButton chatId={chat.id} />
+            <button
+              className="ml-1 text-xs rounded-md border border-red-200 px-2 py-1 text-red-700 hover:bg-red-50"
+              onClick={async () => {
+                try {
+                  const { data: userRes } = await supabase.auth.getUser()
+                  const uid2 = userRes.user?.id
+                  if (!uid2 || !chat?.id) return
+                  await supabase
+                    .from('chat_participants')
+                    .update({ deleted_at: new Date().toISOString() })
+                    .match({ chat_id: chat.id, user_id: uid2 })
+                  // Optional: navigate back if embedded in a page
+                  // window.history.back()
+                } catch (e) {
+                  console.error('Delete chat failed:', e)
+                  alert('Failed to delete chat')
+                }
+              }}
+              title="Delete chat from your view"
+            >
+              Delete Chat
+            </button>
           </div>
         )}
       </div>

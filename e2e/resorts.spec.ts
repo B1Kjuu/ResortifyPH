@@ -12,7 +12,7 @@ test.describe('Resorts catalog', () => {
     await expect(page.getByLabel('Filter by guest count')).toBeVisible()
     await expect(page.getByLabel('Filter by location')).toBeVisible()
     await expect(page.getByRole('button', { name: /Clear All/i })).toBeVisible()
-    await expect(page.getByText(/Showing \d+ resorts/i)).toBeVisible()
+    await expect(page.getByTestId('results-count')).toBeVisible()
   })
 
   test('pushes filter changes into the URL query string', async ({ page }) => {

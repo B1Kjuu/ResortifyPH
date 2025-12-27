@@ -21,6 +21,7 @@ export type ChatMessage = {
   content: string
   created_at: string
   read_at: string | null
+  deleted_at?: string | null
   attachment_url?: string | null
   attachment_type?: string | null
   attachment_name?: string | null

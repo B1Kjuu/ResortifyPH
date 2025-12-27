@@ -34,6 +34,7 @@ type ChatItem = {
 export default function ChatList({ roleFilter }: ChatListProps) {
   const [items, setItems] = useState<ChatItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     let mounted = true
@@ -109,6 +110,46 @@ export default function ChatList({ roleFilter }: ChatListProps) {
               ) : (
                 <ChatLink resortId={c.resort_id || undefined} as={(c.myRole as any) || 'guest'} label="Open" title={title} />
               )}
+              <button
+                className="inline-flex items-center rounded-md border px-3 py-1 text-sm hover:bg-red-50 text-red-700 border-red-200 disabled:opacity-50"
+                disabled={deletingId === c.id}
+                onClick={async () => {
+                  if (!confirm('Delete this chat from your view? Messages remain available for moderation.')) return
+                  try {
+                    setDeletingId(c.id)
+                    const { data: { session } } = await supabase.auth.getSession()
+                    const uid = session?.user?.id
+                    if (!uid) throw new Error('Not signed in')
+                    await supabase
+                      .from('chat_participants')
+                      .update({ deleted_at: new Date().toISOString() })
+                      .match({ chat_id: c.id, user_id: uid })
+                    // Refresh list
+                    const { data: rpcData, error } = await supabase.rpc('get_user_chats')
+                    if (!error) {
+                      const mapped: ChatItem[] = (rpcData as RpcChatRow[] | null || []).map((r) => ({
+                        id: r.chat_id,
+                        booking_id: r.booking_id,
+                        resort_id: r.resort_id,
+                        lastMessage: { content: r.last_message, created_at: r.last_message_at },
+                        unreadCount: r.unread_count || 0,
+                        resortName: r.resort_name || undefined,
+                        participantName: r.other_participant_name || undefined,
+                        myRole: r.my_role,
+                      }))
+                      setItems(roleFilter ? mapped.filter(i => i.myRole === roleFilter) : mapped)
+                    }
+                  } catch (e) {
+                    console.error('Failed to delete chat:', e)
+                    alert('Failed to delete chat')
+                  } finally {
+                    setDeletingId(null)
+                  }
+                }}
+                title="Delete chat from your view"
+              >
+                Delete
+              </button>
             </div>
           </li>
         )
