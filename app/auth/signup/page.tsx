@@ -11,11 +11,7 @@ import { toast } from 'sonner'
 export default function SignUpPage(){
   const [loading, setLoading] = useState(false)
   const [oauthLoading, setOauthLoading] = useState(false)
-  const [phoneOtp, setPhoneOtp] = useState('')
-  const [otpSent, setOtpSent] = useState(false)
-  const [phoneInput, setPhoneInput] = useState('')
   
-  const enablePhoneAuth = process.env.NEXT_PUBLIC_ENABLE_PHONE_AUTH === 'true'
   const router = useRouter()
   
   const { register, handleSubmit, formState: { errors } } = useForm<SignUpInput>({
@@ -76,25 +72,7 @@ export default function SignUpPage(){
     }
   }
 
-  async function sendPhoneSignupOtp(){
-    if (!phoneInput) { toast.error('Enter a phone number'); return }
-    const ok = /^((\+63|0)?9\d{9})$/.test(phoneInput)
-    if (!ok) { toast.error('Invalid PH mobile number'); return }
-    const { error } = await supabase.auth.signInWithOtp({ phone: phoneInput, options: { shouldCreateUser: true } })
-    if (error) { toast.error(error.message); return }
-    toast.success('SMS code sent')
-    setOtpSent(true)
-  }
-
-  async function verifyPhoneSignupOtp(){
-    if (!phoneOtp) { toast.error('Enter the SMS code'); return }
-    const { data, error } = await supabase.auth.verifyOtp({ type: 'sms', phone: phoneInput, token: phoneOtp })
-    if (error) { toast.error(error.message); return }
-    if (data?.session) {
-      toast.success('Account created via phone')
-      router.push('/profile?welcome=true')
-    }
-  }
+  // SMS sign-up is currently disabled; keeping a static "coming soon" notice.
 
   
 
@@ -196,40 +174,10 @@ export default function SignUpPage(){
           {oauthLoading ? 'Redirecting…' : 'Continue with Google'}
         </button>
 
-        {/* Phone OTP signup */}
-        {enablePhoneAuth ? (
-          <div className="mt-4 space-y-2">
-            <label className="block text-sm font-medium text-slate-700">Sign up with phone (SMS)</label>
-            <div className="flex gap-2">
-              <input
-                value={phoneInput}
-                onChange={(e) => setPhoneInput(e.target.value)}
-                className="flex-1 rounded-lg border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-resort-500"
-                placeholder="09171234567 or +639171234567"
-              />
-              {!otpSent ? (
-                <button onClick={sendPhoneSignupOtp} className="px-4 rounded-lg bg-resort-500 text-white font-semibold" type="button">Send code</button>
-              ) : (
-                <button onClick={() => { setOtpSent(false); setPhoneOtp('') }} className="px-4 rounded-lg bg-slate-200 text-slate-700 font-semibold" type="button">Reset</button>
-              )}
-            </div>
-            {otpSent && (
-              <div className="flex gap-2 mt-2">
-                <input
-                  value={phoneOtp}
-                  onChange={(e) => setPhoneOtp(e.target.value)}
-                  className="flex-1 rounded-lg border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-resort-500"
-                  placeholder="Enter SMS code"
-                />
-                <button onClick={verifyPhoneSignupOtp} className="px-4 rounded-lg bg-resort-500 text-white font-semibold" type="button">Verify</button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="mt-4">
-            <div className="w-full px-3 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm text-center">Phone sign-up (SMS) — coming soon</div>
-          </div>
-        )}
+        {/* Phone OTP disabled */}
+        <div className="mt-4">
+          <div className="w-full px-3 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm text-center">Phone sign-up (SMS) — coming soon</div>
+        </div>
 
         
 

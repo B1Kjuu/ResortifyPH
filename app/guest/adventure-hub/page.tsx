@@ -442,7 +442,7 @@ export default function AdventureHub(){
           <div className="bg-white border-2 border-slate-200 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-bold text-slate-900">Favorites</h3>
-              <Link href="/profile" className="text-xs font-semibold text-resort-600 hover:text-resort-700">Manage →</Link>
+              <Link href="/guest/favorites" className="text-xs font-semibold text-resort-600 hover:text-resort-700">Manage →</Link>
             </div>
             {favoritesLoading ? (
               <div className="text-sm text-slate-600">Loading favorites…</div>
@@ -473,7 +473,7 @@ export default function AdventureHub(){
           <div className="bg-white border-2 border-slate-200 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-bold text-slate-900">Reviews</h3>
-              <Link href="/profile" className="text-xs font-semibold text-resort-600 hover:text-resort-700">Manage →</Link>
+              <Link href="/guest/reviews" className="text-xs font-semibold text-resort-600 hover:text-resort-700">Manage →</Link>
             </div>
             {reviewsLoading ? (
               <div className="text-sm text-slate-600">Loading reviews…</div>

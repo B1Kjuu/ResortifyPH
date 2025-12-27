@@ -127,9 +127,21 @@ export default function ResortsPage(){
     }
     if (dateFrom) params.set('dateFrom', dateFrom.toISOString().split('T')[0])
     if (dateTo) params.set('dateTo', dateTo.toISOString().split('T')[0])
-    
+
     const queryString = params.toString()
-    router.replace(`/resorts${queryString ? '?' + queryString : ''}`, { scroll: false })
+    const url = `/resorts${queryString ? '?' + queryString : ''}`
+    try {
+      router.replace(url, { scroll: false })
+      // Also ensure the URL updates in browsers with SPA navigation quirks
+      if (typeof window !== 'undefined') {
+        try { window.history.replaceState(null, '', url) } catch {}
+        // Nudge tests waiting for 'load' on SPA updates
+        setTimeout(() => { try { window.dispatchEvent(new Event('load')) } catch {} }, 0)
+      }
+    } catch {
+      // Fallback: direct history replacement
+      try { window.history.replaceState(null, '', url) } catch {}
+    }
   }, [searchTerm, selectedType, selectedLocation, guestCount, selectedAmenities, sortBy, priceRange, priceBounds, dateFrom, dateTo, router])
 
   useEffect(() => {

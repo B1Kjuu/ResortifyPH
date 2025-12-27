@@ -398,6 +398,12 @@ If any ❌ → Likely 10-12 weeks.
 7. **Create support process** - Have plan before launch
 
 ### DO THESE LATER (Post-Launch)
+ 
+---
+
+## Recent Update
+
+- Favorites: Implemented guest Favorites page at `app/guest/favorites/page.tsx` listing saved resorts. A basic e2e test `e2e/favorites.spec.ts` was added. Not linked in Navbar per current preference.
 
 8. **Build mobile app** - Web is sufficient for MVP
 9. **Advanced search** - Basic filters work initially

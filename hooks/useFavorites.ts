@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import { toast } from 'sonner'
 
 export interface FavoritesState {
   ready: boolean
@@ -51,7 +52,7 @@ export function useFavorites() {
 
   const toggleFavorite = useCallback(async (resortId: string) => {
     if (!state.userId) {
-      // silently ignore if not signed in
+      toast.info('Please sign in to save favorites')
       return
     }
     const currentlyFav = state.favorites.has(resortId)
@@ -71,6 +72,9 @@ export function useFavorites() {
             next.add(resortId)
             return { ...prev, favorites: next, error: error.message }
           })
+          toast.error('Failed to remove from favorites')
+        } else {
+          toast.success('Removed from favorites')
         }
       } else {
         // optimistic add
@@ -88,10 +92,14 @@ export function useFavorites() {
             const next = new Set([...prev.favorites].filter(id => id !== resortId))
             return { ...prev, favorites: next, error: error.message }
           })
+          toast.error('Failed to save to favorites')
+        } else {
+          toast.success('Saved to favorites')
         }
       }
     } catch (err: any) {
       setState(prev => ({ ...prev, error: err?.message || 'Failed to toggle favorite' }))
+      toast.error('Unexpected error while toggling favorite')
     }
   }, [state.userId, state.favorites])
 

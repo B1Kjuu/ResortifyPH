@@ -207,7 +207,7 @@ export default function Navbar(){
 
         {/* Navigation - Desktop Only */}
         <nav className="hidden lg:flex items-center gap-6 ml-8">
-          <Link href="/resorts" prefetch={false} onClick={handleExploreClick} className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
+          <Link href="/resorts" prefetch={false} className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
             Explore
           </Link>
           {authChecked && user && !isAdminContext && (
@@ -393,7 +393,7 @@ export default function Navbar(){
           </div>
 
           <nav className="space-y-2">
-            <Link href="/resorts" onClick={(e) => { setShowMobileMenu(false); handleExploreClick(e) }} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">Explore</Link>
+            <Link href="/resorts" onClick={() => setShowMobileMenu(false)} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">Explore</Link>
             {authChecked && user && !isAdminContext && (
               <Link
                 href={userRole === 'owner' ? '/owner/chats' : '/guest/chats'}

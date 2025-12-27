@@ -531,21 +531,29 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
               {/* Reviews Section - moved below grid to reduce tall right column whitespace */}
               <div className="space-y-5">
+                {user && eligibleReviewBookingId && (
+                  <div className="bg-green-50 border border-green-200 text-green-800 rounded-xl p-4 flex items-center justify-between">
+                    <p className="text-sm font-semibold">You’re eligible to review this resort based on your recent stay.</p>
+                    <a href="#review-form" className="px-3 py-1.5 bg-green-600 text-white rounded-md text-sm font-semibold hover:bg-green-700">Write a review</a>
+                  </div>
+                )}
                 <ReviewsList reviews={reviews} />
                 {user && eligibleReviewBookingId ? (
-                  <ReviewForm
-                    resortId={params.id}
-                    bookingId={eligibleReviewBookingId}
-                    onSubmitted={async () => {
-                      const { data: reviewsData } = await supabase
-                        .from('reviews')
-                        .select('id, rating, title, content, created_at, guest_id, booking_id')
-                        .eq('resort_id', params.id)
-                        .order('created_at', { ascending: false })
-                      setReviews(reviewsData || [])
-                      setEligibleReviewBookingId(null)
-                    }}
-                  />
+                  <div id="review-form">
+                    <ReviewForm
+                      resortId={params.id}
+                      bookingId={eligibleReviewBookingId}
+                      onSubmitted={async () => {
+                        const { data: reviewsData } = await supabase
+                          .from('reviews')
+                          .select('id, rating, title, content, created_at, guest_id, booking_id')
+                          .eq('resort_id', params.id)
+                          .order('created_at', { ascending: false })
+                        setReviews(reviewsData || [])
+                        setEligibleReviewBookingId(null)
+                      }}
+                    />
+                  </div>
                 ) : (
                   <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
                     <p className="text-sm text-slate-700">Only guests who completed a confirmed stay can write a review.</p>

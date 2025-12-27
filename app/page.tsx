@@ -116,7 +116,7 @@ export default function Home(){
                 <Link href="/auth/signup" prefetch={false} className="px-8 py-4 bg-gradient-to-r from-resort-500 to-resort-600 text-white rounded-xl font-semibold hover:shadow-xl transition-all duration-300 text-center">
                   Get Started Free
                 </Link>
-                <Link href="/resorts" prefetch={false} onClick={(e)=>{ e.preventDefault(); try { router.push('/resorts') } catch {} finally { window.location.assign('/resorts') } }} className="px-8 py-4 border-2 border-slate-300 text-slate-900 rounded-xl font-semibold hover:border-resort-500 hover:bg-slate-50 transition-all duration-300 text-center">
+                <Link href="/resorts" prefetch={false} className="px-8 py-4 border-2 border-slate-300 text-slate-900 rounded-xl font-semibold hover:border-resort-500 hover:bg-slate-50 transition-all duration-300 text-center">
                   Browse Resorts
                 </Link>
               </div>

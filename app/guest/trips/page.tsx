@@ -130,7 +130,7 @@ export default function TripsPage(){
         ) : (
           (() => {
             const now = new Date()
-            const upcoming = bookings.filter(b => new Date(b.date_to) >= now)
+            const upcoming = bookings.filter(b => new Date(b.date_to) >= now && b.status !== 'rejected')
             const current = bookings.filter(b => b.status === 'confirmed' && new Date(b.date_to) >= now)
             const pastOrRejected = bookings.filter(b => new Date(b.date_to) < now || b.status === 'rejected')
             async function deleteBooking(id: string){
