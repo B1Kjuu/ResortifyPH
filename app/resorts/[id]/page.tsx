@@ -346,6 +346,27 @@ export default function ResortDetail({ params }: { params: { id: string } }){
               sender_id: user.id,
               content: '📌 System: Coordinate payment in chat; share payment details and receipt here.'
             })
+
+            // Fire owner notification email for new booking request
+            try {
+              if (owner?.email) {
+                await fetch('/api/notifications/booking-status', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    to: owner.email,
+                    status: 'created',
+                    resortName: resort.name,
+                    dateFrom: format(selectedRange.from!, 'yyyy-MM-dd'),
+                    dateTo: format(selectedRange.to!, 'yyyy-MM-dd'),
+                    link: `/chat/${newId}?as=owner`,
+                    userId: owner.id,
+                  })
+                })
+              }
+            } catch (notifyErr) {
+              console.warn('Notify owner (created) failed:', notifyErr)
+            }
           }
         } catch (chatSetupError) {
           console.error('Chat setup error:', chatSetupError)
@@ -551,6 +572,27 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                           .order('created_at', { ascending: false })
                         setReviews(reviewsData || [])
                         setEligibleReviewBookingId(null)
+
+                        // Notify owner of new review
+                        try {
+                          const latest = (reviewsData || [])[0]
+                          if (owner?.email && latest) {
+                            await fetch('/api/notifications/review-submitted', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                to: owner.email,
+                                resortName: resort.name,
+                                rating: latest.rating,
+                                comment: latest.title ? `${latest.title} — ${latest.content}` : latest.content,
+                                link: `/resorts/${params.id}#reviews`,
+                                userId: owner.id,
+                              })
+                            })
+                          }
+                        } catch (notifyErr) {
+                          console.warn('Notify owner (review) failed:', notifyErr)
+                        }
                       }}
                     />
                   </div>

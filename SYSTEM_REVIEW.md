@@ -11,7 +11,7 @@
 
 ## 📊 Executive Summary
 
-ResortifyPH is a **sophisticated resort booking platform** inspired by Airbnb. The system has strong foundations with modern architecture but requires significant development in payment processing, advanced filtering, messaging, and analytics to reach production parity with industry leaders.
+ResortifyPH is a **sophisticated resort booking platform** inspired by Airbnb. The system has strong foundations with modern architecture and now includes MVP **messaging** and **reviews**. Remaining focus areas are **payment processing**, **visual calendars**, **search ranking/discovery**, and **analytics** to reach production parity.
 
 **What's Working Well (Updated):**
 
@@ -30,13 +30,12 @@ ResortifyPH is a **sophisticated resort booking platform** inspired by Airbnb. T
 
 **Critical Gaps (Blocking Production Launch):**
 
-- ❌ **No Payment Processing** - Essential for revenue
-- ❌ **No Calendar/Availability UI** - Users expect visual calendars (Airbnb-style)
-- ❌ **No Search/Discovery Algorithm** - Sorting is basic, personalization missing
-- ❌ **Payments Deferred** - Coordinate in chat; integrate gateway later
-- ❌ **No Analytics Dashboard** - Hosts can't see performance metrics
-- ❌ **Form Validation Missing** - User experience issue
-- ❌ **Error Handling Minimal** - No toast notifications or proper feedback
+- ❌ **Payment Processing** - Deferred for MVP; coordinate payment in chat
+- ⚠️ **Calendar/Availability UI** - Partial; full visual calendars expected
+- ⚠️ **Search/Discovery Algorithm** - Basic sorting; personalization missing
+- ❌ **Analytics Dashboard** - Hosts need performance metrics
+- ⚠️ **Form Validation Coverage** - Partial; expand across core flows
+- ✅ **Error Handling Improved** - Continue adding toasts and user feedback
 
 ---
 
@@ -552,9 +551,14 @@ const [user, setUser] = useState<User | null>(null);
 
 ---
 
-### Issue 10: No Test Coverage
+### Issue 10: Test Coverage Scope
 
 **Severity:** ℹ️ INFORMATIONAL (Best practice)
+
+**Current State:**
+
+- Playwright e2e tests cover home, navigation, help center, resorts, favorites
+- Cross-browser stability (Chromium/Firefox/WebKit) improved via standard `Link`, URL syncing, and deterministic `data-testid`
 
 **Recommendation:**
 
@@ -563,7 +567,7 @@ npm install --save-dev jest @testing-library/react
 npx jest --init
 ```
 
-Add tests for critical paths:
+Add unit/integration tests for critical paths:
 
 - Authentication flow
 - Resort CRUD operations
@@ -592,7 +596,7 @@ Add tests for critical paths:
 | ------------------- | --------------- | ------------------------------------ |
 | **Authentication**  | ✅ Good         | Supabase Auth handles securely       |
 | **Authorization**   | ⚠️ Partial      | Role checks needed middleware        |
-| **Data Validation** | ❌ Missing      | No client-side validation            |
+| **Data Validation** | ⚠️ Partial      | Client-side validation expanding     |
 | **SQL Injection**   | ✅ Safe         | Using Supabase parameterized queries |
 | **XSS Protection**  | ✅ Good         | React escapes by default             |
 | **CSRF**            | ✅ Good         | Same-origin policy in place          |
@@ -698,23 +702,23 @@ Add tests for critical paths:
 
 ## 📞 Questions to Address
 
-1. **Payment Integration:** No payment processing (Stripe/PayPal) integrated
-2. **Email Notifications:** No confirmation emails for bookings
-3. **Calendar View:** No calendar UI for availability
-4. **Search:** No search functionality for resorts
-5. **Reviews:** No rating/review system
-6. **Messaging:** No direct messaging between guests/owners
+1. **Payment Integration:** Timeline and gateway choice (Stripe) post-MVP
+2. **Email Notifications:** Confirmation emails for bookings and reviews
+3. **Calendar View:** Full availability calendar UX and owner block-dates
+4. **Search:** Ranking and discovery improvements beyond basic filters
+5. **Reviews:** Owner responses moderation and sorting enhancements
+6. **Messaging:** Presence/typing indicators and notifications
 
 ---
 
 ## 📝 Conclusion
 
-**ResortifyPH is a well-designed MVP with excellent UI/UX and complete feature set.** The system is technically sound for development/testing. Before production deployment, address the security concerns (validation, middleware, RLS) and add proper error handling/loading states.
+**ResortifyPH is a well-designed MVP with excellent UI/UX and strong core features.** The system is technically sound for development/testing. Before production deployment, finalize payments, expand validation and calendars, and continue strengthening user feedback and analytics.
 
-**Estimated Time to Production Ready:** 2-3 weeks for critical fixes + 1-2 weeks for important improvements.
+**Estimated Time to Production Ready:** 4-6 weeks for payment + calendar + analytics; security/UX improvements ongoing.
 
-**Current Grade: A (95/100)** - Would be A+ with security fixes and error handling.
+**Current Grade: A- (88/100)** - Will improve with payments, calendars, and analytics.
 
 ---
 
-_Review completed: December 11, 2025_
+_Review updated: December 27, 2025_

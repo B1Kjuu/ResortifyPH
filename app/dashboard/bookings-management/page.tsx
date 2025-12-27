@@ -107,6 +107,26 @@ export default function BookingsManagementPage(){
       const reverted = new Set(confirmingIds); reverted.delete(id); setConfirmingIds(reverted)
       return
     }
+    // Send approval email to guest
+    try {
+      const b = (original || confirmedBookings.find(x => x.id === id))
+      if (b?.guest?.email) {
+        await fetch('/api/notifications/booking-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: b.guest.email,
+            status: 'approved',
+            resortName: b.resort?.name || 'Your booking',
+            dateFrom: b.date_from,
+            dateTo: b.date_to,
+            link: `/chat/${id}?as=guest`,
+          })
+        })
+      }
+    } catch (notifyErr) {
+      console.warn('Notify guest (approved) failed:', notifyErr)
+    }
     // Fallback refresh in case realtime is delayed
     setTimeout(() => {
       supabase
@@ -127,6 +147,26 @@ export default function BookingsManagementPage(){
       .update({ status: 'rejected' })
       .eq('id', id)
     if (error) { alert(error.message); return }
+    // Send rejection email to guest
+    try {
+      const orig = pendingBookings.find(b => b.id === id)
+      if (orig?.guest?.email) {
+        await fetch('/api/notifications/booking-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: orig.guest.email,
+            status: 'rejected',
+            resortName: orig.resort?.name || 'Your booking',
+            dateFrom: orig.date_from,
+            dateTo: orig.date_to,
+            link: `/chat/${id}?as=guest`,
+          })
+        })
+      }
+    } catch (notifyErr) {
+      console.warn('Notify guest (rejected) failed:', notifyErr)
+    }
     // Fallback ping
     setTimeout(() => {
       supabase

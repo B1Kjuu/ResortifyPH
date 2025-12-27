@@ -1,4 +1,4 @@
-# ResortifyPH — Next.js + Supabase MVP
+# ResortifyPH — Next.js + Supabase
 
 This repository is the active ResortifyPH app built with Next.js 14 (App Router), TypeScript, Tailwind CSS, and Supabase (Auth, Database, Storage, Realtime). It includes chat integrity and audit logging, per-user and per-message soft-deletes, Favorites, Reviews, and stable e2e coverage.
 
