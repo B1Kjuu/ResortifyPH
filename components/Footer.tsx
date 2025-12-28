@@ -50,9 +50,20 @@ export default function Footer(){
 
           {/* Divider */}
           <div className="border-t border-slate-700 pt-8">
-            <div className="flex justify-center md:justify-between items-center">
+            <div className="flex justify-center md:justify-between items-center gap-4">
               <div className="text-sm text-slate-400 text-center">
                 © {new Date().getFullYear()} <span className="font-semibold text-white">ResortifyPH</span>. All rights reserved.
+              </div>
+              <div className="hidden md:flex items-center gap-3">
+                <a href="mailto:resortifyph@gmail.com" aria-label="Email" className="flex items-center justify-center w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-white hover:bg-slate-700">
+                  ✉️
+                </a>
+                <a href="https://www.facebook.com/people/Resortifyph/61584827603544/" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="flex items-center justify-center w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-white hover:bg-blue-700">
+                  👍
+                </a>
+                <a href="https://www.instagram.com/resortifyph/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="flex items-center justify-center w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-white hover:bg-pink-700">
+                  📷
+                </a>
               </div>
             </div>
           </div>

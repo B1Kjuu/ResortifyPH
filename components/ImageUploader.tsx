@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useId } from 'react'
 import { supabase } from '../lib/supabaseClient'
 
 type Props = {
@@ -12,6 +12,7 @@ export default function ImageUploader({ bucket = 'resort-images', onUpload }: Pr
   const [uploading, setUploading] = useState(false)
   const [uploadedUrls, setUploadedUrls] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const inputId = useId()
 
   async function handleUpload(){
     if (!files) return
@@ -43,10 +44,10 @@ export default function ImageUploader({ bucket = 'resort-images', onUpload }: Pr
           accept="image/*"
           onChange={(e) => setFiles(e.target.files)} 
           className="hidden"
-          id="resort-image-input"
+          id={`image-input-${inputId}`}
         />
         <label 
-          htmlFor="resort-image-input"
+          htmlFor={`image-input-${inputId}`}
           className="inline-flex items-center gap-2 px-6 py-3 border-2 border-slate-300 rounded-xl font-semibold text-slate-700 hover:border-resort-400 hover:bg-resort-50 transition-all cursor-pointer bg-white shadow-sm"
         >
           <span className="text-xl">📁</span>

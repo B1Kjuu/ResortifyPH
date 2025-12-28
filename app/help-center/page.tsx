@@ -156,13 +156,40 @@ export default function HelpCenterPage() {
             ))}
           </div>
 
+          {/* Contact & Socials */}
+          <div className="mt-16 grid gap-6 sm:grid-cols-2">
+            <div className="p-6 bg-slate-50 border border-slate-200 rounded-xl">
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Contact Email</h3>
+              <p className="text-slate-600 mb-3">Reach us anytime and we’ll get back shortly.</p>
+              <a href="mailto:resortifyph@gmail.com" className="inline-flex items-center gap-2 px-4 py-2 bg-resort-600 text-white rounded-lg hover:bg-resort-700 transition">
+                ✉️ resortifyph@gmail.com
+              </a>
+            </div>
+            <div className="p-6 bg-slate-50 border border-slate-200 rounded-xl">
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Follow Us</h3>
+              <div className="flex flex-col gap-3">
+                <a href="https://www.facebook.com/people/Resortifyph/61584827603544/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                  👍 Facebook
+                </a>
+                <a href="https://www.instagram.com/resortifyph/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition">
+                  📷 Instagram
+                </a>
+              </div>
+            </div>
+          </div>
+
           {/* Still need help */}
           <div className="mt-16 bg-gradient-to-r from-resort-500 to-resort-600 rounded-2xl p-8 sm:p-12 text-center text-white">
             <h2 className="text-3xl font-bold mb-4">Still Need Help?</h2>
             <p className="text-lg mb-8 text-resort-100">Our support team is here to assist you</p>
-            <Link href="/contact" className="inline-block px-8 py-3 bg-white text-resort-600 rounded-xl font-semibold hover:shadow-xl transition">
-              Contact Support
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link href="/contact" className="inline-block px-8 py-3 bg-white text-resort-600 rounded-xl font-semibold hover:shadow-xl transition">
+                Contact Support
+              </Link>
+              <a href="mailto:resortifyph@gmail.com" className="inline-block px-8 py-3 bg-white/10 border border-white/30 text-white rounded-xl font-semibold hover:bg-white/20 transition">
+                Email Us
+              </a>
+            </div>
           </div>
         </div>
       </div>

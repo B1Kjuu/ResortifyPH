@@ -203,6 +203,28 @@ export default function ApprovalsPage(){
                         {resort.business_permit_url && <p>Business Permit: <a className="text-blue-600" href={resort.business_permit_url} target="_blank" rel="noreferrer">View</a></p>}
                         {resort.gov_id_owner_url && <p>Owner ID: <a className="text-blue-600" href={resort.gov_id_owner_url} target="_blank" rel="noreferrer">View</a></p>}
                       </div>
+                      {(resort.dti_sec_certificate_url || resort.business_permit_url || resort.gov_id_owner_url) && (
+                        <div className="mt-3">
+                          <div className="text-xs text-slate-500 mb-2">Evidence previews</div>
+                          <div className="grid grid-cols-3 gap-3">
+                            {resort.dti_sec_certificate_url && (
+                              <a href={resort.dti_sec_certificate_url} target="_blank" rel="noreferrer" className="block rounded-lg overflow-hidden border border-slate-200 hover:border-blue-400">
+                                <img src={resort.dti_sec_certificate_url} alt="DTI/SEC certificate" className="w-full h-24 object-cover" />
+                              </a>
+                            )}
+                            {resort.business_permit_url && (
+                              <a href={resort.business_permit_url} target="_blank" rel="noreferrer" className="block rounded-lg overflow-hidden border border-slate-200 hover:border-blue-400">
+                                <img src={resort.business_permit_url} alt="Business permit" className="w-full h-24 object-cover" />
+                              </a>
+                            )}
+                            {resort.gov_id_owner_url && (
+                              <a href={resort.gov_id_owner_url} target="_blank" rel="noreferrer" className="block rounded-lg overflow-hidden border border-slate-200 hover:border-blue-400">
+                                <img src={resort.gov_id_owner_url} alt="Owner government ID" className="w-full h-24 object-cover" />
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      )}
                       <div className="mt-3 grid md:grid-cols-3 gap-2">
                         <label className="inline-flex items-center gap-2 text-sm">
                           <input type="checkbox" defaultChecked={resort.contact_email_verified} onChange={(e) => saveVerification(resort.id, { contact_email_verified: e.target.checked })} /> Email verified
