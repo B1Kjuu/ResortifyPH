@@ -13,6 +13,7 @@ DECLARE pol_exists boolean;
 DECLARE polnames text[];
 DECLARE cmd text;
 DECLARE cons_name text;
+DECLARE allow_check boolean;
 BEGIN
   -- Define consolidation targets: table + command + policies to merge
   FOR tgt IN
@@ -30,6 +31,7 @@ BEGIN
   LOOP
     polnames := tgt.polnames;
     cmd := tgt.cmd;
+    allow_check := upper(cmd) IN ('INSERT','UPDATE');
 
     -- Build a per-role consolidation by inspecting existing policies' roles and expressions
     FOR role_name IN
@@ -80,18 +82,20 @@ BEGIN
       END IF;
 
       -- Create consolidated policy for this role
-      IF consolidated_using IS NOT NULL AND consolidated_check IS NULL THEN
-        EXECUTE format(
-          'CREATE POLICY %I ON %I.%I AS PERMISSIVE FOR %s TO %I USING (%s)',
-          cons_name, tgt.schemaname, tgt.tablename, cmd, role_name, consolidated_using
-        );
-      ELSIF consolidated_using IS NOT NULL AND consolidated_check IS NOT NULL THEN
-        EXECUTE format(
-          'CREATE POLICY %I ON %I.%I AS PERMISSIVE FOR %s TO %I USING (%s) WITH CHECK (%s)',
-          cons_name, tgt.schemaname, tgt.tablename, cmd, role_name, consolidated_using, consolidated_check
-        );
-      ELSIF consolidated_using IS NULL AND consolidated_check IS NOT NULL THEN
-        -- Rare case: only WITH CHECK exists
+      IF consolidated_using IS NOT NULL THEN
+        IF allow_check AND consolidated_check IS NOT NULL THEN
+          EXECUTE format(
+            'CREATE POLICY %I ON %I.%I AS PERMISSIVE FOR %s TO %I USING (%s) WITH CHECK (%s)',
+            cons_name, tgt.schemaname, tgt.tablename, cmd, role_name, consolidated_using, consolidated_check
+          );
+        ELSE
+          EXECUTE format(
+            'CREATE POLICY %I ON %I.%I AS PERMISSIVE FOR %s TO %I USING (%s)',
+            cons_name, tgt.schemaname, tgt.tablename, cmd, role_name, consolidated_using
+          );
+        END IF;
+      ELSIF allow_check AND consolidated_check IS NOT NULL THEN
+        -- Rare case: only WITH CHECK exists and only valid for INSERT/UPDATE
         EXECUTE format(
           'CREATE POLICY %I ON %I.%I AS PERMISSIVE FOR %s TO %I WITH CHECK (%s)',
           cons_name, tgt.schemaname, tgt.tablename, cmd, role_name, consolidated_check
