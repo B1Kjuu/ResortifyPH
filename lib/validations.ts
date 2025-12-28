@@ -84,6 +84,18 @@ export const resortSchema = z.object({
   parking_slots: countField('Parking slots', { required: false, min: 0, max: 50 }),
   nearby_landmarks: z.string().max(500, 'Nearby landmarks must be under 500 characters').optional().nullable().transform((s) => (s ? s.replace(/<[^>]*>/g, ' ').replace(/[\u0000-\u001F\u007F]/g, ' ').trim() : s)),
   bring_own_items: z.string().max(500, 'Bring your own items note must be under 500 characters').optional().nullable().transform((s) => (s ? s.replace(/<[^>]*>/g, ' ').replace(/[\u0000-\u001F\u007F]/g, ' ').trim() : s)),
+  // Verification-related optional fields
+  registration_number: z.string().min(3, 'Registration number is required').max(120),
+  dti_sec_certificate_url: z.string().url('Upload the DTI/SEC certificate (image URL required)'),
+  business_permit_url: z.string().url('Upload the Business Permit (image URL required)'),
+  gov_id_owner_url: z.string().url('Upload the Owner Government ID (image URL required)'),
+  website_url: z.string().url('Must be a valid URL').optional().nullable(),
+  facebook_url: z.string().url('Must be a valid URL').optional().nullable(),
+  instagram_url: z.string().url('Must be a valid URL').optional().nullable(),
+  contact_email_verified: z.boolean().default(false),
+  contact_phone_verified: z.boolean().default(false),
+  location_verified: z.boolean().default(false),
+  verification_notes: z.string().max(2000).optional().nullable().transform((s) => (s ? s.replace(/<[^>]*>/g, ' ').replace(/[\u0000-\u001F\u007F]/g, ' ').trim() : s)),
 })
 
 // Booking validations

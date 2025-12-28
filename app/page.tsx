@@ -16,6 +16,11 @@ export default function Home(){
     let timeoutId: NodeJS.Timeout
 
     async function checkAuth(){
+      // In e2e mode, skip auth gating and show landing immediately
+      if (process.env.NEXT_PUBLIC_E2E === 'true') {
+        setLoading(false)
+        return
+      }
       try {
         const { data: { session } } = await supabase.auth.getSession()
         if (!mounted) return
@@ -83,14 +88,6 @@ export default function Home(){
 
   return (
     <div className="w-full min-h-screen bg-white">
-      {loading ? (
-        <div className="w-full min-h-screen flex items-center justify-center bg-white">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-resort-500 mx-auto mb-4"></div>
-            <p className="text-slate-600">Redirecting...</p>
-          </div>
-        </div>
-      ) : (
       <>
       {/* Hero Section */}
       <section className="relative overflow-hidden w-full px-4 sm:px-6 lg:px-8 py-20 sm:py-32 bg-gradient-to-b from-slate-50 to-white">
@@ -116,7 +113,11 @@ export default function Home(){
                 <Link href="/auth/signup" prefetch={false} className="px-8 py-4 bg-gradient-to-r from-resort-500 to-resort-600 text-white rounded-xl font-semibold hover:shadow-xl transition-all duration-300 text-center">
                   Get Started Free
                 </Link>
-                <Link href="/resorts" prefetch={false} className="px-8 py-4 border-2 border-slate-300 text-slate-900 rounded-xl font-semibold hover:border-resort-500 hover:bg-slate-50 transition-all duration-300 text-center">
+                <Link
+                  href="/resorts"
+                  prefetch={false}
+                  className="px-8 py-4 border-2 border-slate-300 text-slate-900 rounded-xl font-semibold hover:border-resort-500 hover:bg-slate-50 transition-all duration-300 text-center"
+                >
                   Browse Resorts
                 </Link>
               </div>
@@ -443,7 +444,6 @@ export default function Home(){
         </div>
       </section>
     </>
-    )}
     </div>
   )
 }

@@ -75,22 +75,38 @@ export default function ApprovalsPage(){
     }
   }, [])
 
-  async function approveResort(id: string){
+  function evidenceCount(resort: any) {
+    const fields = [
+      resort.registration_number,
+      resort.dti_sec_certificate_url,
+      resort.business_permit_url,
+      resort.gov_id_owner_url,
+      resort.website_url,
+      resort.facebook_url,
+      resort.instagram_url,
+    ]
+    return fields.filter((v) => !!v).length
+  }
+
+  async function approveResort(resort: any){
+    const hasVerified = [resort.contact_email_verified, resort.contact_phone_verified, resort.location_verified].filter(Boolean).length >= 2
+    const hasEvidence = evidenceCount(resort) >= 2
+    if (!hasVerified && !hasEvidence) {
+      toast.error('Need at least 2 verified checks or 2 evidence links before approval')
+      return
+    }
+
     toast.loading('Approving resort...')
-    
     const { error } = await supabase
       .from('resorts')
       .update({ status: 'approved' })
-      .eq('id', id)
-    
+      .eq('id', resort.id)
     toast.dismiss()
-    
-    if (error) { 
+    if (error) {
       console.error('Approve error:', error)
       toast.error(`Error: ${error.message}`)
-      return 
+      return
     }
-    
     toast.success('Resort approved!')
     await loadPendingResorts()
   }
@@ -113,6 +129,19 @@ export default function ApprovalsPage(){
     
     toast.success('Resort rejected')
     await loadPendingResorts()
+  }
+
+  async function saveVerification(id: string, updates: Partial<{ contact_email_verified: boolean; contact_phone_verified: boolean; location_verified: boolean; verification_notes: string }>){
+    const { error } = await supabase
+      .from('resorts')
+      .update(updates)
+      .eq('id', id)
+    if (error) {
+      toast.error(`Save failed: ${error.message}`)
+    } else {
+      toast.success('Verification updated')
+      await loadPendingResorts()
+    }
   }
 
   if (loading) return <div className="w-full px-4 sm:px-6 lg:px-8 py-10 text-center text-slate-600">Loading submissions...</div>
@@ -162,12 +191,44 @@ export default function ApprovalsPage(){
                     <p className="text-sm text-slate-700">💰 ₱{resort.price}/night · 👥 {resort.capacity} guests</p>
                     {resort.amenities && <p className="text-sm text-slate-700">✨ {resort.amenities.join(', ')}</p>}
                     <p className="text-sm text-slate-600 line-clamp-3 mt-2 italic">{resort.description}</p>
+                    {/* Verification details */}
+                    <div className="mt-3 bg-slate-50 border border-slate-200 rounded-xl p-3">
+                      <p className="text-sm font-semibold text-slate-800 mb-2">Verification Details</p>
+                      <div className="grid md:grid-cols-2 gap-2 text-sm">
+                        {resort.registration_number && <p>Reg No.: <span className="font-mono">{resort.registration_number}</span></p>}
+                        {resort.website_url && <p>Website: <a className="text-blue-600" href={resort.website_url} target="_blank" rel="noreferrer">Visit</a></p>}
+                        {resort.facebook_url && <p>Facebook: <a className="text-blue-600" href={resort.facebook_url} target="_blank" rel="noreferrer">Open</a></p>}
+                        {resort.instagram_url && <p>Instagram: <a className="text-blue-600" href={resort.instagram_url} target="_blank" rel="noreferrer">Open</a></p>}
+                        {resort.dti_sec_certificate_url && <p>DTI/SEC: <a className="text-blue-600" href={resort.dti_sec_certificate_url} target="_blank" rel="noreferrer">View</a></p>}
+                        {resort.business_permit_url && <p>Business Permit: <a className="text-blue-600" href={resort.business_permit_url} target="_blank" rel="noreferrer">View</a></p>}
+                        {resort.gov_id_owner_url && <p>Owner ID: <a className="text-blue-600" href={resort.gov_id_owner_url} target="_blank" rel="noreferrer">View</a></p>}
+                      </div>
+                      <div className="mt-3 grid md:grid-cols-3 gap-2">
+                        <label className="inline-flex items-center gap-2 text-sm">
+                          <input type="checkbox" defaultChecked={resort.contact_email_verified} onChange={(e) => saveVerification(resort.id, { contact_email_verified: e.target.checked })} /> Email verified
+                        </label>
+                        <label className="inline-flex items-center gap-2 text-sm">
+                          <input type="checkbox" defaultChecked={resort.contact_phone_verified} onChange={(e) => saveVerification(resort.id, { contact_phone_verified: e.target.checked })} /> Phone verified
+                        </label>
+                        <label className="inline-flex items-center gap-2 text-sm">
+                          <input type="checkbox" defaultChecked={resort.location_verified} onChange={(e) => saveVerification(resort.id, { location_verified: e.target.checked })} /> Location verified
+                        </label>
+                      </div>
+                      <div className="mt-3">
+                        <label className="block text-sm font-semibold text-slate-700 mb-1">Verification Notes</label>
+                        <textarea defaultValue={resort.verification_notes || ''} rows={3} className="w-full px-3 py-2 border border-slate-300 rounded" onBlur={(e) => saveVerification(resort.id, { verification_notes: e.target.value })} />
+                      </div>
+                    </div>
                   </div>
                   
                   <div className="flex gap-3 items-center">
                     <button 
-                      onClick={() => approveResort(resort.id)} 
-                      className="flex-1 px-4 py-3 text-sm font-bold bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all border-2 border-green-400"
+                      onClick={() => approveResort(resort)} 
+                      disabled={!(evidenceCount(resort) >= 2 || [resort.contact_email_verified, resort.contact_phone_verified, resort.location_verified].filter(Boolean).length >= 2)}
+                      className={`flex-1 px-4 py-3 text-sm font-bold rounded-xl border-2 ${ (evidenceCount(resort) >= 2 || [resort.contact_email_verified, resort.contact_phone_verified, resort.location_verified].filter(Boolean).length >= 2)
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:shadow-lg hover:-translate-y-0.5 transition-all border-green-400'
+                        : 'bg-slate-300 text-slate-600 cursor-not-allowed border-slate-400'}`}
+                      title={ (evidenceCount(resort) >= 2 || [resort.contact_email_verified, resort.contact_phone_verified, resort.location_verified].filter(Boolean).length >= 2) ? 'Approve' : 'Add at least 2 evidence links or verify 2 checks'}
                     >
                       ✅ Approve
                     </button>
@@ -177,6 +238,13 @@ export default function ApprovalsPage(){
                     >
                       ❌ Reject
                     </button>
+                    <Link 
+                      href={`/admin/resorts/${resort.id}`} 
+                      className="px-4 py-3 text-sm font-bold bg-blue-600 text-white rounded-xl hover:bg-blue-700 border-2 border-blue-500"
+                      title="Open detailed view"
+                    >
+                      🔎 Open details
+                    </Link>
                     {/* If resort has a related booking, allow admin to open chat as admin by ID input or linking logic. As minimal step, show link if resort.latest_booking_id exists. */}
                     {resort.latest_booking_id && (
                       <ChatLink bookingId={resort.latest_booking_id} as="admin" label="Open Chat" title={resort.name} />

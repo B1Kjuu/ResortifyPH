@@ -18,6 +18,9 @@ export default defineConfig({
     trace: 'on-first-retry',
     video: 'retain-on-failure',
     screenshot: 'only-on-failure',
+    env: {
+      NEXT_PUBLIC_E2E: 'true',
+    },
   },
   projects: [
     {
@@ -39,7 +42,10 @@ export default defineConfig({
         // Use npx to avoid npm argument passthrough issues on Windows
         command: `npx next dev -H ${WEB_HOST} -p ${WEB_PORT}`,
         url: baseURL,
-        reuseExistingServer: !process.env.CI,
+        reuseExistingServer: false,
         timeout: 120 * 1000,
+        env: {
+          NEXT_PUBLIC_E2E: 'true',
+        },
       },
 })

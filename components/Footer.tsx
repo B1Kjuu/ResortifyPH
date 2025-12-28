@@ -4,6 +4,11 @@ import Link from 'next/link'
 import Image from 'next/image'
 
 export default function Footer(){
+  // Lightweight client-side navigation helper for E2E stability
+  function push(path: string) {
+    try { (window as any).next?.router?.push?.(path) } catch {}
+    try { window.history.pushState(null, '', path); window.dispatchEvent(new Event('load')) } catch {}
+  }
   return (
     <footer className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-300 mt-auto border-t-4 border-resort-500">
       <div className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-14">

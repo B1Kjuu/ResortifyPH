@@ -54,7 +54,10 @@ export default function NotificationsAuditPage(){
   return (
     <div className="w-full min-h-screen bg-gradient-to-b from-slate-50 to-white">
       <div className="w-full px-4 sm:px-6 lg:px-8 py-12 max-w-6xl mx-auto">
-        <Link href="/admin/command-center" className="text-sm text-resort-500 font-semibold mb-6 inline-flex items-center gap-2">← Back</Link>
+        <div className="flex items-center justify-between mb-6">
+          <Link href="/admin/command-center" className="text-sm text-resort-500 font-semibold inline-flex items-center gap-2">← Back</Link>
+          <Link href="/admin/verification-report" className="text-sm font-semibold text-blue-600">Open Verification Report →</Link>
+        </div>
         <h1 className="text-2xl font-bold mb-4">Notifications Audit</h1>
         <div className="bg-white border border-slate-200 rounded-xl overflow-auto">
           <table className="min-w-full text-sm">

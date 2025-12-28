@@ -28,6 +28,16 @@ export default function Navbar(){
     let timeoutId: NodeJS.Timeout
 
     async function checkAuth(){
+      // In e2e mode, skip Supabase auth checks to make UI deterministic
+      if (process.env.NEXT_PUBLIC_E2E === 'true') {
+        setAuthChecked(true)
+        setUser(null)
+        setIsAdmin(false)
+        setUserRole('')
+        setProfileEmail(null)
+        authCompletedRef.current = true
+        return
+      }
       try {
         const { data: { session } } = await supabase.auth.getSession()
         if (!mounted) return

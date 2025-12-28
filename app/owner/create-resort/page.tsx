@@ -71,6 +71,13 @@ const defaultResortValues: Partial<ResortInput> = {
   parking_slots: null,
   nearby_landmarks: '',
   bring_own_items: '',
+  registration_number: '',
+  dti_sec_certificate_url: '',
+  business_permit_url: '',
+  gov_id_owner_url: '',
+  website_url: '',
+  facebook_url: '',
+  instagram_url: '',
 }
 
 export default function CreateResort() {
@@ -197,6 +204,13 @@ export default function CreateResort() {
       parking_slots: typeof values.parking_slots === 'number' ? values.parking_slots : null,
       nearby_landmarks: values.nearby_landmarks?.trim() || null,
       bring_own_items: values.bring_own_items?.trim() || null,
+      registration_number: values.registration_number?.trim() || null,
+      dti_sec_certificate_url: values.dti_sec_certificate_url?.trim() || null,
+      business_permit_url: values.business_permit_url?.trim() || null,
+      gov_id_owner_url: values.gov_id_owner_url?.trim() || null,
+      website_url: values.website_url?.trim() || null,
+      facebook_url: values.facebook_url?.trim() || null,
+      instagram_url: values.instagram_url?.trim() || null,
       status: 'pending',
       created_at: new Date(),
     }
@@ -207,6 +221,24 @@ export default function CreateResort() {
     if (error) {
       toast.error(`Error: ${error.message}`)
       return
+    }
+
+    // Notify admins of new submission
+    try {
+      await fetch('/api/notifications/resort-submitted', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          resortName: values.name,
+          ownerName: undefined,
+          ownerEmail: (await supabase.auth.getUser()).data.user?.email || 'owner',
+          ownerId: userId,
+          location: values.location,
+          price: values.price,
+        })
+      })
+    } catch (notifyErr) {
+      console.warn('Admin notify (resort submitted) failed:', notifyErr)
     }
 
     toast.success('Resort created! Pending admin approval.')
@@ -328,6 +360,49 @@ export default function CreateResort() {
             <div className="flex items-center gap-2 mb-2">
               <span className="text-2xl">💰</span>
               <h3 className="text-lg font-bold text-slate-900">Pricing Options</h3>
+            </div>
+
+            {/* Verification details (optional) */}
+            <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-xl p-6 space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">🛡️</span>
+                <h3 className="text-lg font-bold text-slate-900">Verification Details (Optional)</h3>
+              </div>
+              <p className="text-sm text-slate-600">These are required for submission to help admins verify your resort.</p>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Business Registration Number</label>
+                  <input className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl" {...register('registration_number')} />
+                  {errors.registration_number && <p className="text-xs text-red-500 mt-1">{errors.registration_number.message as any}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">DTI/SEC Certificate (Image)</label>
+                  <ImageUploader bucket="verification-docs" onUpload={(urls) => setValue('dti_sec_certificate_url', urls[0] || '', { shouldValidate: true })} />
+                  {errors.dti_sec_certificate_url && <p className="text-xs text-red-500 mt-1">{errors.dti_sec_certificate_url.message as any}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Business Permit (Image)</label>
+                  <ImageUploader bucket="verification-docs" onUpload={(urls) => setValue('business_permit_url', urls[0] || '', { shouldValidate: true })} />
+                  {errors.business_permit_url && <p className="text-xs text-red-500 mt-1">{errors.business_permit_url.message as any}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Owner Government ID (Image)</label>
+                  <ImageUploader bucket="verification-docs" onUpload={(urls) => setValue('gov_id_owner_url', urls[0] || '', { shouldValidate: true })} />
+                  {errors.gov_id_owner_url && <p className="text-xs text-red-500 mt-1">{errors.gov_id_owner_url.message as any}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Website</label>
+                  <input className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl" placeholder="https://" {...register('website_url')} />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Facebook Page</label>
+                  <input className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl" placeholder="https://facebook.com/..." {...register('facebook_url')} />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Instagram</label>
+                  <input className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl" placeholder="https://instagram.com/..." {...register('instagram_url')} />
+                </div>
+              </div>
             </div>
 
             <div className="grid md:grid-cols-2 gap-4">

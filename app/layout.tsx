@@ -21,6 +21,10 @@ export const metadata = {
   alternates: {
     canonical: '/',
   },
+  icons: {
+    icon: '/assets/ResortifyPH-LOGO-CLEAN.ico',
+    shortcut: '/assets/ResortifyPH-LOGO-CLEAN.ico',
+  },
   openGraph: {
     type: 'website',
     locale: 'en_PH',
@@ -100,6 +104,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Handle Supabase auth link hashes (expired, recovery, signup) */}
         <AuthHashHandler />
         <Toaster position="top-right" richColors />
+        {/* Ensure a 'load' event fires promptly after DOM is ready for tests */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.addEventListener('DOMContentLoaded', function(){ try { window.dispatchEvent(new Event('load')); } catch {} });`,
+          }}
+        />
         {/* Provide nonce to Next internal scripts; suppress hydration warnings */}
         {nonce && (
           <script

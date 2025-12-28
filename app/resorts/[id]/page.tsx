@@ -38,6 +38,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
   const [activeImage, setActiveImage] = useState(0)
   const [guests, setGuests] = useState(1)
   const [booking, setBooking] = useState(false)
+  const [stayType, setStayType] = useState<'day' | 'overnight'>('overnight')
   const [message, setMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null)
   const [quickExploreProvince, setQuickExploreProvince] = useState('')
   const [latestBookingId, setLatestBookingId] = useState<string | null>(null)
@@ -252,6 +253,15 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       return
     }
 
+    // Enforce same-day for Day Tour
+    if (stayType === 'day') {
+      const sameDay = format(selectedRange.from, 'yyyy-MM-dd') === format(selectedRange.to, 'yyyy-MM-dd')
+      if (!sameDay) {
+        toast.error('Day Tour must start and end on the same day')
+        return
+      }
+    }
+
     // Guard against overlapping with already booked dates (confirmed bookings)
     try {
       const chosen: string[] = []
@@ -294,6 +304,8 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       p_resort_province: resort.location ?? null,
       p_resort_region_code: resort.region_code ?? provinceInfo?.regionCode ?? null,
       p_resort_region_name: resort.region_name ?? provinceInfo?.regionName ?? null,
+      // optional: pass stay type if RPC handles it (ignored otherwise)
+      p_stay_type: stayType,
     })
 
     setBooking(false)
@@ -393,9 +405,9 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       ? [resort.image_url]
       : []
 
-  const nightlyRate = resort.price
-  const nights = selectedRange.from && selectedRange.to ? Math.ceil((selectedRange.to.getTime() - selectedRange.from.getTime()) / (1000 * 60 * 60 * 24)) : 0
-  const totalCost = nights * nightlyRate
+  const baseRate = stayType === 'day' ? (resort.day_tour_price ?? resort.price) : (resort.overnight_price ?? resort.price)
+  const nights = selectedRange.from && selectedRange.to ? Math.max(1, Math.ceil((selectedRange.to.getTime() - selectedRange.from.getTime()) / (1000 * 60 * 60 * 24))) : 0
+  const totalCost = baseRate * nights
 
   function scrollToBookingCard(){
     const el = bookingCardRef.current
@@ -658,6 +670,15 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                 <span className="text-sm text-slate-500">Flexible dates</span>
               </div>
 
+              <div>
+                <label className="block text-sm font-semibold text-slate-700">Stay Type</label>
+                <select value={stayType} onChange={(e) => setStayType(e.target.value as any)} className="mt-1 w-full px-3 py-2 border border-slate-300 rounded">
+                  <option value="day">Day Tour (same-day)</option>
+                  <option value="overnight">Overnight</option>
+                </select>
+                <p className="text-xs text-slate-500 mt-1">Pricing uses {stayType === 'day' ? 'Day Tour' : 'Overnight'} rate when available.</p>
+              </div>
+
               {message && (
                 <div className={`px-4 py-3 rounded-lg text-sm font-semibold ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
                   {message.text}
@@ -691,7 +712,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
               {nights > 0 && (
                 <div className="bg-resort-50 rounded-lg p-3 space-y-2">
                   <div className="flex justify-between text-sm text-slate-700">
-                    <span>₱{nightlyRate.toLocaleString()} × {nights} night{nights > 1 ? 's' : ''}</span>
+                    <span>₱{baseRate.toLocaleString()} × {nights} {stayType === 'day' ? 'day' : `night${nights > 1 ? 's' : ''}`}</span>
                     <span>₱{totalCost.toLocaleString()}</span>
                   </div>
                   <div className="border-t border-resort-200 pt-2 flex justify-between font-bold text-resort-900">
@@ -737,8 +758,8 @@ export default function ResortDetail({ params }: { params: { id: string } }){
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="text-sm">
-              <p className="font-bold text-resort-900">₱{nightlyRate?.toLocaleString()}</p>
-              <p className="text-xs text-slate-600">per night</p>
+              <p className="font-bold text-resort-900">₱{baseRate?.toLocaleString()}</p>
+              <p className="text-xs text-slate-600">{stayType === 'day' ? 'per day' : 'per night'}</p>
             </div>
             {nights > 0 && (
               <div className="text-xs text-slate-700">
