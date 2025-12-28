@@ -18,9 +18,6 @@ export default defineConfig({
     trace: 'on-first-retry',
     video: 'retain-on-failure',
     screenshot: 'only-on-failure',
-    env: {
-      NEXT_PUBLIC_E2E: 'true',
-    },
   },
   projects: [
     {
