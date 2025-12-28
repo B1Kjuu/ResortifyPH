@@ -35,7 +35,7 @@ export default function Empire(){
           .from('profiles')
           .select('id, email, full_name, role, is_admin')
           .eq('id', session.user.id)
-          .single()
+          .maybeSingle()
         if (error || !userProfile) {
           console.error('Profile error:', error)
           router.push('/')
@@ -44,6 +44,12 @@ export default function Empire(){
 
         if (userProfile?.role !== 'owner') {
           router.push('/')
+          return
+        }
+
+        // First-login email gate
+        if (!userProfile.email) {
+          router.push('/profile?requireEmail=1')
           return
         }
 

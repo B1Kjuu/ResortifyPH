@@ -143,6 +143,48 @@ export default function GuestBookingsPage(){
                             // Optimistic update
                             setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, cancellation_status: 'requested', cancellation_reason: reason } : b))
                             toast.success('Cancellation request sent')
+                            // Notify resort owner and add a system chat message
+                            try {
+                              // Fetch resort owner
+                              const { data: resort } = await supabase
+                                .from('resorts')
+                                .select('id, name, owner_id')
+                                .eq('id', booking.resort_id)
+                                .single()
+                              const ownerId = (resort as any)?.owner_id
+                              if (ownerId) {
+                                const { notify } = await import('../../../lib/notifications')
+                                await notify({
+                                  userId: ownerId,
+                                  type: 'cancellation_requested',
+                                  title: 'Guest requested booking cancellation',
+                                  body: `${resort?.name || 'Resort'} — ${booking.date_from} to ${booking.date_to}`,
+                                  link: `/owner/bookings`,
+                                  metadata: { bookingId: booking.id }
+                                })
+                              }
+                              // Insert system message into booking chat if exists
+                              const { data: chatRow } = await supabase
+                                .from('chats')
+                                .select('id')
+                                .eq('booking_id', booking.id)
+                                .limit(1)
+                                .maybeSingle()
+                              const chatId = (chatRow as any)?.id
+                              if (chatId) {
+                                const { data: { session } } = await supabase.auth.getSession()
+                                const senderId = session?.user?.id
+                                if (senderId) {
+                                  await supabase.from('chat_messages').insert({
+                                    chat_id: chatId,
+                                    sender_id: senderId,
+                                    content: `⚠ Guest requested cancellation${reason ? ` — ${reason}` : ''}.`,
+                                  } as any)
+                                }
+                              }
+                            } catch (e) {
+                              console.warn('Owner notification/system message failed:', e)
+                            }
                           } catch (err: any) {
                             toast.dismiss()
                             toast.error(err?.message || 'Failed to request cancellation')

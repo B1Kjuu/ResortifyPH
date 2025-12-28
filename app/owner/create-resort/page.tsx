@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
+import Select from '../../../components/Select'
 import { useRouter } from 'next/navigation'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -343,16 +344,13 @@ export default function CreateResort() {
 
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Resort Type *</label>
-            <select
-              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors cursor-pointer"
-              {...register('type')}
-            >
+            <Select ariaLabel="Resort type" className="w-full" {...register('type')}>
               <option value="beach">🏖️ Beach Resort</option>
               <option value="mountain">🏔️ Mountain Resort</option>
               <option value="nature">🌿 Nature Retreat</option>
               <option value="city">🏙️ City Resort</option>
               <option value="countryside">🌾 Countryside</option>
-            </select>
+            </Select>
             {errors.type && <p className="text-xs text-red-500 mt-1">{errors.type.message}</p>}
           </div>
 
@@ -655,16 +653,13 @@ export default function CreateResort() {
 
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Cancellation Policy</label>
-            <select
-              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shawdow-sm hover:border-slate-300 transition-colors cursor-pointer"
-              {...register('cancellation_policy')}
-            >
+            <Select ariaLabel="Cancellation policy" className="w-full" {...register('cancellation_policy')}>
               {CANCELLATION_POLICIES.map((policy) => (
                 <option key={policy.value} value={policy.value}>
                   {policy.label}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-6">

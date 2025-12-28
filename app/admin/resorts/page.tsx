@@ -35,8 +35,9 @@ export default function AdminResortsPage(){
         .from('profiles')
         .select('id, email, full_name, role, is_admin')
         .eq('id', session.user.id)
-        .single()
+        .maybeSingle()
       if (!profile?.is_admin) { router.push('/'); return }
+      if (!profile?.email) { router.push('/profile?requireEmail=1'); return }
 
       setIsAdmin(true)
       await loadPendingResorts()

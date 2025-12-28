@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import ImageUploader from '../../../../components/ImageUploader'
 import LocationCombobox from '../../../../components/LocationCombobox'
+import Select from '../../../../components/Select'
 import DisclaimerBanner from '../../../../components/DisclaimerBanner'
 import { getProvinceInfo } from '../../../../lib/locations'
 import { supabase } from '../../../../lib/supabaseClient'
@@ -58,9 +59,16 @@ export default function EditResort(){
         .from('profiles')
         .select('id, email, full_name, role, is_admin')
         .eq('id', session.user.id)
-        .single()
+        .maybeSingle()
       if (profile?.role !== 'owner') {
         router.push('/owner/dashboard')
+        setLoading(false)
+        return
+      }
+
+      // First-login email gate
+      if (!profile?.email) {
+        router.push('/profile?requireEmail=1')
         setLoading(false)
         return
       }
@@ -243,8 +251,9 @@ export default function EditResort(){
 
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-2">Resort Type *</label>
-          <select
-            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors cursor-pointer"
+          <Select
+            ariaLabel="Resort type"
+            className="w-full"
             value={type}
             onChange={e => setType(e.target.value)}
             required
@@ -254,7 +263,7 @@ export default function EditResort(){
             <option value="nature">🌿 Nature Retreat</option>
             <option value="city">🏙️ City Resort</option>
             <option value="countryside">🌾 Countryside</option>
-          </select>
+          </Select>
         </div>
 
         <div className="grid md:grid-cols-2 gap-4">
@@ -392,8 +401,9 @@ export default function EditResort(){
 
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-2">Cancellation Policy</label>
-          <select
-            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors cursor-pointer"
+          <Select
+            ariaLabel="Cancellation policy"
+            className="w-full"
             value={cancellationPolicy}
             onChange={e => setCancellationPolicy(e.target.value)}
           >
@@ -401,7 +411,7 @@ export default function EditResort(){
             <option value="moderate">Moderate - Full refund up to 5 days before check-in</option>
             <option value="strict">Strict - Full refund up to 14 days before check-in</option>
             <option value="no-refund">No Refund - Non-refundable booking</option>
-          </select>
+          </Select>
         </div>
 
         <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-6">

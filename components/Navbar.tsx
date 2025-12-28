@@ -179,9 +179,21 @@ export default function Navbar(){
     }
   }
 
-  function handleExploreClick(e?: React.MouseEvent) {
+  async function handleExploreClick(e?: React.MouseEvent) {
     try {
       if (e) e.preventDefault()
+      // If current role is owner, switch to guest before navigating so booking is enabled
+      if (user && userRole === 'owner') {
+        try {
+          const { error } = await supabase
+            .from('profiles')
+            .update({ role: 'guest' })
+            .eq('id', user.id)
+          if (!error) setUserRole('guest')
+        } catch (err) {
+          console.warn('Explore role switch failed:', err)
+        }
+      }
       router.push('/resorts')
       // Nudge environments relying on window "load" after SPA route changes
       setTimeout(() => { try { window.dispatchEvent(new Event('load')) } catch {} }, 0)
@@ -205,7 +217,7 @@ export default function Navbar(){
         <Link href={getHomeLink()} className="flex items-center gap-2 flex-shrink-0">
           <div className="relative">
             <Image 
-              src="/assets/ResortifyPH_Logo.png" 
+              src="/assets/ResortifyPH-LOGO-CLEAN.png" 
               alt="ResortifyPH Logo" 
               width={36} 
               height={36}
@@ -217,7 +229,7 @@ export default function Navbar(){
 
         {/* Navigation - Desktop Only */}
         <nav className="hidden lg:flex items-center gap-6 ml-8">
-          <Link href="/resorts" prefetch={false} className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
+          <Link href="/resorts" prefetch={false} onClick={(e) => handleExploreClick(e)} className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
             Explore
           </Link>
           {authChecked && user && !isAdminContext && (
@@ -403,7 +415,7 @@ export default function Navbar(){
           </div>
 
           <nav className="space-y-2">
-            <Link href="/resorts" onClick={() => setShowMobileMenu(false)} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">Explore</Link>
+            <Link href="/resorts" onClick={(e) => { handleExploreClick(e); setShowMobileMenu(false) }} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">Explore</Link>
             {authChecked && user && !isAdminContext && (
               <Link
                 href={userRole === 'owner' ? '/owner/chats' : '/guest/chats'}

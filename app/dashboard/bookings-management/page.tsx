@@ -1,6 +1,7 @@
 'use client'
 import React, { useEffect, useState } from 'react'
 import DisclaimerBanner from '../../../components/DisclaimerBanner'
+import Select from '../../../components/Select'
 import { format, addMonths } from 'date-fns'
 import DashboardSidebar from '../../../components/DashboardSidebar'
 import { supabase } from '../../../lib/supabaseClient'
@@ -229,12 +230,12 @@ export default function BookingsManagementPage(){
             <div className="flex items-center gap-3">
               <span className="text-sm text-slate-600">{format(month, 'MMMM yyyy')}</span>
               <label className="text-sm text-slate-600">Resort:</label>
-              <select value={selectedResortId} onChange={(e) => setSelectedResortId(e.target.value as any)} className="text-sm px-3 py-1.5 border border-slate-300 rounded">
+              <Select ariaLabel="Resort filter" value={selectedResortId} onChange={(e) => setSelectedResortId(e.target.value as any)} className="text-sm min-w-[140px]">
                 <option value="all">All</option>
                 {Array.from(new Map([...pendingBookings, ...confirmedBookings].map(b => [b.resort_id, b.resort?.name || 'Unnamed Resort']))).map(([id, name]) => (
                   <option key={id} value={id}>{name}</option>
                 ))}
-              </select>
+              </Select>
             </div>
           </div>
           <OwnerAvailabilityCalendar

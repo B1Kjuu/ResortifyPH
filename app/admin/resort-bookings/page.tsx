@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabaseClient'
+import Select from '../../../components/Select'
 import DisclaimerBanner from '../../../components/DisclaimerBanner'
 import ChatLink from '../../../components/ChatLink'
 import { useRouter } from 'next/navigation'
@@ -38,10 +39,11 @@ export default function ResortBookingsPage(){
       if (!session?.user) { router.push('/auth/signin'); return }
       const { data: profile } = await supabase
         .from('profiles')
-        .select('id, is_admin')
+        .select('id, is_admin, email')
         .eq('id', session.user.id)
-        .single()
+        .maybeSingle()
       if (!profile?.is_admin) { router.push('/'); return }
+      if (!profile?.email) { router.push('/profile?requireEmail=1'); return }
       if (mounted) setIsAdmin(true)
 
       const { data: resortsData, error } = await supabase
@@ -90,8 +92,9 @@ export default function ResortBookingsPage(){
         {/* Resort selector */}
         <div className="bg-white border-2 border-slate-200 rounded-2xl p-6 shadow-sm mb-8">
           <label className="block text-sm font-semibold text-slate-700 mb-2">Choose a Resort</label>
-          <select
-            className="w-full max-w-md px-3 py-2 rounded-lg border-2 border-slate-200"
+          <Select
+            ariaLabel="Choose a resort"
+            className="w-full max-w-md"
             value={selectedResortId}
             onChange={(e) => { const id = e.target.value; setSelectedResortId(id); loadBookings(id) }}
           >
@@ -99,7 +102,7 @@ export default function ResortBookingsPage(){
             {resorts.map((r) => (
               <option key={r.id} value={r.id}>{r.name || r.id.slice(0,8)}</option>
             ))}
-          </select>
+          </Select>
         </div>
 
         {/* Bookings list */}

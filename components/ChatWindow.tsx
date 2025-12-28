@@ -27,6 +27,10 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
 
   useEffect(() => {
     let mounted = true
+    // Fallback timer: ensure loading doesn't get stuck forever
+    const loadingFallback = setTimeout(() => {
+      if (mounted) setLoading(false)
+    }, 3000)
     ;(async () => {
       const { data: userRes } = await supabase.auth.getUser()
       const uid = userRes.user?.id
@@ -288,6 +292,7 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
 
       return () => {
         mounted = false
+        clearTimeout(loadingFallback)
         supabase.removeChannel(channel)
         supabase.removeChannel(presenceChannel)
         // Set user offline on unmount
@@ -427,6 +432,41 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
         <div className="flex flex-1 items-center justify-center text-sm text-gray-500">Loading chat…</div>
       ) : !userId ? (
         <div className="flex flex-1 items-center justify-center text-sm text-gray-500">Sign in to chat.</div>
+      ) : !chat ? (
+        <div className="flex flex-1 items-center justify-center text-sm text-gray-500">
+          <div className="text-center">
+            <div className="mb-2 font-semibold">Chat not available</div>
+            <div className="text-xs text-gray-600 mb-3">This conversation might be archived or not created yet.</div>
+            <button
+              className="inline-flex items-center rounded-md border px-3 py-1 text-sm bg-slate-50 text-slate-700 hover:bg-slate-100"
+              onClick={async () => {
+                try {
+                  const { data: userRes } = await supabase.auth.getUser()
+                  const uid = userRes.user?.id
+                  if (!uid) return
+                  if (bookingId) {
+                    const { data: created } = await supabase
+                      .from('chats')
+                      .insert({ booking_id: bookingId, creator_id: uid })
+                      .select('*')
+                      .single()
+                    if (created) setChat(created as any)
+                  } else if (resortId) {
+                    const { data: created } = await supabase
+                      .from('chats')
+                      .insert({ resort_id: resortId, creator_id: uid })
+                      .select('*')
+                      .single()
+                    if (created) setChat(created as any)
+                  }
+                } catch (e) {
+                  console.error('Start chat failed:', e)
+                  alert('Failed to start chat')
+                }
+              }}
+            >Start Chat</button>
+          </div>
+        </div>
       ) : (
         <>
           {pinnedGuidance && (

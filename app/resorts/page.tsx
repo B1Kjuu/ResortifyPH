@@ -8,6 +8,7 @@ import 'rc-slider/assets/index.css'
 import ResortCard from '../../components/ResortCard'
 import SkeletonCard from '../../components/SkeletonCard'
 import LocationCombobox from '../../components/LocationCombobox'
+import Select from '../../components/Select'
 import ResortMap from '../../components/ResortMap'
 import { supabase } from '../../lib/supabaseClient'
 import { getProvinceCoordinates } from '../../lib/locations'
@@ -622,11 +623,11 @@ export default function ResortsPage(){
             </div>
 
             {/* Type Filter */}
-            <select 
+            <Select
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
-              aria-label="Filter by resort type"
-              className="flex-shrink-0 px-3 py-2 h-10 min-w-[120px] border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white cursor-pointer"
+              ariaLabel="Filter by resort type"
+              className="flex-shrink-0 min-w-[120px]"
             >
               <option value="all">All Types</option>
               <option value="beach">🏖️ Beach</option>
@@ -634,34 +635,52 @@ export default function ResortsPage(){
               <option value="nature">🌿 Nature</option>
               <option value="city">🏙️ City</option>
               <option value="countryside">🌾 Countryside</option>
-            </select>
+            </Select>
 
-            {/* Guests Filter */}
-            <select 
-              value={guestCount}
-              onChange={(e) => setGuestCount(e.target.value)}
-              aria-label="Filter by guest count"
-              className="flex-shrink-0 px-3 py-2 h-10 min-w-[110px] border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white cursor-pointer"
-            >
-              <option value="all">Guests</option>
-              <option value="2">2+</option>
-              <option value="4">4+</option>
-              <option value="6">6+</option>
-              <option value="8">8+</option>
-              <option value="10">10+</option>
-            </select>
+            {/* Guests Filter (numeric input) */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <input
+                type="number"
+                inputMode="numeric"
+                min={1}
+                value={guestCount === 'all' ? '' : guestCount}
+                onChange={(e) => {
+                  const raw = e.target.value
+                  if (raw === '') {
+                    setGuestCount('all')
+                    return
+                  }
+                  const n = Number(raw)
+                  // Guard against NaN/negative
+                  setGuestCount(Number.isFinite(n) && n > 0 ? String(n) : 'all')
+                }}
+                placeholder="Guests"
+                aria-label="Filter by guest count"
+                className="px-3 py-2 h-10 min-w-[110px] border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white"
+              />
+              {guestCount !== 'all' && (
+                <button
+                  type="button"
+                  onClick={() => setGuestCount('all')}
+                  className="px-2 py-2 h-10 rounded-lg text-sm text-slate-700 border border-slate-300 hover:bg-slate-50"
+                  aria-label="Clear guest filter"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
 
             {/* Sort */}
-            <select
+            <Select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              aria-label="Sort resorts"
-              className="flex-shrink-0 px-3 py-2 h-10 min-w-[110px] border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white cursor-pointer"
+              ariaLabel="Sort resorts"
+              className="flex-shrink-0 min-w-[110px]"
             >
               <option value="newest">Newest</option>
               <option value="price-asc">Price ↑</option>
               <option value="price-desc">Price ↓</option>
-            </select>
+            </Select>
 
             {/* Show Total toggle */}
             <button

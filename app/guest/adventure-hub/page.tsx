@@ -79,7 +79,7 @@ export default function AdventureHub(){
           .from('profiles')
           .select('id, email, full_name, role, is_admin')
           .eq('id', session.user.id)
-          .single()
+          .maybeSingle()
         if (!mounted) return
         
         if (error || !userProfile) {
@@ -90,6 +90,12 @@ export default function AdventureHub(){
 
         if (userProfile?.role !== 'guest') {
           router.push('/')
+          return
+        }
+
+        // First-login email gate for guests as well
+        if (!userProfile.email) {
+          router.push('/profile?requireEmail=1')
           return
         }
 

@@ -145,6 +145,26 @@ export default function OwnerBookingsPage(){
               metadata: { bookingId }
             })
           }
+          // Email guest confirmation
+          try {
+            if (booking?.guest?.email) {
+              await fetch('/api/notifications/booking-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  to: booking.guest.email,
+                  status: 'approved',
+                  resortName: booking.resort?.name || 'Your booking',
+                  dateFrom: booking.date_from,
+                  dateTo: booking.date_to,
+                  link: `/chat/${bookingId}?as=guest`,
+                  userId: booking.guest.id,
+                })
+              })
+            }
+          } catch (e) { console.warn('Email confirm failed:', e) }
+          // Insert a system message into the booking chat thread
+          await insertSystemMessageForBooking(bookingId, `✅ Booking confirmed for ${booking.resort?.name || 'Resort'} — ${booking.date_from} → ${booking.date_to}`)
         } catch (e) { console.warn('Notify failed:', e) }
       }
     } catch (err) {
@@ -182,6 +202,26 @@ export default function OwnerBookingsPage(){
               metadata: { bookingId }
             })
           }
+          // Email guest rejection
+          try {
+            if (booking?.guest?.email) {
+              await fetch('/api/notifications/booking-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  to: booking.guest.email,
+                  status: 'rejected',
+                  resortName: booking.resort?.name || 'Your booking',
+                  dateFrom: booking.date_from,
+                  dateTo: booking.date_to,
+                  link: `/chat/${bookingId}?as=guest`,
+                  userId: booking.guest.id,
+                })
+              })
+            }
+          } catch (e) { console.warn('Email reject failed:', e) }
+          // Insert a system message into the booking chat thread
+          await insertSystemMessageForBooking(bookingId, `❌ Booking rejected for ${booking.resort?.name || 'Resort'} — ${booking.date_from} → ${booking.date_to}`)
         } catch (e) { console.warn('Notify failed:', e) }
       }
     } catch (err) {
@@ -218,6 +258,7 @@ export default function OwnerBookingsPage(){
               metadata: { bookingId }
             })
           }
+          await insertSystemMessageForBooking(bookingId, `🛑 Cancellation approved — ${booking?.resort?.name || 'Resort'} (${booking?.date_from} → ${booking?.date_to})`)
         } catch (e) { console.warn('Notify failed:', e) }
       }
     } catch (err) {
@@ -254,6 +295,7 @@ export default function OwnerBookingsPage(){
               metadata: { bookingId }
             })
           }
+          await insertSystemMessageForBooking(bookingId, `↩️ Cancellation declined — ${booking?.resort?.name || 'Resort'} (${booking?.date_from} → ${booking?.date_to})`)
         } catch (e) { console.warn('Notify failed:', e) }
       }
     } catch (err) {
@@ -392,6 +434,67 @@ export default function OwnerBookingsPage(){
       }
     } catch (err) {
       setToast({ message: 'Error saving verification details', type: 'error' })
+    }
+  }
+
+  // Owner-side cancel for confirmed bookings
+  async function cancelBooking(bookingId: string){
+    try {
+      const ok = typeof window !== 'undefined' ? window.confirm('Cancel this confirmed booking?') : true
+      if (!ok) return
+      setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'cancelled', cancellation_status: 'approved' } : b))
+      const { error } = await supabase
+        .from('bookings')
+        .update({ status: 'cancelled', cancellation_status: 'approved' })
+        .eq('id', bookingId)
+        .eq('status', 'confirmed')
+      if (error) {
+        setToast({ message: `Error: ${error.message}`, type: 'error' })
+        loadOwnerBookings()
+        return
+      }
+      setToast({ message: 'Booking cancelled', type: 'success' })
+      try {
+        const booking = bookings.find(b => b.id === bookingId)
+        if (booking?.guest?.id) {
+          const { notify } = await import('../../../lib/notifications')
+          await notify({
+            userId: booking.guest.id,
+            type: 'owner_cancelled',
+            title: 'Your booking was cancelled by host',
+            body: `${booking.resort?.name || 'Resort'} — ${booking.date_from} to ${booking.date_to}`,
+            link: `/guest/trips/${bookingId}`,
+            metadata: { bookingId }
+          })
+        }
+        await insertSystemMessageForBooking(bookingId, `🛑 Host cancelled booking — ${booking?.resort?.name || 'Resort'} (${booking?.date_from} → ${booking?.date_to})`)
+      } catch (e) { console.warn('Notify failed:', e) }
+    } catch (err) {
+      setToast({ message: 'Error cancelling booking', type: 'error' })
+    }
+  }
+
+  // Helper: insert system message into chat for a booking
+  async function insertSystemMessageForBooking(bookingId: string, content: string){
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const senderId = session?.user?.id
+      if (!senderId) return
+      const { data: chatRow } = await supabase
+        .from('chats')
+        .select('id')
+        .eq('booking_id', bookingId)
+        .limit(1)
+        .maybeSingle()
+      const chatId = (chatRow as any)?.id
+      if (!chatId) return
+      await supabase.from('chat_messages').insert({
+        chat_id: chatId,
+        sender_id: senderId,
+        content,
+      } as any)
+    } catch (e) {
+      console.warn('Insert system message failed:', e)
     }
   }
 
@@ -555,6 +658,7 @@ export default function OwnerBookingsPage(){
       declineCancellation={declineCancellation}
       bulkApproveCancellations={bulkApproveCancellations}
       bulkDeclineCancellations={bulkDeclineCancellations}
+      cancelBooking={cancelBooking}
     />
   )
 }

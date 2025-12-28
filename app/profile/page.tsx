@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '../../lib/supabaseClient'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { sanitizeText } from '../../lib/sanitize'
 
@@ -28,6 +28,11 @@ export default function ProfilePage(){
   const [sessionInfo, setSessionInfo] = useState<any>(null)
   const [linking, setLinking] = useState<'google' | 'facebook' | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const requireEmail = searchParams.get('requireEmail') === '1'
+  const [emailEditOpen, setEmailEditOpen] = useState(false)
+  const [newEmail, setNewEmail] = useState('')
+  const [updatingEmail, setUpdatingEmail] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -48,7 +53,7 @@ export default function ProfilePage(){
           .from('profiles')
           .select('id, email, full_name, role, is_admin, created_at, avatar_url, phone, bio, location')
           .eq('id', session.user.id)
-          .single()
+          .maybeSingle()
         if (error || !userProfile) {
           console.error('Profile error:', error)
           router.push('/')
@@ -228,6 +233,12 @@ export default function ProfilePage(){
 
           {/* Profile Info */}
           <div className="px-8 py-10">
+            {/* Email requirement notice */}
+            {!profile.email && (
+              <div className="mb-6 px-4 py-3 rounded-lg bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm font-semibold">
+                Email missing: You’ll receive in-app notifications only. Add an email to ensure booking and review emails reach you.
+              </div>
+            )}
             {/* Tabs */}
             <div className="mb-6 flex items-center justify-center gap-2">
               <button onClick={() => setActiveTab('personal')} className={`px-4 py-2 rounded-full text-sm font-semibold border ${activeTab==='personal' ? 'bg-resort-600 text-white border-resort-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>Personal Info</button>
@@ -249,6 +260,53 @@ export default function ProfilePage(){
                   disabled 
                   className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-slate-50 text-slate-600 cursor-not-allowed font-medium"
                 />
+                {requireEmail && (
+                  <div className="mt-3 p-4 border-2 border-yellow-200 bg-yellow-50 rounded-xl">
+                    <p className="text-sm font-semibold text-yellow-800 mb-2">An email is required to receive booking and review notifications.</p>
+                    {!emailEditOpen ? (
+                      <button
+                        type="button"
+                        onClick={() => { setEmailEditOpen(true); setNewEmail('') }}
+                        className="px-4 py-2 rounded-lg bg-resort-600 text-white font-semibold hover:bg-resort-700"
+                      >
+                        Add Email
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="email"
+                          value={newEmail}
+                          onChange={(e) => setNewEmail(e.target.value)}
+                          placeholder="you@example.com"
+                          className="flex-1 px-4 py-2 border-2 border-slate-200 rounded-lg"
+                        />
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!newEmail || !newEmail.includes('@')) { toast.error('Enter a valid email'); return }
+                            try {
+                              setUpdatingEmail(true)
+                              toast.loading('Updating email…')
+                              const { error } = await supabase.auth.updateUser({ email: newEmail })
+                              toast.dismiss()
+                              if (error) { toast.error(error.message); setUpdatingEmail(false); return }
+                              toast.success('Check your new email for a confirmation link!')
+                              setUpdatingEmail(false)
+                            } catch (e: any) {
+                              toast.dismiss(); setUpdatingEmail(false);
+                              toast.error(e?.message || 'Failed to update email')
+                            }
+                          }}
+                          disabled={updatingEmail}
+                          className="px-4 py-2 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800 disabled:opacity-50"
+                        >
+                          {updatingEmail ? 'Saving…' : 'Save'}
+                        </button>
+                      </div>
+                    )}
+                    <p className="mt-2 text-xs text-slate-600">We’ll send a confirmation link to the new address. Once confirmed, dashboards will be accessible.</p>
+                  </div>
+                )}
               </div>
 
               {/* Full Name */}

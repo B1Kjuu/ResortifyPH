@@ -31,15 +31,13 @@ export default function Home(){
             .from('profiles')
             .select('id, email, is_admin, role')
             .eq('id', session.user.id)
-            .single()
+            .maybeSingle()
 
           if (!mounted) return
           clearTimeout(timeoutId)
 
           if (error) {
             console.error('Profile fetch error:', error)
-            window.location.href = '/guest/adventure-hub'
-            return
           }
 
           if (profile?.is_admin) {

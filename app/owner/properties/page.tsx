@@ -20,9 +20,15 @@ export default function Properties(){
         .from('profiles')
         .select('id, email, full_name, role, is_admin')
         .eq('id', session.user.id)
-        .single()
-      if (profile?.role !== 'owner') {
+        .maybeSingle()
+      if (!profile || profile.role !== 'owner') {
         router.push('/owner/empire')
+        return
+      }
+
+      // First-login email gate
+      if (!profile.email) {
+        router.push('/profile?requireEmail=1')
         return
       }
 
