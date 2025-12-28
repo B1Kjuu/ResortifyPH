@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useRef, useId } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import { FiFolder, FiUpload, FiLoader, FiInfo, FiCheck } from 'react-icons/fi'
 
 type Props = {
   bucket?: string
@@ -50,7 +51,7 @@ export default function ImageUploader({ bucket = 'resort-images', onUpload }: Pr
           htmlFor={`image-input-${inputId}`}
           className="inline-flex items-center gap-2 px-6 py-3 border-2 border-slate-300 rounded-xl font-semibold text-slate-700 hover:border-resort-400 hover:bg-resort-50 transition-all cursor-pointer bg-white shadow-sm"
         >
-          <span className="text-xl">📁</span>
+          <FiFolder className="w-5 h-5" />
           <span>Choose Files</span>
         </label>
         
@@ -69,12 +70,12 @@ export default function ImageUploader({ bucket = 'resort-images', onUpload }: Pr
         >
           {uploading ? (
             <>
-              <span className="animate-spin">⏳</span>
+              <FiLoader className="w-5 h-5 animate-spin" />
               <span>Uploading...</span>
             </>
           ) : (
             <>
-              <span>📤</span>
+              <FiUpload className="w-5 h-5" />
               <span>Upload Images</span>
             </>
           )}
@@ -82,13 +83,13 @@ export default function ImageUploader({ bucket = 'resort-images', onUpload }: Pr
       </div>
       
       <div className="text-xs text-slate-500">
-        <p>💡 <strong>Tip:</strong> Upload high-quality photos showing pool, rooms, amenities, and outdoor areas. Maximum 10 images recommended.</p>
+        <p className="flex items-center gap-1"><FiInfo className="w-4 h-4" /> <strong>Tip:</strong> Upload high-quality photos showing pool, rooms, amenities, and outdoor areas. Maximum 10 images recommended.</p>
       </div>
       
       {uploadedUrls.length > 0 && (
         <div className="space-y-3 p-4 bg-green-50 border-2 border-green-200 rounded-xl">
           <div className="flex items-center gap-2">
-            <span className="text-green-600 font-bold text-xl">✓</span>
+            <FiCheck className="text-green-600 w-5 h-5" />
             <div className="text-sm font-semibold text-green-800">
               Successfully uploaded {uploadedUrls.length} image{uploadedUrls.length !== 1 ? 's' : ''}
             </div>

@@ -14,6 +14,8 @@ import { supabase } from '../../lib/supabaseClient'
 import { getProvinceCoordinates } from '../../lib/locations'
 import { getCityToProvinceMap } from '../../lib/psgcClient'
 import { useGeolocation, calculateDistance, formatDistance } from '../../hooks/useGeolocation'
+import { FaUmbrellaBeach, FaMountain, FaLeaf, FaCity, FaTractor, FaSwimmer, FaFire, FaGem, FaUsers } from 'react-icons/fa'
+import { FiCheck, FiSearch } from 'react-icons/fi'
 
 
 
@@ -61,16 +63,16 @@ export default function ResortsPage(){
   
   // Airbnb-style categories
   const categories = [
-    { id: 'beach', icon: '🏖️', label: 'Beachfront' },
-    { id: 'mountain', icon: '🏔️', label: 'Mountains' },
-    { id: 'nature', icon: '🌿', label: 'Nature' },
-    { id: 'city', icon: '🏙️', label: 'City' },
-    { id: 'countryside', icon: '🌾', label: 'Countryside' },
-    { id: 'pool', icon: '🏊', label: 'Amazing Pools' },
-    { id: 'trending', icon: '🔥', label: 'Trending' },
-    { id: 'new', icon: '✨', label: 'New' },
-    { id: 'luxury', icon: '💎', label: 'Luxe' },
-    { id: 'family', icon: '👨‍👩‍👧‍👦', label: 'Family' },
+    { id: 'beach', icon: <FaUmbrellaBeach className="w-5 h-5" />, label: 'Beachfront' },
+    { id: 'mountain', icon: <FaMountain className="w-5 h-5" />, label: 'Mountains' },
+    { id: 'nature', icon: <FaLeaf className="w-5 h-5" />, label: 'Nature' },
+    { id: 'city', icon: <FaCity className="w-5 h-5" />, label: 'City' },
+    { id: 'countryside', icon: <FaTractor className="w-5 h-5" />, label: 'Countryside' },
+    { id: 'pool', icon: <FaSwimmer className="w-5 h-5" />, label: 'Amazing Pools' },
+    { id: 'trending', icon: <FaFire className="w-5 h-5" />, label: 'Trending' },
+    { id: 'new', icon: <FiSearch className="w-5 h-5" />, label: 'New' },
+    { id: 'luxury', icon: <FaGem className="w-5 h-5" />, label: 'Luxe' },
+    { id: 'family', icon: <FaUsers className="w-5 h-5" />, label: 'Family' },
   ]
   
   const [resorts, setResorts] = useState<any[]>([])
@@ -506,7 +508,7 @@ export default function ResortsPage(){
                     : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
                 }`}
               >
-                <span className="text-xl">🏝️</span>
+                <FaUmbrellaBeach className="w-5 h-5" />
                 <span className="text-xs font-medium whitespace-nowrap">All</span>
               </button>
               {categories.map((cat) => (
@@ -592,7 +594,12 @@ export default function ResortsPage(){
                     <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                   </svg>
                 )}
-                {geoLoading ? 'Locating...' : showNearby && position ? 'Near Me ✓' : 'Near Me'}
+                {geoLoading ? 'Locating...' : (
+                  <span className="inline-flex items-center gap-1">
+                    <span>Near Me</span>
+                    {showNearby && position ? <FiCheck className="w-4 h-4" /> : null}
+                  </span>
+                )}
               </button>
             )}
             
@@ -630,11 +637,11 @@ export default function ResortsPage(){
               className="flex-shrink-0 min-w-[120px]"
             >
               <option value="all">All Types</option>
-              <option value="beach">🏖️ Beach</option>
-              <option value="mountain">🏔️ Mountain</option>
-              <option value="nature">🌿 Nature</option>
-              <option value="city">🏙️ City</option>
-              <option value="countryside">🌾 Countryside</option>
+              <option value="beach">Beach</option>
+              <option value="mountain">Mountain</option>
+              <option value="nature">Nature</option>
+              <option value="city">City</option>
+              <option value="countryside">Countryside</option>
             </Select>
 
             {/* Guests Filter (numeric input) */}
@@ -823,7 +830,7 @@ export default function ResortsPage(){
             </div>
           ) : filteredResorts.length === 0 ? (
             <div className="text-center py-16">
-              <div className="text-6xl mb-4">🔍</div>
+              <div className="flex justify-center mb-4"><FiSearch className="w-12 h-12 text-slate-600" /></div>
               <h3 className="text-2xl font-bold text-slate-900 mb-2">No resorts found</h3>
               <p className="text-slate-600 mb-6">Try adjusting your search or filters</p>
             </div>

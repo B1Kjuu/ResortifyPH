@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import 'leaflet/dist/leaflet.css'
+import { FiSearch, FiLoader, FiMapPin, FiInfo, FiCheck } from 'react-icons/fi'
 
 // Dynamic imports for Leaflet components
 const MapContainer = dynamic(
@@ -293,7 +294,7 @@ export default function LocationPicker({
               disabled={isSearching}
               className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium text-sm transition-colors disabled:opacity-50"
             >
-              {isSearching ? '...' : '🔍'}
+              {isSearching ? '...' : <FiSearch className="w-5 h-5" />}
             </button>
           </div>
           {/* Search results dropdown */}
@@ -326,12 +327,12 @@ export default function LocationPicker({
         >
           {isLocating ? (
             <>
-              <span className="animate-spin">⏳</span>
+              <FiLoader className="w-5 h-5 animate-spin" />
               <span>Locating...</span>
             </>
           ) : (
             <>
-              <span>📍</span>
+              <FiMapPin className="w-5 h-5" />
               <span>Use My Location</span>
             </>
           )}
@@ -339,8 +340,8 @@ export default function LocationPicker({
       </div>
       {/* Instructions */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
-        <p className="text-sm text-blue-800">
-          <span className="font-semibold">📌 Tip:</span> Click on the map to pin your resort location, or drag the marker to adjust. 
+        <p className="text-sm text-blue-800 flex items-center gap-1">
+          <span className="font-semibold inline-flex items-center gap-1"><FiInfo className="w-4 h-4" /> Tip:</span> Click on the map to pin your resort location, or drag the marker to adjust. 
           You can also search for an address or use your current location.
         </p>
       </div>
@@ -358,7 +359,7 @@ export default function LocationPicker({
       {position && (
         <div className="flex items-center gap-4 text-sm">
           <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg">
-            <span className="text-green-600">✓</span>
+            <FiCheck className="text-green-600 w-4 h-4" />
             <span className="text-green-800 font-medium">
               {latitude?.toFixed(6)}, {longitude?.toFixed(6)}
             </span>

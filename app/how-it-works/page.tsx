@@ -1,6 +1,8 @@
 'use client'
 import React from 'react'
 import Link from 'next/link'
+import { FiSearch, FiCalendar, FiCreditCard, FiEdit3, FiCheck, FiMail, FiDollarSign, FiLock, FiZap, FiShield, FiSmartphone, FiMessageSquare } from 'react-icons/fi'
+import { FaUmbrellaBeach, FaStar, FaCamera } from 'react-icons/fa'
 
 export default function HowItWorksPage() {
   return (
@@ -25,7 +27,7 @@ export default function HowItWorksPage() {
           <div className="grid md:grid-cols-4 gap-8">
             <div className="text-center">
               <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center text-white text-3xl mx-auto mb-6">
-                🔍
+                <FiSearch aria-hidden />
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">1. Search & Discover</h3>
               <p className="text-slate-600">Browse hundreds of resorts across the Philippines. Filter by location, price, and amenities.</p>
@@ -33,7 +35,7 @@ export default function HowItWorksPage() {
 
             <div className="text-center">
               <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center text-white text-3xl mx-auto mb-6">
-                📅
+                <FiCalendar aria-hidden />
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">2. Select Dates</h3>
               <p className="text-slate-600">Choose your check-in and check-out dates, and the number of guests for your stay.</p>
@@ -41,7 +43,7 @@ export default function HowItWorksPage() {
 
             <div className="text-center">
               <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center text-white text-3xl mx-auto mb-6">
-                💳
+                <FiCreditCard aria-hidden />
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">3. Book & Pay</h3>
               <p className="text-slate-600">Submit your booking request and make secure payment once confirmed by the host.</p>
@@ -49,7 +51,7 @@ export default function HowItWorksPage() {
 
             <div className="text-center">
               <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center text-white text-3xl mx-auto mb-6">
-                🏖️
+                <FaUmbrellaBeach aria-hidden />
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">4. Enjoy Your Stay</h3>
               <p className="text-slate-600">Receive booking confirmation and get ready for an amazing resort experience!</p>
@@ -76,7 +78,7 @@ export default function HowItWorksPage() {
           <div className="grid md:grid-cols-4 gap-8">
             <div className="text-center">
               <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center text-white text-3xl mx-auto mb-6">
-                📝
+                <FiEdit3 aria-hidden />
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">1. Create Listing</h3>
               <p className="text-slate-600">Sign up and add your resort details, photos, amenities, and pricing information.</p>
@@ -84,7 +86,7 @@ export default function HowItWorksPage() {
 
             <div className="text-center">
               <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center text-white text-3xl mx-auto mb-6">
-                ✅
+                <FiCheck aria-hidden />
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">2. Get Approved</h3>
               <p className="text-slate-600">Our team reviews your listing (usually within 24-48 hours) to ensure quality standards.</p>
@@ -92,7 +94,7 @@ export default function HowItWorksPage() {
 
             <div className="text-center">
               <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center text-white text-3xl mx-auto mb-6">
-                📨
+                <FiMail aria-hidden />
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">3. Receive Bookings</h3>
               <p className="text-slate-600">Get booking requests from guests. Accept or decline based on your availability.</p>
@@ -100,7 +102,7 @@ export default function HowItWorksPage() {
 
             <div className="text-center">
               <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center text-white text-3xl mx-auto mb-6">
-                💰
+                <FiDollarSign aria-hidden />
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">4. Get Paid</h3>
               <p className="text-slate-600">Receive secure payments after confirmed bookings. Withdraw anytime to your account.</p>
@@ -122,37 +124,37 @@ export default function HowItWorksPage() {
           
           <div className="grid md:grid-cols-3 gap-8">
             <div className="p-8 border border-slate-200 rounded-2xl hover:shadow-lg transition">
-              <div className="text-4xl mb-4">🔒</div>
+              <div className="text-4xl mb-4"><FiLock aria-hidden /></div>
               <h3 className="text-2xl font-bold text-slate-900 mb-3">Secure Transactions</h3>
               <p className="text-slate-600">Industry-standard encryption protects all payments and personal information.</p>
             </div>
 
             <div className="p-8 border border-slate-200 rounded-2xl hover:shadow-lg transition">
-              <div className="text-4xl mb-4">⚡</div>
+              <div className="text-4xl mb-4"><FiZap aria-hidden /></div>
               <h3 className="text-2xl font-bold text-slate-900 mb-3">Instant Booking</h3>
               <p className="text-slate-600">Quick booking process with instant confirmation from verified hosts.</p>
             </div>
 
             <div className="p-8 border border-slate-200 rounded-2xl hover:shadow-lg transition">
-              <div className="text-4xl mb-4">🛡️</div>
+              <div className="text-4xl mb-4"><FiShield aria-hidden /></div>
               <h3 className="text-2xl font-bold text-slate-900 mb-3">Trust & Safety</h3>
               <p className="text-slate-600">All listings are verified. Secure messaging and booking protection policies.</p>
             </div>
 
             <div className="p-8 border border-slate-200 rounded-2xl hover:shadow-lg transition">
-              <div className="text-4xl mb-4">📱</div>
+              <div className="text-4xl mb-4"><FiSmartphone aria-hidden /></div>
               <h3 className="text-2xl font-bold text-slate-900 mb-3">Easy Management</h3>
               <p className="text-slate-600">Intuitive dashboard for both guests and hosts to manage everything.</p>
             </div>
 
             <div className="p-8 border border-slate-200 rounded-2xl hover:shadow-lg transition">
-              <div className="text-4xl mb-4">💬</div>
+              <div className="text-4xl mb-4"><FiMessageSquare aria-hidden /></div>
               <h3 className="text-2xl font-bold text-slate-900 mb-3">24/7 Support</h3>
               <p className="text-slate-600">Our support team is always ready to help with any questions or issues.</p>
             </div>
 
             <div className="p-8 border border-slate-200 rounded-2xl hover:shadow-lg transition">
-              <div className="text-4xl mb-4">🌟</div>
+              <div className="text-4xl mb-4"><FaStar aria-hidden /></div>
               <h3 className="text-2xl font-bold text-slate-900 mb-3">Quality Verified</h3>
               <p className="text-slate-600">Every resort is reviewed to ensure quality experiences for our community.</p>
             </div>

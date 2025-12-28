@@ -1,5 +1,6 @@
 "use client"
 import React, { useState } from "react"
+import { FiMail, FiPhone, FiMapPin, FiClock } from 'react-icons/fi'
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({ name: "", email: "", subject: "", message: "" })
@@ -28,7 +29,7 @@ export default function ContactPage() {
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-resort-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-2xl">📧</span>
+                    <FiMail aria-hidden className="text-2xl" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-slate-900 mb-1">Email</h3>
@@ -38,7 +39,7 @@ export default function ContactPage() {
 
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-resort-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-2xl">📱</span>
+                    <FiPhone aria-hidden className="text-2xl" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-slate-900 mb-1">Phone</h3>
@@ -48,7 +49,7 @@ export default function ContactPage() {
 
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-resort-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-2xl">📍</span>
+                    <FiMapPin aria-hidden className="text-2xl" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-slate-900 mb-1">Office</h3>
@@ -58,7 +59,7 @@ export default function ContactPage() {
 
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-resort-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-2xl">🕐</span>
+                    <FiClock aria-hidden className="text-2xl" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-slate-900 mb-1">Business Hours</h3>

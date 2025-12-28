@@ -5,6 +5,8 @@ import { supabase } from '../../lib/supabaseClient'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { sanitizeText } from '../../lib/sanitize'
+import { FiArrowLeft, FiMail, FiUser, FiTag, FiPhone, FiMapPin, FiEdit3, FiLock, FiClock, FiLink, FiCheckCircle } from 'react-icons/fi'
+import { FaUmbrellaBeach, FaHotel, FaTicketAlt, FaSuitcase, FaHeart, FaStar } from 'react-icons/fa'
 
 export default function ProfilePage(){
   const [profile, setProfile] = useState<any>(null)
@@ -152,19 +154,19 @@ export default function ProfilePage(){
     <div className="w-full min-h-screen bg-gradient-to-br from-resort-50 to-resort-100 px-4 sm:px-6 lg:px-8 py-10">
       <div className="max-w-4xl mx-auto">
         <Link href={profile.is_admin ? '/admin/command-center' : profile.role === 'owner' ? '/owner/empire' : '/guest/adventure-hub'} className="inline-flex items-center gap-2 text-resort-600 hover:text-resort-700 font-semibold mb-8 transition-colors">
-          <span>←</span>
+          <FiArrowLeft aria-hidden />
           <span>Back to Dashboard</span>
         </Link>
 
         <div className="bg-white rounded-3xl shadow-2xl border-2 border-slate-200 overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-resort-500 via-blue-500 to-resort-600 px-8 py-16 text-white text-center relative overflow-hidden flex flex-col items-center">
-            <div className="absolute top-4 right-4 text-5xl opacity-20">🏨</div>
+            <div className="absolute top-4 right-4 text-5xl opacity-20"><FaHotel aria-hidden /></div>
             <div className="relative w-28 h-28 bg-white/20 backdrop-blur-sm rounded-full mx-auto mb-6 flex items-center justify-center text-6xl shadow-2xl border-2 border-white/20 overflow-hidden">
               {profile.avatar_url ? (
                 <img src={profile.avatar_url} alt="Profile avatar" className="w-full h-full object-cover" />
               ) : (
-                <span>👤</span>
+                <FiUser aria-hidden />
               )}
               {/* Avatar upload trigger */}
               <input
@@ -251,7 +253,7 @@ export default function ProfilePage(){
               {/* Email */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-                  <span>📧</span>
+                  <FiMail aria-hidden />
                   <span>Email Address</span>
                 </label>
                 <input 
@@ -312,7 +314,7 @@ export default function ProfilePage(){
               {/* Full Name */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-                  <span>👤</span>
+                  <FiUser aria-hidden />
                   <span>Full Name</span>
                 </label>
                 {editing ? (
@@ -332,7 +334,7 @@ export default function ProfilePage(){
               {/* Role */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-                  <span>🎫</span>
+                  <FiTag aria-hidden />
                   <span>Account Type</span>
                 </label>
                 <input 
@@ -346,7 +348,7 @@ export default function ProfilePage(){
               {/* Phone */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-                  <span>📞</span>
+                  <FiPhone aria-hidden />
                   <span>Phone</span>
                 </label>
                 {editing ? (
@@ -359,7 +361,7 @@ export default function ProfilePage(){
               {/* Location */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-                  <span>📍</span>
+                  <FiMapPin aria-hidden />
                   <span>Location</span>
                 </label>
                 {editing ? (
@@ -372,7 +374,7 @@ export default function ProfilePage(){
               {/* Bio */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-                  <span>📝</span>
+                  <FiEdit3 aria-hidden />
                   <span>Bio</span>
                 </label>
                 {editing ? (
@@ -388,7 +390,7 @@ export default function ProfilePage(){
             <div className="space-y-6">
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-                  <span>🔒</span>
+                  <FiLock aria-hidden />
                   <span>Password</span>
                 </label>
                 <div className="space-y-3">
@@ -472,7 +474,7 @@ export default function ProfilePage(){
               </div>
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-                  <span>🕒</span>
+                  <FiClock aria-hidden />
                   <span>Login Activity</span>
                 </label>
                 <div className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-900">
@@ -494,7 +496,7 @@ export default function ProfilePage(){
               </div>
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-                  <span>🔗</span>
+                  <FiLink aria-hidden />
                   <span>Linked Accounts</span>
                 </label>
                 <div className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white">
@@ -564,7 +566,7 @@ export default function ProfilePage(){
             <div className="space-y-6">
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-                  <span>🧳</span>
+                  <FaSuitcase aria-hidden />
                   <span>Past Bookings</span>
                 </label>
                 {bookings.length === 0 ? (
@@ -585,7 +587,7 @@ export default function ProfilePage(){
               </div>
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-                  <span>💚</span>
+                  <FaHeart aria-hidden />
                   <span>Favorites</span>
                 </label>
                 {favoritesLoading ? (
@@ -600,7 +602,7 @@ export default function ProfilePage(){
                           {Array.isArray(r.images) && r.images.length > 0 ? (
                             <img src={r.images[0]} alt={r.name} className="w-full h-full object-cover" />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-slate-400">🏝️</div>
+                            <div className="w-full h-full flex items-center justify-center text-slate-400"><FaUmbrellaBeach aria-hidden /></div>
                           )}
                         </div>
                         <div className="min-w-0">
@@ -617,7 +619,7 @@ export default function ProfilePage(){
               </div>
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-                  <span>⭐</span>
+                  <FaStar aria-hidden />
                   <span>Reviews</span>
                 </label>
                 <div className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-600">Your reviews will appear here.</div>
@@ -666,24 +668,24 @@ export default function ProfilePage(){
         {/* Quick Links */}
         <div className="mt-8 grid md:grid-cols-3 gap-4">
           <Link href="/resorts" className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition text-center">
-            <div className="text-3xl mb-2">🏖️</div>
+            <div className="text-3xl mb-2"><FaUmbrellaBeach aria-hidden /></div>
             <h3 className="font-semibold text-resort-900">Browse Resorts</h3>
           </Link>
           {profile.role === 'guest' && (
             <Link href="/guest/trips" className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition text-center">
-              <div className="text-3xl mb-2">🎫</div>
+              <div className="text-3xl mb-2"><FaTicketAlt aria-hidden /></div>
               <h3 className="font-semibold text-resort-900">My Trips</h3>
             </Link>
           )}
           {profile.role === 'owner' && (
             <Link href="/owner/properties" className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition text-center">
-              <div className="text-3xl mb-2">🏨</div>
+              <div className="text-3xl mb-2"><FaHotel aria-hidden /></div>
               <h3 className="font-semibold text-resort-900">My Properties</h3>
             </Link>
           )}
           {profile.is_admin && (
             <Link href="/admin/approvals" className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition text-center">
-              <div className="text-3xl mb-2">✓</div>
+              <div className="text-3xl mb-2"><FiCheckCircle aria-hidden /></div>
               <h3 className="font-semibold text-resort-900">Approvals</h3>
             </Link>
           )}

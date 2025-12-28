@@ -15,6 +15,8 @@ import { getProvinceInfo } from '../../../lib/locations'
 import { supabase } from '../../../lib/supabaseClient'
 import { resortSchema, type ResortInput } from '../../../lib/validations'
 import DisclaimerBanner from '../../../components/DisclaimerBanner'
+import { FiMapPin, FiDollarSign, FiUsers, FiCamera, FiCheck, FiClock } from 'react-icons/fi'
+import { FaUmbrellaBeach, FaMountain, FaLeaf, FaCity, FaTractor, FaSwimmer, FaStar } from 'react-icons/fa'
 
 const AMENITIES = [
   'Pool',
@@ -272,7 +274,7 @@ export default function CreateResort() {
 
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
-            <span className="text-4xl">🏝️</span>
+            <FaUmbrellaBeach className="w-8 h-8 text-resort-600" />
             <h1 className="text-4xl font-bold bg-gradient-to-r from-resort-600 to-blue-600 bg-clip-text text-transparent">
               Create New Resort
             </h1>
@@ -322,7 +324,7 @@ export default function CreateResort() {
           {/* Exact Location Map Picker */}
           <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-xl p-6">
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl">📍</span>
+              <FiMapPin className="w-5 h-5" />
               <div>
                 <h3 className="text-lg font-bold text-slate-900">Pin Your Exact Location</h3>
                 <p className="text-sm text-slate-600">Help guests find your resort easily on the map</p>
@@ -345,25 +347,25 @@ export default function CreateResort() {
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Resort Type *</label>
             <Select ariaLabel="Resort type" className="w-full" {...register('type')}>
-              <option value="beach">🏖️ Beach Resort</option>
-              <option value="mountain">🏔️ Mountain Resort</option>
-              <option value="nature">🌿 Nature Retreat</option>
-              <option value="city">🏙️ City Resort</option>
-              <option value="countryside">🌾 Countryside</option>
+              <option value="beach">Beach Resort</option>
+              <option value="mountain">Mountain Resort</option>
+              <option value="nature">Nature Retreat</option>
+              <option value="city">City Resort</option>
+              <option value="countryside">Countryside</option>
             </Select>
             {errors.type && <p className="text-xs text-red-500 mt-1">{errors.type.message}</p>}
           </div>
 
           <div className="bg-gradient-to-br from-resort-50 to-blue-50 border-2 border-resort-200 rounded-xl p-6 space-y-4">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-2xl">💰</span>
+              <FiDollarSign className="w-5 h-5" />
               <h3 className="text-lg font-bold text-slate-900">Pricing Options</h3>
             </div>
 
             {/* Verification details (optional) */}
             <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-xl p-6 space-y-4">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-2xl">🛡️</span>
+                <span className="w-5 h-5 inline-block">🔒</span>
                 <h3 className="text-lg font-bold text-slate-900">Verification Details (Optional)</h3>
               </div>
               <p className="text-sm text-slate-600">These are required for submission to help admins verify your resort.</p>
@@ -469,7 +471,7 @@ export default function CreateResort() {
 
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Guest Capacity *</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiUsers className="w-4 h-4" /> Guest Capacity *</label>
               <input
                 type="number"
                 placeholder="e.g., 10"
@@ -521,7 +523,7 @@ export default function CreateResort() {
 
           <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-6">
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-xl">✨</span>
+              <FaStar className="w-5 h-5" />
               <label className="text-sm font-bold text-slate-700">Amenities</label>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -545,7 +547,7 @@ export default function CreateResort() {
 
           <div className="bg-gradient-to-br from-cyan-50 to-blue-50 border-2 border-cyan-200 rounded-xl p-6 space-y-4">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-2xl">🏊</span>
+              <FaSwimmer className="w-6 h-6" />
               <h3 className="text-lg font-bold text-slate-900">Pool & Water Features</h3>
             </div>
 
@@ -586,7 +588,7 @@ export default function CreateResort() {
 
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">🅿️ Parking Slots</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Parking Slots</label>
               <input
                 type="number"
                 placeholder="e.g., 2"
@@ -598,7 +600,7 @@ export default function CreateResort() {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">📍 Nearby Landmarks</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiMapPin className="w-4 h-4" /> Nearby Landmarks</label>
               <input
                 type="text"
                 placeholder="e.g., 5 mins from town center"
@@ -642,7 +644,7 @@ export default function CreateResort() {
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">🎒 Bring Your Own Items</label>
+            <label className="block text-sm font-bold text-slate-700 mb-2">Bring Your Own Items</label>
             <textarea
               rows={3}
               placeholder="e.g., Food and drinks, towels, toiletries"
@@ -664,7 +666,7 @@ export default function CreateResort() {
 
           <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-6">
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-xl">📸</span>
+              <FiCamera className="w-5 h-5" />
               <label className="text-sm font-bold text-slate-700">Resort Images</label>
             </div>
             <ImageUploader onUpload={handleImageUpload} />
@@ -672,8 +674,8 @@ export default function CreateResort() {
 
             {images.length > 0 && (
               <div className="mt-4 space-y-3">
-                <div className="px-4 py-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 font-semibold">
-                  ✓ {images.length} image(s) uploaded
+                <div className="px-4 py-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 font-semibold inline-flex items-center gap-1">
+                  <FiCheck className="w-4 h-4" /> {images.length} image(s) uploaded
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {images.map((url) => (
@@ -699,7 +701,11 @@ export default function CreateResort() {
               disabled={isSubmitting}
               className="flex-1 px-6 py-4 bg-gradient-to-r from-resort-500 to-blue-500 text-white rounded-xl font-bold text-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? '⏳ Creating...' : '✨ Create Resort'}
+              {isSubmitting ? (
+                <span className="inline-flex items-center gap-2"><FiClock className="w-5 h-5" /> Creating...</span>
+              ) : (
+                <span className="inline-flex items-center gap-2"><FaStar className="w-5 h-5" /> Create Resort</span>
+              )}
             </button>
             <Link
               href="/owner/dashboard"

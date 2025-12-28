@@ -339,6 +339,23 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
         console.log('✅ Message sent successfully, ID:', (data as ChatMessage).id)
         // Optimistically append; realtime will also deliver
         setMessages((prev) => [...prev, data as ChatMessage])
+        // Notify owner via email for guest messages
+        try {
+          if (participantRole === 'guest') {
+            await fetch('/api/notifications/chat-message', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                bookingId: bookingId,
+                resortId: resortId,
+                senderUserId: userId,
+                content,
+              }),
+            })
+          }
+        } catch (notifyErr) {
+          console.warn('Notify owner (chat message) failed:', notifyErr)
+        }
       }
     }
   }, [chat, userId])

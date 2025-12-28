@@ -7,6 +7,8 @@ import DisclaimerBanner from '../../../components/DisclaimerBanner'
 import { getProvinceInfo } from '../../../lib/locations'
 import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
+import { FiMapPin, FiDollarSign, FiUsers, FiStar, FiEdit3, FiCamera, FiCheck, FiClock, FiX } from 'react-icons/fi'
+import { FaHotel, FaRocket } from 'react-icons/fa'
 
 export default function LaunchResort(){
   const [name, setName] = useState('')
@@ -92,7 +94,7 @@ export default function LaunchResort(){
         
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-3">
-            <span className="text-5xl">🏗️</span>
+            <FaRocket className="w-12 h-12 text-resort-600" />
             <h1 className="text-5xl font-bold bg-gradient-to-r from-resort-600 to-blue-600 bg-clip-text text-transparent">Launch Your Resort</h1>
           </div>
           <p className="text-lg text-slate-600 ml-20">Submit your property for approval. Fill in all details carefully to increase approval chances.</p>
@@ -106,7 +108,7 @@ export default function LaunchResort(){
         <form onSubmit={handleCreate} className="bg-white border-2 border-slate-200 rounded-3xl shadow-lg p-8 space-y-6">
           <div>
             <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-              <span>🏨</span>
+              <FaHotel className="w-4 h-4" />
               <span>Resort Name *</span>
             </label>
             <input 
@@ -121,7 +123,7 @@ export default function LaunchResort(){
 
           <div>
             <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-              <span>📍</span>
+              <FiMapPin className="w-4 h-4" />
               <span>Location *</span>
             </label>
             <LocationCombobox
@@ -135,7 +137,7 @@ export default function LaunchResort(){
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-                <span>💰</span>
+                <FiDollarSign className="w-4 h-4" />
                 <span>Price per Night (₱) *</span>
               </label>
               <input 
@@ -150,7 +152,7 @@ export default function LaunchResort(){
 
             <div>
               <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-                <span>👥</span>
+                <FiUsers className="w-4 h-4" />
                 <span>Guest Capacity *</span>
               </label>
               <input 
@@ -166,7 +168,7 @@ export default function LaunchResort(){
 
           <div>
             <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-              <span>✨</span>
+              <FiStar className="w-4 h-4" />
               <span>Amenities (comma separated)</span>
             </label>
             <input 
@@ -180,7 +182,7 @@ export default function LaunchResort(){
 
           <div>
             <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-              <span>📝</span>
+              <FiEdit3 className="w-4 h-4" />
               <span>Description</span>
             </label>
             <textarea 
@@ -194,11 +196,11 @@ export default function LaunchResort(){
 
           <div>
             <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
-              <span>📸</span>
+              <FiCamera className="w-4 h-4" />
               <span>Resort Images</span>
             </label>
             <ImageUploader onUpload={(urls) => setImages(urls)} />
-            {images.length > 0 && <p className="text-xs text-slate-600 mt-2 font-semibold">✅ {images.length} image(s) uploaded</p>}
+            {images.length > 0 && <p className="text-xs text-slate-600 mt-2 font-semibold inline-flex items-center gap-1"><FiCheck className="w-4 h-4 text-green-600" /> {images.length} image(s) uploaded</p>}
           </div>
 
           <div className="flex gap-3 pt-6">
@@ -207,10 +209,14 @@ export default function LaunchResort(){
               disabled={submitting}
               className="flex-1 px-6 py-4 bg-gradient-to-r from-resort-500 to-blue-500 text-white rounded-xl font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed border-2 border-resort-400"
             >
-              {submitting ? '⏳ Launching...' : '🚀 Launch Resort'}
+              {submitting ? (
+                <span className="inline-flex items-center gap-2"><FiClock className="w-4 h-4" /> Launching...</span>
+              ) : (
+                <span className="inline-flex items-center gap-2"><FaRocket className="w-4 h-4" /> Launch Resort</span>
+              )}
             </button>
             <Link href="/owner/empire" className="flex-1 px-6 py-4 border-2 border-slate-300 rounded-xl font-bold text-center hover:bg-slate-50 hover:border-slate-400 transition-all">
-              ✕ Cancel
+              <span className="inline-flex items-center gap-2 justify-center"><FiX className="w-4 h-4" /> Cancel</span>
             </Link>
           </div>
         </form>

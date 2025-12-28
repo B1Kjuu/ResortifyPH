@@ -13,6 +13,8 @@ import LocationCombobox from '../../../components/LocationCombobox'
 import { format } from 'date-fns'
 import ChatLink from '../../../components/ChatLink'
 import DisclaimerBanner from '../../../components/DisclaimerBanner'
+import { FiArrowLeft, FiMapPin, FiDollarSign, FiUsers, FiUser, FiTag, FiCheck } from 'react-icons/fi'
+import { FaUmbrellaBeach, FaStar } from 'react-icons/fa'
 
 export default function ResortDetail({ params }: { params: { id: string } }){
   function formatTime12h(t?: string | null) {
@@ -295,7 +297,9 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
     const provinceInfo = getProvinceInfo(resort?.location)
 
-    const { data: newId, error } = await supabase.rpc('create_booking_safe', {
+    let newId: string | null = null
+    let error: any = null
+    const rpcRes = await supabase.rpc('create_booking_safe', {
       p_resort_id: resort.id,
       p_guest_id: user.id,
       p_date_from: format(selectedRange.from, 'yyyy-MM-dd'),
@@ -307,6 +311,30 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       // optional: pass stay type if RPC handles it (ignored otherwise)
       p_stay_type: stayType,
     })
+    newId = (rpcRes as any)?.data ?? null
+    error = (rpcRes as any)?.error ?? null
+
+    // Fallback: if function is missing, insert booking directly
+    if (error && String(error?.message || '').includes('Could not find the function')) {
+      const { data: ins, error: insErr } = await supabase
+        .from('bookings')
+        .insert({
+          resort_id: resort.id,
+          guest_id: user.id,
+          date_from: format(selectedRange.from, 'yyyy-MM-dd'),
+          date_to: format(selectedRange.to, 'yyyy-MM-dd'),
+          guest_count: guests,
+          status: 'pending',
+        })
+        .select('id')
+        .single()
+      if (insErr) {
+        error = insErr
+      } else {
+        newId = (ins as any)?.id ?? null
+        error = null
+      }
+    }
 
     setBooking(false)
     toast.dismiss()
@@ -352,6 +380,14 @@ export default function ResortDetail({ params }: { params: { id: string } }){
               sender_id: user.id,
               content: `Hi! I'd like to book ${resort.name} from ${format(selectedRange.from, 'MMM dd, yyyy')} to ${format(selectedRange.to, 'MMM dd, yyyy')} for ${guests} ${guests === 1 ? 'guest' : 'guests'}. Looking forward to hearing from you!`,
             })
+            // Notify owner for booking-created message
+            try {
+              await fetch('/api/notifications/chat-message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bookingId: newId, resortId: resort.id, senderUserId: user.id, content: 'New booking request message' }),
+              })
+            } catch {}
             // Add system guidance message (acts like a pinned note)
             await supabase.from('chat_messages').insert({
               chat_id: chat.id,
@@ -421,7 +457,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
     <div className="w-full min-h-screen bg-gradient-to-b from-resort-50 to-white px-4 sm:px-6 lg:px-10 py-10">
       <div className="max-w-6xl mx-auto space-y-6">
         <Link href="/resorts" className="text-sm text-resort-500 font-semibold inline-flex items-center gap-1 hover:text-resort-600">
-          <span aria-hidden>←</span> Back to Resorts
+          <FiArrowLeft aria-hidden className="inline-block" /> Back to Resorts
         </Link>
 
         <div className="grid lg:grid-cols-[1.55fr_1fr] gap-6">
@@ -441,7 +477,9 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                     unoptimized
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-6xl">🏖️</div>
+                  <div className="w-full h-full flex items-center justify-center text-6xl">
+                    <FaUmbrellaBeach aria-hidden className="text-white/80" />
+                  </div>
                 )}
                 <div className="absolute top-4 right-4">
                   <span className={`px-3 py-1.5 rounded-full text-xs font-semibold shadow ${
@@ -497,7 +535,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                 {reviews && reviews.length > 0 && (
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1">
-                      <span className="text-yellow-500">★</span>
+                      <FaStar aria-hidden className="text-yellow-500" />
                       <span className="text-sm font-semibold text-slate-900">
                         {Math.round((reviews.reduce((a,r)=>a+(r.rating||0),0)/reviews.length)*10)/10}
                       </span>
@@ -506,28 +544,28 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                   </div>
                 )}
                 <div className="flex items-center gap-2 text-base text-slate-600">
-                  <span>📍</span>
+                  <FiMapPin aria-hidden />
                   <span>{resort.location}</span>
                 </div>
               </div>
 
               <div className="grid sm:grid-cols-3 gap-3">
                 <div className="flex items-center gap-3 bg-resort-50 p-4 rounded-xl">
-                  <span className="text-xl">💰</span>
+                  <FiDollarSign aria-hidden className="text-xl" />
                   <div>
                     <p className="text-xs text-slate-600">Price per night</p>
                     <p className="text-lg font-bold text-resort-900">₱{resort.price?.toLocaleString()}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 bg-resort-50 p-4 rounded-xl">
-                  <span className="text-xl">👥</span>
+                  <FiUsers aria-hidden className="text-xl" />
                   <div>
                     <p className="text-xs text-slate-600">Capacity</p>
                     <p className="text-lg font-bold text-resort-900">{resort.capacity} guests</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 bg-resort-50 p-4 rounded-xl">
-                  <span className="text-xl">🏷️</span>
+                  <FiTag aria-hidden className="text-xl" />
                   <div>
                     <p className="text-xs text-slate-600">Type</p>
                     <p className="text-lg font-bold text-resort-900">{resort.type || '—'}</p>
@@ -626,7 +664,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                   <div className="flex flex-wrap gap-2">
                     {resort.amenities.map((amenity: string, idx: number) => (
                       <span key={idx} className="px-3 py-1.5 bg-resort-100 text-resort-800 rounded-lg text-xs font-medium fade-in-up" style={{ animationDelay: `${idx * 50}ms` }}>
-                        ✓ {amenity}
+                        <FiCheck aria-hidden className="inline-block mr-1 align-middle" /> {amenity}
                       </span>
                     ))}
                   </div>
@@ -652,7 +690,9 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
               {owner && (
                 <div className="bg-white border border-slate-200 rounded-xl p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 bg-resort-100 rounded-full flex items-center justify-center text-lg">👤</div>
+                  <div className="w-10 h-10 bg-resort-100 rounded-full flex items-center justify-center text-lg">
+                    <FiUser aria-hidden />
+                  </div>
                   <div>
                     <p className="font-semibold text-resort-900">{owner.full_name}</p>
                     <p className="text-sm text-slate-600">Contact shared after booking</p>

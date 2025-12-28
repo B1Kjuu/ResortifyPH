@@ -1,6 +1,8 @@
 'use client'
 import React from 'react'
 import Link from 'next/link'
+import { FiMail, FiMessageSquare, FiUserPlus, FiChevronDown } from 'react-icons/fi'
+import { FaUmbrellaBeach, FaHotel, FaFacebook, FaInstagram } from 'react-icons/fa'
 
 export default function HelpCenterPage() {
   const faqs = [
@@ -117,19 +119,19 @@ export default function HelpCenterPage() {
           {/* Quick Links */}
           <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4 mb-16">
             <Link href="/contact" className="p-6 bg-slate-50 rounded-xl hover:bg-slate-100 transition text-center">
-              <div className="text-3xl mb-2">💬</div>
+              <div className="flex justify-center mb-2"><FiMessageSquare className="w-7 h-7 text-slate-700" /></div>
               <h3 className="font-semibold text-slate-900">Contact Us</h3>
             </Link>
             <Link href="/resorts" className="p-6 bg-slate-50 rounded-xl hover:bg-slate-100 transition text-center">
-              <div className="text-3xl mb-2">🏖️</div>
+              <div className="flex justify-center mb-2"><FaUmbrellaBeach className="w-7 h-7 text-slate-700" /></div>
               <h3 className="font-semibold text-slate-900">Browse Resorts</h3>
             </Link>
             <Link href="/auth/signup" className="p-6 bg-slate-50 rounded-xl hover:bg-slate-100 transition text-center">
-              <div className="text-3xl mb-2">👤</div>
+              <div className="flex justify-center mb-2"><FiUserPlus className="w-7 h-7 text-slate-700" /></div>
               <h3 className="font-semibold text-slate-900">Create Account</h3>
             </Link>
             <Link href="/become-host" className="p-6 bg-slate-50 rounded-xl hover:bg-slate-100 transition text-center">
-              <div className="text-3xl mb-2">🏨</div>
+              <div className="flex justify-center mb-2"><FaHotel className="w-7 h-7 text-slate-700" /></div>
               <h3 className="font-semibold text-slate-900">Become a Host</h3>
             </Link>
           </div>
@@ -144,7 +146,7 @@ export default function HelpCenterPage() {
                     <details key={qIdx} className="group bg-white border border-slate-200 rounded-xl overflow-hidden">
                       <summary className="px-6 py-4 cursor-pointer font-semibold text-slate-900 hover:bg-slate-50 transition flex justify-between items-center">
                         {item.q}
-                        <span className="text-resort-500 group-open:rotate-180 transition-transform">▼</span>
+                        <FiChevronDown className="text-resort-500 group-open:rotate-180 transition-transform" />
                       </summary>
                       <div className="px-6 pb-4 text-slate-600 leading-relaxed border-t border-slate-100 pt-4">
                         {item.a}
@@ -162,17 +164,20 @@ export default function HelpCenterPage() {
               <h3 className="text-xl font-bold text-slate-900 mb-2">Contact Email</h3>
               <p className="text-slate-600 mb-3">Reach us anytime and we’ll get back shortly.</p>
               <a href="mailto:resortifyph@gmail.com" className="inline-flex items-center gap-2 px-4 py-2 bg-resort-600 text-white rounded-lg hover:bg-resort-700 transition">
-                ✉️ resortifyph@gmail.com
+                <FiMail className="w-5 h-5" />
+                resortifyph@gmail.com
               </a>
             </div>
             <div className="p-6 bg-slate-50 border border-slate-200 rounded-xl">
               <h3 className="text-xl font-bold text-slate-900 mb-2">Follow Us</h3>
               <div className="flex flex-col gap-3">
                 <a href="https://www.facebook.com/people/Resortifyph/61584827603544/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                  👍 Facebook
+                  <FaFacebook className="w-5 h-5" />
+                  Facebook
                 </a>
                 <a href="https://www.instagram.com/resortifyph/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition">
-                  📷 Instagram
+                  <FaInstagram className="w-5 h-5" />
+                  Instagram
                 </a>
               </div>
             </div>
@@ -186,7 +191,8 @@ export default function HelpCenterPage() {
               <Link href="/contact" className="inline-block px-8 py-3 bg-white text-resort-600 rounded-xl font-semibold hover:shadow-xl transition">
                 Contact Support
               </Link>
-              <a href="mailto:resortifyph@gmail.com" className="inline-block px-8 py-3 bg-white/10 border border-white/30 text-white rounded-xl font-semibold hover:bg-white/20 transition">
+              <a href="mailto:resortifyph@gmail.com" className="inline-flex items-center gap-2 px-8 py-3 bg-white/10 border border-white/30 text-white rounded-xl font-semibold hover:bg-white/20 transition">
+                <FiMail className="w-5 h-5" />
                 Email Us
               </a>
             </div>

@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { getProvinceCoordinates } from '../lib/locations'
 import 'leaflet/dist/leaflet.css'
+import { FiMapPin } from 'react-icons/fi'
 
 // Dynamic import to avoid SSR issues with Leaflet
 const MapContainer = dynamic(
@@ -234,7 +235,7 @@ export default function ResortMap({ resorts, userPosition, onResortClick, select
       {/* Resort Count Badge */}
       <div className="absolute top-4 left-4 z-[1000] bg-white/95 backdrop-blur-sm rounded-xl shadow-lg px-4 py-2 border border-slate-200">
         <div className="flex items-center gap-2">
-          <span className="text-lg">📍</span>
+          <FiMapPin aria-hidden className="text-lg" />
           <span className="text-sm font-semibold text-slate-700">{resortPositions.length} resorts on map</span>
         </div>
       </div>
@@ -259,7 +260,7 @@ export default function ResortMap({ resorts, userPosition, onResortClick, select
           >
             <Popup>
               <div className="text-center p-1">
-                <p className="font-semibold text-blue-700">📍 You are here</p>
+                <p className="font-semibold text-blue-700 flex items-center gap-1"><FiMapPin aria-hidden /> <span>You are here</span></p>
               </div>
             </Popup>
           </Marker>
@@ -292,7 +293,7 @@ export default function ResortMap({ resorts, userPosition, onResortClick, select
                       )}
                       {resort.hasExactLocation && (
                         <span className="px-2 py-0.5 bg-green-500/90 backdrop-blur-sm rounded-full text-xs font-medium text-white">
-                          📍 Exact
+                          <span className="inline-flex items-center gap-1"><FiMapPin aria-hidden /> Exact</span>
                         </span>
                       )}
                     </div>

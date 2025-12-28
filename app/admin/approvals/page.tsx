@@ -5,6 +5,7 @@ import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import ChatLink from '../../../components/ChatLink'
+import { FiClipboard, FiUser, FiClock, FiMapPin, FiCheck, FiX, FiSearch, FiCheckCircle } from 'react-icons/fi'
 
 export default function ApprovalsPage(){
   const [pendingResorts, setPendingResorts] = useState<any[]>([])
@@ -157,7 +158,7 @@ export default function ApprovalsPage(){
         <div className="mb-8">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
-              <span className="text-5xl">📋</span>
+              <FiClipboard className="w-10 h-10 text-slate-700" />
               <div>
                 <p className="text-sm text-slate-600 font-semibold">Review Queue</p>
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Pending Submissions</h1>
@@ -170,7 +171,7 @@ export default function ApprovalsPage(){
         <section className="space-y-6">
           {pendingResorts.length === 0 ? (
             <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-12 text-center text-slate-600">
-              <p className="font-bold text-4xl mb-3">✨</p>
+              <div className="flex justify-center mb-3"><FiCheckCircle className="w-10 h-10 text-green-600" /></div>
               <p className="font-semibold text-xl text-slate-900 mb-1">All caught up!</p>
               <p className="text-lg">No pending submissions to review</p>
             </div>
@@ -181,15 +182,15 @@ export default function ApprovalsPage(){
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex-1">
                       <h3 className="text-xl font-bold text-slate-900">{resort.name}</h3>
-                      <p className="text-sm text-slate-600 mt-1">👤 Owner: {resort.owner?.full_name || 'Unknown'}</p>
+                      <p className="text-sm text-slate-600 mt-1 inline-flex items-center gap-1"><FiUser className="w-4 h-4" /> Owner: {resort.owner?.full_name || 'Unknown'}</p>
                     </div>
-                    <span className="text-xs bg-yellow-100 text-yellow-800 px-3 py-1 rounded-lg font-bold border-2 border-yellow-300">⏳ Pending</span>
+                    <span className="text-xs bg-yellow-100 text-yellow-800 px-3 py-1 rounded-lg font-bold border-2 border-yellow-300 inline-flex items-center gap-1"><FiClock className="w-4 h-4" /> Pending</span>
                   </div>
                   
                   <div className="space-y-2 mb-4 pb-4 border-b border-slate-100">
-                    <p className="text-sm text-slate-700">📍 {resort.location}</p>
-                    <p className="text-sm text-slate-700">💰 ₱{resort.price}/night · 👥 {resort.capacity} guests</p>
-                    {resort.amenities && <p className="text-sm text-slate-700">✨ {resort.amenities.join(', ')}</p>}
+                    <p className="text-sm text-slate-700 inline-flex items-center gap-1"><FiMapPin className="w-4 h-4" /> {resort.location}</p>
+                    <p className="text-sm text-slate-700">₱{resort.price}/night · {resort.capacity} guests</p>
+                    {resort.amenities && <p className="text-sm text-slate-700">Amenities: {resort.amenities.join(', ')}</p>}
                     <p className="text-sm text-slate-600 line-clamp-3 mt-2 italic">{resort.description}</p>
                     {/* Verification details */}
                     <div className="mt-3 bg-slate-50 border border-slate-200 rounded-xl p-3">
@@ -252,20 +253,20 @@ export default function ApprovalsPage(){
                         : 'bg-slate-300 text-slate-600 cursor-not-allowed border-slate-400'}`}
                       title={ (evidenceCount(resort) >= 2 || [resort.contact_email_verified, resort.contact_phone_verified, resort.location_verified].filter(Boolean).length >= 2) ? 'Approve' : 'Add at least 2 evidence links or verify 2 checks'}
                     >
-                      ✅ Approve
+                      <span className="inline-flex items-center gap-2 justify-center"><FiCheck className="w-4 h-4" /> Approve</span>
                     </button>
                     <button 
                       onClick={() => rejectResort(resort.id)} 
                       className="flex-1 px-4 py-3 text-sm font-bold bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all border-2 border-red-400"
                     >
-                      ❌ Reject
+                      <span className="inline-flex items-center gap-2 justify-center"><FiX className="w-4 h-4" /> Reject</span>
                     </button>
                     <Link 
                       href={`/admin/resorts/${resort.id}`} 
                       className="px-4 py-3 text-sm font-bold bg-blue-600 text-white rounded-xl hover:bg-blue-700 border-2 border-blue-500"
                       title="Open detailed view"
                     >
-                      🔎 Open details
+                      <span className="inline-flex items-center gap-2"><FiSearch className="w-4 h-4" /> Open details</span>
                     </Link>
                     {/* If resort has a related booking, allow admin to open chat as admin by ID input or linking logic. As minimal step, show link if resort.latest_booking_id exists. */}
                     {resort.latest_booking_id && (

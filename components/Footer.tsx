@@ -2,6 +2,8 @@
 import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { FiMail } from 'react-icons/fi'
+import { FaFacebook, FaInstagram } from 'react-icons/fa'
 
 export default function Footer(){
   // Lightweight client-side navigation helper for E2E stability
@@ -56,13 +58,13 @@ export default function Footer(){
               </div>
               <div className="hidden md:flex items-center gap-3">
                 <a href="mailto:resortifyph@gmail.com" aria-label="Email" className="flex items-center justify-center w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-white hover:bg-slate-700">
-                  ✉️
+                  <FiMail className="w-5 h-5" />
                 </a>
                 <a href="https://www.facebook.com/people/Resortifyph/61584827603544/" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="flex items-center justify-center w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-white hover:bg-blue-700">
-                  👍
+                  <FaFacebook className="w-5 h-5" />
                 </a>
                 <a href="https://www.instagram.com/resortifyph/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="flex items-center justify-center w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-white hover:bg-pink-700">
-                  📷
+                  <FaInstagram className="w-5 h-5" />
                 </a>
               </div>
             </div>

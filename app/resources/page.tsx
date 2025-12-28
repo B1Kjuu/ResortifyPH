@@ -1,6 +1,8 @@
 'use client'
 import React from 'react'
 import Link from 'next/link'
+import { FiEdit3, FiDollarSign, FiCalendar, FiMessageSquare, FiFileText, FiClipboard } from 'react-icons/fi'
+import { FaCamera, FaStar, FaBroom } from 'react-icons/fa'
 
 export default function ResourcesPage() {
   return (
@@ -21,21 +23,21 @@ export default function ResourcesPage() {
             <h2 className="text-3xl font-bold text-slate-900 mb-8">Getting Started</h2>
             <div className="grid md:grid-cols-3 gap-6">
               <div className="p-6 border border-slate-200 rounded-xl hover:shadow-lg transition">
-                <div className="text-3xl mb-4">📝</div>
+                <div className="text-3xl mb-4"><FiEdit3 aria-hidden /></div>
                 <h3 className="text-xl font-bold text-slate-900 mb-2">Creating Your Listing</h3>
                 <p className="text-slate-600 mb-4">Learn how to create an attractive and complete resort listing that gets bookings.</p>
                 <a href="#" className="text-resort-500 font-semibold hover:underline">Read Guide →</a>
               </div>
 
               <div className="p-6 border border-slate-200 rounded-xl hover:shadow-lg transition">
-                <div className="text-3xl mb-4">📸</div>
+                <div className="text-3xl mb-4"><FaCamera aria-hidden /></div>
                 <h3 className="text-xl font-bold text-slate-900 mb-2">Photography Tips</h3>
                 <p className="text-slate-600 mb-4">Take stunning photos that showcase your property's best features.</p>
                 <a href="#" className="text-resort-500 font-semibold hover:underline">Read Guide →</a>
               </div>
 
               <div className="p-6 border border-slate-200 rounded-xl hover:shadow-lg transition">
-                <div className="text-3xl mb-4">💰</div>
+                <div className="text-3xl mb-4"><FiDollarSign aria-hidden /></div>
                 <h3 className="text-xl font-bold text-slate-900 mb-2">Pricing Strategy</h3>
                 <p className="text-slate-600 mb-4">Set competitive prices that maximize your bookings and revenue.</p>
                 <a href="#" className="text-resort-500 font-semibold hover:underline">Read Guide →</a>
@@ -49,7 +51,7 @@ export default function ResourcesPage() {
             <div className="grid md:grid-cols-2 gap-6">
               <div className="flex gap-4 p-6 bg-slate-50 rounded-xl">
                 <div className="flex-shrink-0 w-12 h-12 bg-resort-100 rounded-lg flex items-center justify-center text-2xl">
-                  ⭐
+                  <FaStar aria-hidden />
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 mb-2">Provide Excellent Service</h3>
@@ -59,7 +61,7 @@ export default function ResourcesPage() {
 
               <div className="flex gap-4 p-6 bg-slate-50 rounded-xl">
                 <div className="flex-shrink-0 w-12 h-12 bg-resort-100 rounded-lg flex items-center justify-center text-2xl">
-                  📅
+                  <FiCalendar aria-hidden />
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 mb-2">Keep Calendar Updated</h3>
@@ -69,7 +71,7 @@ export default function ResourcesPage() {
 
               <div className="flex gap-4 p-6 bg-slate-50 rounded-xl">
                 <div className="flex-shrink-0 w-12 h-12 bg-resort-100 rounded-lg flex items-center justify-center text-2xl">
-                  💬
+                  <FiMessageSquare aria-hidden />
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 mb-2">Communicate Clearly</h3>
@@ -79,7 +81,7 @@ export default function ResourcesPage() {
 
               <div className="flex gap-4 p-6 bg-slate-50 rounded-xl">
                 <div className="flex-shrink-0 w-12 h-12 bg-resort-100 rounded-lg flex items-center justify-center text-2xl">
-                  🧹
+                  <FaBroom aria-hidden />
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 mb-2">Maintain High Standards</h3>
@@ -122,7 +124,7 @@ export default function ResourcesPage() {
               <div className="p-6 border border-slate-200 rounded-xl hover:shadow-lg transition">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-2xl">📄</span>
+                    <FiFileText aria-hidden className="text-2xl" />
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-900 mb-2">Host Welcome Guide</h3>
@@ -135,7 +137,7 @@ export default function ResourcesPage() {
               <div className="p-6 border border-slate-200 rounded-xl hover:shadow-lg transition">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-2xl">📋</span>
+                    <FiClipboard aria-hidden className="text-2xl" />
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-900 mb-2">Listing Checklist</h3>

@@ -8,6 +8,9 @@ import DisclaimerBanner from '../../../../components/DisclaimerBanner'
 import { getProvinceInfo } from '../../../../lib/locations'
 import { supabase } from '../../../../lib/supabaseClient'
 import { useRouter, useParams } from 'next/navigation'
+import { FiMapPin, FiDollarSign, FiUsers, FiCamera, FiCheck, FiClock, FiSave, FiTrash2, FiEdit } from 'react-icons/fi'
+import { FaStar } from 'react-icons/fa'
+import { FaUmbrellaBeach, FaMountain, FaLeaf, FaCity, FaTractor } from 'react-icons/fa'
 
 export default function EditResort(){
   const params = useParams()
@@ -216,7 +219,7 @@ export default function EditResort(){
         
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
-            <span className="text-4xl">✏️</span>
+            <FiEdit className="w-8 h-8 text-slate-700" />
             <h1 className="text-4xl font-bold bg-gradient-to-r from-resort-600 to-blue-600 bg-clip-text text-transparent">Edit Resort</h1>
           </div>
           <p className="text-lg text-slate-600 pl-14">Update your resort details and information.</p>
@@ -241,7 +244,7 @@ export default function EditResort(){
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-2">Location *</label>
+          <label className="block text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiMapPin className="w-4 h-4" /> Location *</label>
           <LocationCombobox
             value={location}
             onChange={setLocation}
@@ -258,17 +261,17 @@ export default function EditResort(){
             onChange={e => setType(e.target.value)}
             required
           >
-            <option value="beach">🏖️ Beach Resort</option>
-            <option value="mountain">🏔️ Mountain Resort</option>
-            <option value="nature">🌿 Nature Retreat</option>
-            <option value="city">🏙️ City Resort</option>
-            <option value="countryside">🌾 Countryside</option>
+            <option value="beach">Beach Resort</option>
+            <option value="mountain">Mountain Resort</option>
+            <option value="nature">Nature Retreat</option>
+            <option value="city">City Resort</option>
+            <option value="countryside">Countryside</option>
           </Select>
         </div>
 
         <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">Price per Night (₱) *</label>
+            <label className="block text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiDollarSign className="w-4 h-4" /> Price per Night (₱) *</label>
             <input 
               type="number"
               className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors" 
@@ -280,7 +283,7 @@ export default function EditResort(){
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">Guest Capacity *</label>
+            <label className="block text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiUsers className="w-4 h-4" /> Guest Capacity *</label>
             <input 
               type="number"
               className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors" 
@@ -331,7 +334,7 @@ export default function EditResort(){
 
         <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-6">
           <div className="flex items-center gap-2 mb-4">
-            <span className="text-xl">✨</span>
+            <FaStar className="w-5 h-5 text-slate-700" />
             <label className="text-sm font-bold text-slate-700">Amenities</label>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -416,13 +419,13 @@ export default function EditResort(){
 
         <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-6">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xl">📸</span>
+            <FiCamera className="w-5 h-5" />
             <label className="text-sm font-bold text-slate-700">Resort Images</label>
           </div>
           <ImageUploader onUpload={(urls) => setImages(urls)} />
           {images.length > 0 && (
             <div className="mt-3 px-4 py-2 bg-green-100 border border-green-300 rounded-lg flex items-center gap-2">
-              <span className="text-green-600 font-bold">✓</span>
+              <FiCheck className="text-green-600 w-4 h-4" />
               <p className="text-sm text-green-700 font-semibold">{images.length} image(s) uploaded</p>
             </div>
           )}
@@ -434,7 +437,11 @@ export default function EditResort(){
             disabled={submitting}
             className="flex-1 px-6 py-4 bg-gradient-to-r from-resort-500 to-blue-500 text-white rounded-xl font-bold text-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {submitting ? '⏳ Updating...' : '💾 Save Changes'}
+            {submitting ? (
+              <span className="inline-flex items-center gap-2"><FiClock className="w-5 h-5" /> Updating...</span>
+            ) : (
+              <span className="inline-flex items-center gap-2"><FiSave className="w-5 h-5" /> Save Changes</span>
+            )}
           </button>
           <Link href="/owner/my-resorts" className="flex-1 px-6 py-4 border-2 border-slate-300 rounded-xl font-bold text-lg text-center hover:bg-slate-50 transition-all text-slate-700">
             Cancel
@@ -448,7 +455,7 @@ export default function EditResort(){
             disabled={submitting}
             className="w-full px-6 py-4 bg-red-500 text-white rounded-xl font-bold text-lg hover:bg-red-600 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            🗑️ Delete Resort
+            <span className="inline-flex items-center gap-2"><FiTrash2 className="w-5 h-5" /> Delete Resort</span>
           </button>
           <p className="text-xs text-slate-500 mt-2 text-center">This action cannot be undone</p>
         </div>
