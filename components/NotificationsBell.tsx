@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { supabase } from '../lib/supabaseClient'
 import { listNotifications, markAllRead, deleteAllNotifications } from '../lib/notifications'
@@ -12,6 +12,20 @@ export default function NotificationsBell(){
     try { return localStorage.getItem('notif_sound') === 'on' } catch { return true }
   })
   const [toast, setToast] = useState<{ title: string; body?: string; link?: string } | null>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [open])
 
   useEffect(() => {
     let mounted = true
@@ -68,7 +82,7 @@ export default function NotificationsBell(){
   }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={dropdownRef}>
       <button
         onClick={toggleOpen}
         className="relative p-2 rounded-full hover:bg-slate-100 transition"

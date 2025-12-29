@@ -142,11 +142,12 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
           setDynamicTitle(resortData.name)
         } else if (participantRole === 'owner' && booking?.guest_id) {
           // Owner sees guest name
-          const { data: guestProfile } = await supabase
+          const { data: guestProfiles } = await supabase
             .from('profiles')
             .select('full_name, email')
             .eq('id', booking.guest_id)
-            .single()
+            .limit(1)
+          const guestProfile = guestProfiles?.[0]
           if (guestProfile) {
             setDynamicTitle(guestProfile.full_name || guestProfile.email || 'Guest')
           }

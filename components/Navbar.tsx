@@ -249,7 +249,7 @@ export default function Navbar(){
               priority
             />
           </div>
-          <span className="font-bold text-base sm:text-lg text-slate-900 hidden xs:inline">ResortifyPH</span>
+          <span className="font-bold text-base sm:text-lg text-slate-900">ResortifyPH</span>
         </Link>
 
         {/* Navigation - Desktop Only */}
@@ -389,14 +389,26 @@ export default function Navbar(){
               </button>
             </>
           ) : authChecked ? (
-            <div className="hidden sm:flex items-center gap-2">
-              <Link href="/auth/signin" className="px-4 py-2 text-sm font-semibold text-slate-700 hover:text-resort-600 hover:bg-slate-50 rounded-lg transition-all whitespace-nowrap">
-                Sign in
-              </Link>
-              <Link href="/auth/signup" className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-resort-500 to-resort-600 hover:from-resort-600 hover:to-resort-700 rounded-lg shadow-sm hover:shadow-md transition-all whitespace-nowrap">
-                Sign up
-              </Link>
-            </div>
+            <>
+              {/* Desktop Sign in/up */}
+              <div className="hidden sm:flex items-center gap-2">
+                <Link href="/auth/signin" className="px-4 py-2 text-sm font-semibold text-slate-700 hover:text-resort-600 hover:bg-slate-50 rounded-lg transition-all whitespace-nowrap">
+                  Sign in
+                </Link>
+                <Link href="/auth/signup" className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-resort-500 to-resort-600 hover:from-resort-600 hover:to-resort-700 rounded-lg shadow-sm hover:shadow-md transition-all whitespace-nowrap">
+                  Sign up
+                </Link>
+              </div>
+              {/* Mobile Sign in/up - compact */}
+              <div className="flex sm:hidden items-center gap-1">
+                <Link href="/auth/signin" className="px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-resort-600 rounded-lg transition-all">
+                  Sign in
+                </Link>
+                <Link href="/auth/signup" className="px-3 py-1.5 text-xs font-semibold text-white bg-resort-500 hover:bg-resort-600 rounded-lg shadow-sm transition-all">
+                  Sign up
+                </Link>
+              </div>
+            </>
           ) : (
             <div className="hidden sm:flex items-center gap-2">
               <div className="w-16 h-8 bg-slate-100 rounded-lg animate-pulse" />
