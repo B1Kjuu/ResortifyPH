@@ -418,17 +418,17 @@ export default function ResortsPage(){
             </div>
           </div>
           {/* Mobile View Mode Toggle */}
-          <div className="md:hidden mt-2 flex items-center gap-1 bg-slate-100 rounded-xl p-1 w-full">
-            <button onClick={() => setViewMode('grid')} className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all ${viewMode === 'grid' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'}`}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z"/></svg>
+          <div className="md:hidden mt-3 flex items-center bg-slate-100 rounded-xl p-1 w-full max-w-sm mx-auto">
+            <button onClick={() => setViewMode('grid')} className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${viewMode === 'grid' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z"/></svg>
               Grid
             </button>
-            <button onClick={() => setViewMode('split')} className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all ${viewMode === 'split' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'}`}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            <button onClick={() => setViewMode('split')} className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${viewMode === 'split' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2"/></svg>
               Split
             </button>
-            <button onClick={() => setViewMode('map')} className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all ${viewMode === 'map' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'}`}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7"/></svg>
+            <button onClick={() => setViewMode('map')} className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${viewMode === 'map' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7"/></svg>
               Map
             </button>
           </div>
@@ -597,7 +597,7 @@ export default function ResortsPage(){
             ))}
           </div>
         ) : viewMode === 'map' ? (
-          <div className="h-[70vh] min-h-[500px]"><ResortMap resorts={filteredResorts} userPosition={position} selectedResortId={selectedMapResort} onResortClick={(id) => setSelectedMapResort(id === selectedMapResort ? null : id)} className="h-full" /></div>
+          <div className="h-[70vh] min-h-[500px]"><ResortMap resorts={filteredResorts} userPosition={position} selectedResortId={selectedMapResort} onResortClick={(id) => setSelectedMapResort(id === selectedMapResort ? null : id)} className="h-full" onRequestLocation={requestLocation} geoLoading={geoLoading} /></div>
         ) : (
           <div className="flex gap-0 -mx-6 sm:-mx-10 lg:-mx-20">
             <div className="w-full lg:w-1/2 px-6 sm:px-10 lg:px-10 max-h-[calc(100vh-200px)] overflow-y-auto">
@@ -616,7 +616,7 @@ export default function ResortsPage(){
               </div>
             </div>
             <div className="hidden lg:block w-1/2 sticky top-[180px] h-[calc(100vh-200px)]">
-              <ResortMap resorts={filteredResorts} userPosition={position} selectedResortId={selectedMapResort} onResortClick={(id) => setSelectedMapResort(id === selectedMapResort ? null : id)} className="h-full rounded-none" />
+              <ResortMap resorts={filteredResorts} userPosition={position} selectedResortId={selectedMapResort} onResortClick={(id) => setSelectedMapResort(id === selectedMapResort ? null : id)} className="h-full rounded-none" onRequestLocation={requestLocation} geoLoading={geoLoading} />
             </div>
           </div>
         )}

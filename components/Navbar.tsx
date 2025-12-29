@@ -474,6 +474,26 @@ export default function Navbar(){
 
             {authChecked && user ? (
               <div className="space-y-2">
+                {/* Mobile Role Switcher */}
+                {!isAdminContext && (
+                  <div className="mb-3">
+                    <p className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Switch Mode</p>
+                    <div className="flex items-center gap-2 px-3">
+                      <button
+                        onClick={() => { handleRoleSwitch('guest'); setShowMobileMenu(false); }}
+                        className={`flex-1 px-3 py-2.5 text-sm font-semibold rounded-xl transition-all ${userRole === 'guest' ? 'bg-resort-500 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                      >
+                        Guest
+                      </button>
+                      <button
+                        onClick={() => { handleRoleSwitch('owner'); setShowMobileMenu(false); }}
+                        className={`flex-1 px-3 py-2.5 text-sm font-semibold rounded-xl transition-all ${userRole === 'owner' ? 'bg-resort-500 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                      >
+                        Host
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <Link href="/profile" onClick={() => setShowMobileMenu(false)} className="block px-3 py-2 rounded-lg text-slate-800 hover:bg-slate-100 font-medium">Profile</Link>
                 <button onClick={() => { setShowMobileMenu(false); handleLogout(); }} className="w-full px-3 py-2 rounded-lg text-left text-slate-800 hover:bg-slate-100 font-medium">Sign out</button>
               </div>
