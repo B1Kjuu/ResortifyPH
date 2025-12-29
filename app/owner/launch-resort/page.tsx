@@ -9,11 +9,13 @@ import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import { FiMapPin, FiDollarSign, FiUsers, FiStar, FiEdit3, FiCamera, FiCheck, FiClock, FiX } from 'react-icons/fi'
 import { FaHotel, FaRocket } from 'react-icons/fa'
+import { RESORT_TYPES } from '../../../lib/resortTypes'
 
 export default function LaunchResort(){
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [location, setLocation] = useState('')
+  const [type, setType] = useState<'beach' | 'mountain' | 'nature' | 'city' | 'countryside' | 'staycation' | 'private' | 'villa' | 'glamping' | 'farmstay' | 'spa'>('city')
   const [price, setPrice] = useState<number | ''>('')
   const [capacity, setCapacity] = useState<number | ''>('')
   const [amenities, setAmenities] = useState('')
@@ -66,6 +68,7 @@ export default function LaunchResort(){
       location, 
       region_code: provinceInfo?.regionCode ?? null,
       region_name: provinceInfo?.regionName ?? null,
+      type,
       price: Number(price), 
       capacity: Number(capacity), 
       amenities: amenities.split(',').map(s => s.trim()).filter(s => s), 
@@ -135,6 +138,22 @@ export default function LaunchResort(){
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+                <FiMapPin className="w-4 h-4" />
+                <span>Resort Type *</span>
+              </label>
+              <select
+                value={type}
+                onChange={(e) => setType(e.target.value as any)}
+                className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 bg-slate-50 hover:border-slate-300 transition-colors"
+                required
+              >
+                {RESORT_TYPES.map((t) => (
+                  <option key={t.id} value={t.id}>{t.label}</option>
+                ))}
+              </select>
+            </div>
             <div>
               <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
                 <FiDollarSign className="w-4 h-4" />

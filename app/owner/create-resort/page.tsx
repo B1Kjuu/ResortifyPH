@@ -17,6 +17,7 @@ import { resortSchema, type ResortInput } from '../../../lib/validations'
 import DisclaimerBanner from '../../../components/DisclaimerBanner'
 import { FiMapPin, FiDollarSign, FiUsers, FiCamera, FiCheck, FiClock } from 'react-icons/fi'
 import { FaUmbrellaBeach, FaMountain, FaLeaf, FaCity, FaTractor, FaSwimmer, FaStar } from 'react-icons/fa'
+import { RESORT_TYPES } from '../../../lib/resortTypes'
 
 const AMENITIES = [
   'Pool',
@@ -347,11 +348,9 @@ export default function CreateResort() {
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Resort Type *</label>
             <Select ariaLabel="Resort type" className="w-full" {...register('type')}>
-              <option value="beach">Beach Resort</option>
-              <option value="mountain">Mountain Resort</option>
-              <option value="nature">Nature Retreat</option>
-              <option value="city">City Resort</option>
-              <option value="countryside">Countryside</option>
+              {RESORT_TYPES.map((t) => (
+                <option key={t.id} value={t.id}>{t.label}</option>
+              ))}
             </Select>
             {errors.type && <p className="text-xs text-red-500 mt-1">{errors.type.message}</p>}
           </div>

@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react'
 import supabase from '../lib/supabaseClient'
+import { FaPaperclip, FaPaperPlane } from 'react-icons/fa'
 
 type Props = {
   onSend: (message: string, attachmentData?: { url: string; type: string; name: string; size: number }) => Promise<void> | void
@@ -131,13 +132,13 @@ export default function MessageInput({ onSend, disabled, chatId, onTyping, parti
   }
 
   return (
-    <div className="border-t bg-white">
+    <div className="border-t bg-white sticky bottom-0 pb-[env(safe-area-inset-bottom)]">
       {uploadError && (
         <div className="px-3 py-2 text-xs text-red-600 bg-red-50 border-b border-red-200">
           {uploadError}
         </div>
       )}
-      <div className="flex items-end gap-2 p-2">
+      <div className="flex items-end gap-2 p-3 sm:p-2">
         <input
           ref={fileInputRef}
           type="file"
@@ -147,14 +148,13 @@ export default function MessageInput({ onSend, disabled, chatId, onTyping, parti
         />
         
         <button
-          className="shrink-0 p-2 rounded-md hover:bg-gray-100 transition-colors disabled:opacity-50"
+          className="shrink-0 p-3 sm:p-2 rounded-md hover:bg-gray-100 transition-colors disabled:opacity-50"
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled || uploading || sending}
           title="Attach file"
+          aria-label="Attach file"
         >
-          <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-          </svg>
+          <FaPaperclip className="w-5 h-5 text-gray-600" />
         </button>
 
         {/* Role-aware payment templates */}
@@ -250,9 +250,9 @@ export default function MessageInput({ onSend, disabled, chatId, onTyping, parti
         )}
 
         <textarea
-          className="flex-1 resize-none rounded-md border border-gray-300 p-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-          rows={2}
-          placeholder="Type your message…"
+          className="flex-1 resize-none rounded-md border border-gray-300 p-3 sm:p-2 text-base sm:text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          rows={3}
+          placeholder={participantRole === 'owner' ? "Type a message to your guest…" : "Type a message to the host…"}
           value={value}
           onChange={(e) => {
             setValue(e.target.value)
@@ -268,11 +268,12 @@ export default function MessageInput({ onSend, disabled, chatId, onTyping, parti
         />
         
         <button
-          className="h-10 shrink-0 rounded-md bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="h-11 sm:h-10 shrink-0 inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 text-base sm:text-sm font-medium text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={handleSend}
           disabled={disabled || sending || uploading || !value.trim()}
+          aria-label="Send message"
         >
-          {uploading ? 'Uploading…' : sending ? 'Sending…' : 'Send'}
+          {uploading ? 'Uploading…' : sending ? 'Sending…' : (<><FaPaperPlane className="w-4 h-4" /> Send</>)}
         </button>
       </div>
     </div>

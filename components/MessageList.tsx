@@ -8,9 +8,11 @@ type Props = {
   messages: ChatMessage[]
   currentUserId?: string
   onReact?: (messageId: string, emoji: string) => void
+  ownerId?: string
+  guestId?: string
 }
 
-export default function MessageList({ messages, currentUserId, onReact }: Props) {
+export default function MessageList({ messages, currentUserId, onReact, ownerId, guestId }: Props) {
   const bottomRef = useRef<HTMLDivElement | null>(null)
   const [profiles, setProfiles] = useState<Record<string, UserProfile>>({})
   const [reactions, setReactions] = useState<Record<string, MessageReaction[]>>({})
@@ -124,6 +126,8 @@ export default function MessageList({ messages, currentUserId, onReact }: Props)
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((m, idx) => {
           const mine = m.sender_id === currentUserId
+          const isOwnerSender = ownerId ? m.sender_id === ownerId : false
+          const isGuestSender = guestId ? m.sender_id === guestId : false
           const profile = profiles[m.sender_id]
           const showAvatar = !mine && (idx === 0 || messages[idx - 1]?.sender_id !== m.sender_id)
           const isImage = m.attachment_url && m.attachment_type?.startsWith('image/')
@@ -179,7 +183,12 @@ export default function MessageList({ messages, currentUserId, onReact }: Props)
                   </div>
                 )}
                 
-                <div className={`rounded-lg px-3 py-2 text-sm ${deleted ? 'bg-gray-50 text-gray-400 italic' : mine ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-900'}`}>
+                <div className={`rounded-2xl px-3 py-2 text-sm shadow-sm ${deleted 
+                  ? 'bg-gray-50 text-gray-400 italic'
+                  : mine
+                    ? (isOwnerSender ? 'bg-emerald-600 text-white' : 'bg-blue-600 text-white')
+                    : (isOwnerSender ? 'bg-emerald-50 text-emerald-900' : 'bg-gray-100 text-gray-900')
+                }`}>
                   {deleted ? (
                     <div className="whitespace-pre-wrap break-words">Message deleted</div>
                   ) : (
@@ -221,7 +230,7 @@ export default function MessageList({ messages, currentUserId, onReact }: Props)
                     </a>
                   )}
                   
-                  <div className={`flex items-center gap-1.5 mt-1 text-[10px] ${deleted ? 'text-gray-300' : mine ? 'text-blue-100' : 'text-gray-500'}`}>
+                  <div className={`flex items-center gap-1.5 mt-1 text-[10px] ${deleted ? 'text-gray-300' : mine ? (isOwnerSender ? 'text-emerald-100' : 'text-blue-100') : (isOwnerSender ? 'text-emerald-600' : 'text-gray-500')}` }>
                     <span>{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     {mine && m.read_at && (
                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">

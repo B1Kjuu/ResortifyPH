@@ -11,6 +11,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { FiMapPin, FiDollarSign, FiUsers, FiCamera, FiCheck, FiClock, FiSave, FiTrash2, FiEdit } from 'react-icons/fi'
 import { FaStar } from 'react-icons/fa'
 import { FaUmbrellaBeach, FaMountain, FaLeaf, FaCity, FaTractor } from 'react-icons/fa'
+import { RESORT_TYPES } from '../../../../lib/resortTypes'
 
 export default function EditResort(){
   const params = useParams()
@@ -261,11 +262,9 @@ export default function EditResort(){
             onChange={e => setType(e.target.value)}
             required
           >
-            <option value="beach">Beach Resort</option>
-            <option value="mountain">Mountain Resort</option>
-            <option value="nature">Nature Retreat</option>
-            <option value="city">City Resort</option>
-            <option value="countryside">Countryside</option>
+            {RESORT_TYPES.map((t) => (
+              <option key={t.id} value={t.id}>{t.label}</option>
+            ))}
           </Select>
         </div>
 

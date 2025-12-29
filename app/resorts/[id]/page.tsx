@@ -39,6 +39,8 @@ export default function ResortDetail({ params }: { params: { id: string } }){
   const [selectedRange, setSelectedRange] = useState<{ from: Date | undefined; to: Date | undefined }>({ from: undefined, to: undefined })
   const [activeImage, setActiveImage] = useState(0)
   const [guests, setGuests] = useState(1)
+  const [childrenCount, setChildrenCount] = useState(0)
+  const [petsCount, setPetsCount] = useState(0)
   const [booking, setBooking] = useState(false)
   const [stayType, setStayType] = useState<'day_12h' | 'overnight_22h'>('overnight_22h')
   const [message, setMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null)
@@ -250,6 +252,12 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       return
     }
 
+    // Prevent owners from booking their own resort
+    if (user?.id && resort?.owner_id && user.id === resort.owner_id) {
+      toast.error('Owners cannot book their own resort')
+      return
+    }
+
     if (!selectedRange.from || !selectedRange.to) {
       toast.error('Please select check-in and check-out dates')
       return
@@ -286,9 +294,9 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       toast.error('At least 1 guest required')
       return
     }
-
-    if (guests > resort.capacity) {
-      toast.error(`Maximum capacity is ${resort.capacity} guests`)
+    const totalPeople = guests + Math.max(0, childrenCount)
+    if (totalPeople > resort.capacity) {
+      toast.error(`Capacity exceeded: ${totalPeople}/${resort.capacity} (adults + children)`) 
       return
     }
 
@@ -310,12 +318,19 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       p_resort_region_name: resort.region_name ?? provinceInfo?.regionName ?? null,
       // optional: pass stay type if RPC handles it (ignored otherwise)
       p_stay_type: stayType,
+      p_children_count: childrenCount,
+      p_pets_count: petsCount,
     })
     newId = (rpcRes as any)?.data ?? null
     error = (rpcRes as any)?.error ?? null
 
     // Fallback: if function is missing, insert booking directly
     if (error && String(error?.message || '').includes('Could not find the function')) {
+      // Double-check self-booking in fallback
+      if (user?.id && resort?.owner_id && user.id === resort.owner_id) {
+        toast.error('Owners cannot book their own resort')
+        return
+      }
       const { data: ins, error: insErr } = await supabase
         .from('bookings')
         .insert({
@@ -324,6 +339,8 @@ export default function ResortDetail({ params }: { params: { id: string } }){
           date_from: format(selectedRange.from, 'yyyy-MM-dd'),
           date_to: format(selectedRange.to, 'yyyy-MM-dd'),
           guest_count: guests,
+          children_count: childrenCount,
+          pets_count: petsCount,
           status: 'pending',
         })
         .select('id')
@@ -754,6 +771,31 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                     className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-500"
                   />
                   <p className="text-xs text-slate-500">Maximum: {resort.capacity} guests</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="block text-sm font-semibold text-slate-700">Children</label>
+                    <input
+                      type="number"
+                      value={childrenCount}
+                      onChange={(e) => setChildrenCount(Math.max(0, parseInt(e.target.value) || 0))}
+                      min={0}
+                      className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-500"
+                    />
+                    <p className="text-xs text-slate-500">Count ages under 13</p>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-sm font-semibold text-slate-700">Pets</label>
+                    <input
+                      type="number"
+                      value={petsCount}
+                      onChange={(e) => setPetsCount(Math.max(0, parseInt(e.target.value) || 0))}
+                      min={0}
+                      className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-500"
+                    />
+                    <p className="text-xs text-slate-500">If allowed; fees may apply</p>
+                  </div>
                 </div>
               </div>
 

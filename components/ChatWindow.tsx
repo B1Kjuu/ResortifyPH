@@ -24,6 +24,8 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
   const [typingUsers, setTypingUsers] = useState<string[]>([])
   const [onlineUsers, setOnlineUsers] = useState<string[]>([])
   const [dynamicTitle, setDynamicTitle] = useState<string>('')
+  const [ownerId, setOwnerId] = useState<string | undefined>()
+  const [guestId, setGuestId] = useState<string | undefined>()
 
   useEffect(() => {
     let mounted = true
@@ -128,10 +130,12 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
       if (bookingId && chatRow.booking_id) {
         const { data: booking } = await supabase
           .from('bookings')
-          .select('resort_id, guest_id, resorts(name)')
+          .select('resort_id, guest_id, resorts(name, owner_id)')
           .eq('id', bookingId)
           .single()
         const resortData = booking?.resorts as any
+        setGuestId(booking?.guest_id)
+        setOwnerId(resortData?.owner_id)
         
         if (participantRole === 'guest' && resortData && typeof resortData === 'object' && 'name' in resortData) {
           // Guest sees resort name
@@ -150,12 +154,14 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
       } else if (resortId && chatRow.resort_id) {
         const { data: resort } = await supabase
           .from('resorts')
-          .select('name')
+          .select('name, owner_id')
           .eq('id', resortId)
           .single()
         if (resort?.name) {
           setDynamicTitle(resort.name)
         }
+        setOwnerId((resort as any)?.owner_id)
+        setGuestId(userId)
       }
 
       // Ensure current user is a participant
@@ -342,14 +348,49 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
         // Notify owner via email for guest messages
         try {
           if (participantRole === 'guest') {
+            // Try to fetch owner email client-side to improve delivery reliability
+            let to: string | undefined
+            if (bookingId) {
+              const { data: b } = await supabase
+                .from('bookings')
+                .select('resort_id, resorts(owner_id, name)')
+                .eq('id', bookingId)
+                .single()
+              const ownerId = (b as any)?.resorts?.owner_id
+              if (ownerId) {
+                const { data: owner } = await supabase
+                  .from('profiles')
+                  .select('email')
+                  .eq('id', ownerId)
+                  .single()
+                to = owner?.email
+              }
+            } else if (resortId) {
+              const { data: r } = await supabase
+                .from('resorts')
+                .select('owner_id, name')
+                .eq('id', resortId)
+                .single()
+              const ownerId = (r as any)?.owner_id
+              if (ownerId) {
+                const { data: owner } = await supabase
+                  .from('profiles')
+                  .select('email')
+                  .eq('id', ownerId)
+                  .single()
+                to = owner?.email
+              }
+            }
+
             await fetch('/api/notifications/chat-message', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                bookingId: bookingId,
-                resortId: resortId,
+                bookingId,
+                resortId,
                 senderUserId: userId,
                 content,
+                to,
               }),
             })
           }
@@ -494,7 +535,7 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
               </div>
             </div>
           )}
-          <MessageList messages={messages} currentUserId={userId} onReact={handleReaction} />
+          <MessageList messages={messages} currentUserId={userId} onReact={handleReaction} ownerId={ownerId} guestId={guestId} />
           {typingUsers.length > 0 && (
             <div className="px-4 py-2 text-xs text-gray-500 italic border-t">
               {typingUsers.length === 1 ? 'Someone is' : `${typingUsers.length} people are`} typing...

@@ -4,10 +4,12 @@ import Link from 'next/link'
 import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import DisclaimerBanner from '../../../components/DisclaimerBanner'
+import { RESORT_TYPES, getResortTypeLabel } from '../../../lib/resortTypes'
 
 export default function Properties(){
   const [resorts, setResorts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [typeFilter, setTypeFilter] = useState<string>('all')
   const router = useRouter()
 
   useEffect(() => {
@@ -32,12 +34,14 @@ export default function Properties(){
         return
       }
 
-      const { data } = await supabase.from('resorts').select('*').eq('owner_id', session.user.id).order('created_at', { ascending: false })
+      let query = supabase.from('resorts').select('*').eq('owner_id', session.user.id)
+      if (typeFilter !== 'all') query = query.eq('type', typeFilter as any)
+      const { data } = await query.order('created_at', { ascending: false })
       setResorts(data || [])
       setLoading(false)
     }
     load()
-  }, [])
+  }, [typeFilter])
 
   if (loading) return <div className="w-full px-4 sm:px-6 lg:px-8 py-10 text-center text-slate-600">Loading...</div>
 
@@ -55,9 +59,22 @@ export default function Properties(){
             </DisclaimerBanner>
           </div>
         </div>
-        <Link href="/owner/launch-resort" className="px-4 py-2 bg-resort-500 text-white rounded-lg font-semibold hover:bg-resort-600 transition">
-          + Launch Resort
-        </Link>
+        <div className="flex items-center gap-2">
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+            aria-label="Filter by type"
+          >
+            <option value="all">All Types</option>
+            {RESORT_TYPES.map((t) => (
+              <option key={t.id} value={t.id}>{t.label}</option>
+            ))}
+          </select>
+          <Link href="/owner/launch-resort" className="px-4 py-2 bg-resort-500 text-white rounded-lg font-semibold hover:bg-resort-600 transition">
+            + Launch Resort
+          </Link>
+        </div>
       </div>
 
       {resorts.length === 0 ? (
@@ -85,6 +102,11 @@ export default function Properties(){
 
               <div className="space-y-1 text-sm text-slate-600 mb-4">
                 <p>₱{resort.price}/night · {resort.capacity} guests</p>
+                {resort.type && (
+                  <p className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-slate-700 text-[11px] font-medium">
+                    {getResortTypeLabel(resort.type)}
+                  </p>
+                )}
                 {resort.amenities && <p>Amenities: {resort.amenities.join(', ')}</p>}
               </div>
 

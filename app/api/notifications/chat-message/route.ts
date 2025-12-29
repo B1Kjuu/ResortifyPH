@@ -1,25 +1,79 @@
 import { NextRequest, NextResponse } from "next/server"
-import { sendEmail } from "lib/email"
+import { sendEmail, brandEmailTemplate } from "lib/email"
 import { getServerSupabaseOrNull } from "lib/supabaseServer"
 
 export async function POST(req: NextRequest) {
   try {
-    const { bookingId, resortId, senderUserId, content } = await req.json()
+    const { bookingId, resortId, senderUserId, content, to } = await req.json()
 
     if (!content || (!bookingId && !resortId)) {
       return NextResponse.json({ error: "Missing content or identifiers" }, { status: 400 })
     }
 
     const sb = getServerSupabaseOrNull()
-    if (!sb) {
-      return NextResponse.json({ error: "Server Supabase not configured" }, { status: 500 })
-    }
 
     let ownerEmail: string | null = null
     let resortName: string | null = null
     let link: string | null = null
 
-    if (bookingId) {
+    // Ensure chat and participants exist server-side to bypass RLS limitations
+    let chatId: string | null = null
+
+    if (sb) {
+      try {
+        if (bookingId) {
+          // Find or create chat for booking
+          const { data: existingChat } = await sb
+            .from('chats')
+            .select('id, resort_id')
+            .eq('booking_id', bookingId)
+            .maybeSingle()
+          if (existingChat?.id) {
+            chatId = existingChat.id
+          } else {
+            const { data: created } = await sb
+              .from('chats')
+              .insert({ booking_id: bookingId, creator_id: senderUserId })
+              .select('id, resort_id')
+              .single()
+            chatId = created?.id ?? null
+          }
+          // Resolve resort/owner
+        } else if (resortId) {
+          // Find or create chat for resort
+          const { data: existingResortChat } = await sb
+            .from('chats')
+            .select('id')
+            .eq('resort_id', resortId)
+            .maybeSingle()
+          if (existingResortChat?.id) {
+            chatId = existingResortChat.id
+          } else {
+            const { data: created } = await sb
+              .from('chats')
+              .insert({ resort_id: resortId, creator_id: senderUserId })
+              .select('id')
+              .single()
+            chatId = created?.id ?? null
+          }
+        }
+
+        // Upsert sender participant (default to guest role for notifications)
+        if (chatId && senderUserId) {
+          await sb
+            .from('chat_participants')
+            .upsert({ chat_id: chatId, user_id: senderUserId, role: 'guest' } as any, {
+              onConflict: 'chat_id,user_id',
+              ignoreDuplicates: true,
+            })
+            .select('chat_id')
+        }
+      } catch (e) {
+        console.warn('Server ensure chat/participant failed:', e)
+      }
+    }
+
+    if (bookingId && !to) {
       const { data: booking } = await sb
         .from('bookings')
         .select('id, resort_id, resorts(name, owner_id), guest_id')
@@ -36,8 +90,22 @@ export async function POST(req: NextRequest) {
           .eq('id', ownerId)
           .single()
         ownerEmail = owner?.email ?? null
+
+        // Ensure owner participant exists
+        if (sb && chatId) {
+          try {
+            await sb
+              .from('chat_participants')
+              .upsert({ chat_id: chatId, user_id: ownerId, role: 'owner' } as any, {
+                onConflict: 'chat_id,user_id',
+                ignoreDuplicates: true,
+              })
+          } catch (e) {
+            console.warn('Ensure owner participant failed:', e)
+          }
+        }
       }
-    } else if (resortId) {
+    } else if (resortId && !to) {
       const { data: resort } = await sb
         .from('resorts')
         .select('name, owner_id')
@@ -53,10 +121,24 @@ export async function POST(req: NextRequest) {
           .eq('id', ownerId)
           .single()
         ownerEmail = owner?.email ?? null
+
+        // Ensure owner participant exists
+        if (sb && chatId) {
+          try {
+            await sb
+              .from('chat_participants')
+              .upsert({ chat_id: chatId, user_id: ownerId, role: 'owner' } as any, {
+                onConflict: 'chat_id,user_id',
+                ignoreDuplicates: true,
+              })
+          } catch (e) {
+            console.warn('Ensure owner participant (resort) failed:', e)
+          }
+        }
       }
     }
 
-    if (!ownerEmail) {
+    if (!ownerEmail && !to) {
       return NextResponse.json({ error: "Owner email not found" }, { status: 404 })
     }
 
@@ -64,30 +146,56 @@ export async function POST(req: NextRequest) {
       ? `New message about ${resortName}`
       : `New message in chat`
 
-    const html = `
-      <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto">
-        <h2>${subject}</h2>
-        <p>${content}</p>
-        ${link ? `<p><a href="${link}">Open chat</a></p>` : ''}
-        <p>Thanks,<br/>ResortifyPH</p>
-      </div>
-    `
+    const html = brandEmailTemplate({
+      title: subject,
+      intro: 'You have a new message from a guest.',
+      rows: resortName ? [{ label: 'Resort', value: resortName }] : [],
+      cta: link ? { label: 'Open Chat', href: link } : undefined,
+    })
 
     const dryRun = req.nextUrl.searchParams.get("dryRun") === "1"
+    const windowMsParam = req.nextUrl.searchParams.get("windowMs")
+    const firstOnlyParam = req.nextUrl.searchParams.get("firstOnly")
+    const firstOnly = firstOnlyParam !== '0'
+    const windowMs = windowMsParam ? parseInt(windowMsParam, 10) : 0
+    if (sb && chatId && !dryRun) {
+      try {
+        const { count, data: lastMsgs } = await sb
+          .from('chat_messages')
+          .select('id, created_at', { count: 'exact' })
+          .eq('chat_id', chatId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+        if (firstOnly && (count ?? 0) > 0) {
+          return NextResponse.json({ ok: true, skipped: true, reason: 'first-only' })
+        }
+        if (!firstOnly && windowMs > 0 && (lastMsgs || []).length > 0) {
+          const lastCreated = new Date((lastMsgs as any)[0].created_at).getTime()
+          if ((Date.now() - lastCreated) < windowMs) {
+            return NextResponse.json({ ok: true, skipped: true, reason: 'window' })
+          }
+        }
+      } catch (e) {
+        console.warn('Throttle check failed:', e)
+      }
+    }
     let res: any = null
-    if (!dryRun) {
-      res = await sendEmail({ to: ownerEmail, subject, html })
+    const finalTo = to ?? ownerEmail
+    if (!dryRun && finalTo) {
+      res = await sendEmail({ to: finalTo, subject, html })
     }
 
     // Optional: log notification
     try {
-      await sb.from('notifications').insert({
+      if (sb) {
+        await sb.from('notifications').insert({
         user_id: null,
         type: 'chat_message',
-        to_email: ownerEmail,
+        to_email: finalTo,
         subject,
         status: dryRun ? 'dry_run' : 'sent',
-      })
+        })
+      }
     } catch {}
 
     return NextResponse.json({ id: res?.data?.id ?? null, ok: true, dryRun })

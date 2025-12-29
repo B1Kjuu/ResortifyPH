@@ -250,7 +250,7 @@ export default function OwnerBookingsContent(props: Props){
                                 <p className="text-lg font-bold text-slate-900">{b.resort?.name}</p>
                                 <p className="text-sm text-slate-600 mt-1">👤 {b.guest?.full_name} — 📧 {b.guest?.email}</p>
                                 <p className="text-sm text-slate-700 mt-1">📅 {b.date_from} → {b.date_to}</p>
-                                <p className="text-sm text-slate-700 mt-1">👥 {b.guest_count} {b.guest_count === 1 ? 'guest' : 'guests'}</p>
+                                <p className="text-sm text-slate-700 mt-1">👥 {b.guest_count} {b.guest_count === 1 ? 'guest' : 'guests'}{typeof b.children_count === 'number' && b.children_count > 0 ? ` · 👶 ${b.children_count}` : ''}{typeof b.pets_count === 'number' && b.pets_count > 0 ? ` · 🐾 ${b.pets_count}` : ''}</p>
                               </div>
                               <div className="flex flex-col items-end gap-2">
                                   <span className={"text-xs px-2 py-1 rounded-lg border-2 " + (b.status === 'confirmed' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-yellow-100 text-yellow-800 border-yellow-300')}>{b.status}</span>
@@ -324,6 +324,12 @@ export default function OwnerBookingsContent(props: Props){
                             </p>
                             <p className="text-sm text-slate-700">
                               👥 <span className="font-bold">{booking.guest_count} {booking.guest_count === 1 ? 'guest' : 'guests'}</span>
+                              {typeof booking.children_count === 'number' && (
+                                <span className="ml-2 text-slate-700">👶 {booking.children_count}</span>
+                              )}
+                              {typeof booking.pets_count === 'number' && (
+                                <span className="ml-2 text-slate-700">🐾 {booking.pets_count}</span>
+                              )}
                             </p>
                             <p className="text-sm text-slate-600 mt-2 italic">
                               Requested: {new Date(booking.created_at).toLocaleDateString()}
@@ -451,6 +457,12 @@ export default function OwnerBookingsContent(props: Props){
                         </p>
                         <p className="text-sm text-slate-700">
                           👥 <span className="font-bold">{booking.guest_count} {booking.guest_count === 1 ? 'guest' : 'guests'}</span>
+                          {typeof booking.children_count === 'number' && (
+                            <span className="ml-2">👶 {booking.children_count}</span>
+                          )}
+                          {typeof booking.pets_count === 'number' && (
+                            <span className="ml-2">🐾 {booking.pets_count}</span>
+                          )}
                         </p>
                         {booking.cancellation_status === 'requested' && (
                           <p className="text-sm text-yellow-700 mt-2">Guest requested cancellation{booking.cancellation_reason ? ` — ${booking.cancellation_reason}` : ''}.</p>
@@ -727,7 +739,7 @@ export default function OwnerBookingsContent(props: Props){
                       </div>
                       <div className="bg-white rounded-xl p-4 border border-slate-200">
                         <p className="text-sm text-slate-700 mb-2">📅 <span className="font-bold">{booking.date_from}</span> → <span className="font-bold">{booking.date_to}</span></p>
-                        <p className="text-sm text-slate-700">👥 <span className="font-bold">{booking.guest_count} {booking.guest_count === 1 ? 'guest' : 'guests'}</span></p>
+                        <p className="text-sm text-slate-700">👥 <span className="font-bold">{booking.guest_count} {booking.guest_count === 1 ? 'guest' : 'guests'}</span>{typeof booking.children_count === 'number' && booking.children_count > 0 ? ` · 👶 ${booking.children_count}` : ''}{typeof booking.pets_count === 'number' && booking.pets_count > 0 ? ` · 🐾 ${booking.pets_count}` : ''}</p>
                         <div className="mt-3 flex justify-end">
                           <ChatLink bookingId={booking.id} as="owner" label="Open Chat" title={booking.guest?.full_name || booking.guest?.email || 'Guest'} />
                         </div>

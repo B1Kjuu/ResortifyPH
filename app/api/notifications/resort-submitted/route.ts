@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendEmail } from "lib/email";
+import { sendEmail, brandEmailTemplate } from "lib/email";
 import { getServerSupabaseOrNull } from "lib/supabaseServer";
 
 export async function POST(req: NextRequest) {
@@ -47,17 +47,20 @@ export async function POST(req: NextRequest) {
     }
 
     const subject = `New resort submitted: ${resortName}`;
-    const html = `
-      <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial">
-        <h2>New Resort Submission</h2>
-        <p><strong>Resort:</strong> ${resortName}</p>
-        ${location ? `<p><strong>Location:</strong> ${location}</p>` : ""}
-        ${price ? `<p><strong>Base price:</strong> ₱${Number(price).toLocaleString()}</p>` : ""}
-        <p><strong>Owner:</strong> ${ownerName || ownerEmail}</p>
-        <p>Open Approvals: /admin/approvals</p>
-      </div>
-    `;
-    const text = `New resort submitted: ${resortName}\nOwner: ${ownerName || ownerEmail}\nApprovals: /admin/approvals`;
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || req.nextUrl.origin || "";
+    const approvalsLink = siteUrl ? `${siteUrl}/admin/approvals` : "/admin/approvals";
+    const html = brandEmailTemplate({
+      title: 'New Resort Submission',
+      intro: 'A new resort has been submitted and awaits approval.',
+      rows: [
+        { label: 'Resort', value: resortName },
+        ...(location ? [{ label: 'Location', value: location }] : []),
+        ...(price ? [{ label: 'Base price', value: `₱${Number(price).toLocaleString()}` }] : []),
+        { label: 'Owner', value: ownerName || ownerEmail },
+      ],
+      cta: { label: 'Open Approvals', href: approvalsLink },
+    });
+    const text = `New resort submitted: ${resortName}\nOwner: ${ownerName || ownerEmail}\nApprovals: ${approvalsLink}`;
 
     const dryRun = req.nextUrl.searchParams.get("dryRun") === "1";
     let res: any = null;

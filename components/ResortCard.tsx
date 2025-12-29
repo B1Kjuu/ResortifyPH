@@ -1,6 +1,7 @@
 'use client'
 import React, { useMemo, useState } from 'react'
 import Link from 'next/link'
+import { getResortTypeLabel } from '../lib/resortTypes'
 import Image from 'next/image'
 import { useFavorites } from '../hooks/useFavorites'
 
@@ -160,11 +161,11 @@ export default function ResortCard({ resort, compact = false, nights = 0, showTo
             {resort.location}
           </p>
           
-          <p className="text-sm text-slate-500">
-            {resort.type && (
-              <span className="capitalize">{resort.type} resort</span>
-            )}
-          </p>
+          {resort.type && (
+            <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-slate-700 text-[11px] font-medium">
+              <span>{getResortTypeLabel(resort.type)}</span>
+            </div>
+          )}
           
           {/* Price */}
           <div className="pt-1 flex items-center gap-2">

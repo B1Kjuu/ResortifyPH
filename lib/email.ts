@@ -50,14 +50,68 @@ export async function sendBookingEmail(
     rejected: `Your booking was rejected – ${data.resortName}`,
   } as const;
 
-  const html = `
-    <div style="font-family:system-ui, -apple-system, Segoe UI, Roboto;">
-      <h2>${subjectMap[kind]}</h2>
-      <p>Dates: ${data.dateFrom} → ${data.dateTo}</p>
-      ${data.link ? `<p><a href="${data.link}">View booking</a></p>` : ""}
-      <p>Thanks,<br/>ResortifyPH</p>
-    </div>
-  `;
+  const html = brandEmailTemplate({
+    title: subjectMap[kind],
+    intro: kind === 'created'
+      ? 'A guest requested to book your resort.'
+      : kind === 'approved'
+      ? 'Great news! Your booking was approved.'
+      : 'Sorry, your booking was rejected.',
+    rows: [
+      { label: 'Resort', value: data.resortName },
+      { label: 'Dates', value: `${data.dateFrom} → ${data.dateTo}` },
+    ],
+    cta: data.link ? { label: kind === 'created' ? 'Open Booking Chat' : 'View Booking', href: data.link } : undefined,
+  })
 
   return sendEmail({ to, subject: subjectMap[kind], html });
+}
+
+export function brandEmailTemplate(opts: {
+  title: string;
+  intro?: string;
+  rows?: { label: string; value: string }[];
+  cta?: { label: string; href: string };
+}) {
+  const { title, intro, rows = [], cta } = opts;
+  const brandColor = '#0ea5e9'; // resort-500-ish
+  const textMuted = '#64748b';
+  const border = '#e2e8f0';
+  return `
+  <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#f8fafc;padding:24px;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;margin:0 auto;background:#ffffff;border:1px solid ${border};border-radius:12px;overflow:hidden;">
+      <tr>
+        <td style="background:${brandColor};padding:16px 20px;color:#fff;">
+          <h1 style="margin:0;font-size:18px;">ResortifyPH</h1>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:20px 20px 8px 20px;">
+          <h2 style="margin:0 0 8px 0;font-size:18px;color:#0f172a;">${title}</h2>
+          ${intro ? `<p style="margin:0 0 12px 0;color:${textMuted};font-size:14px;">${intro}</p>` : ''}
+          ${rows.length ? `
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:8px;">
+              ${rows.map(r => `
+                <tr>
+                  <td style="padding:8px 0;color:${textMuted};font-size:12px;width:120px;">${r.label}</td>
+                  <td style="padding:8px 0;color:#0f172a;font-size:14px;">${r.value}</td>
+                </tr>
+              `).join('')}
+            </table>
+          ` : ''}
+          ${cta ? `
+            <div style="margin-top:16px;">
+              <a href="${cta.href}" style="display:inline-block;background:${brandColor};color:#fff;text-decoration:none;padding:10px 14px;border-radius:8px;font-weight:600;font-size:14px;">${cta.label}</a>
+            </div>
+          ` : ''}
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:16px 20px;color:${textMuted};font-size:12px;border-top:1px solid ${border};">
+          <div>Thanks,<br/>ResortifyPH</div>
+          <div style="margin-top:6px;">Need help? Reply to this email.</div>
+        </td>
+      </tr>
+    </table>
+  </div>`
 }
