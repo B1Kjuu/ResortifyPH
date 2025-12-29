@@ -36,6 +36,27 @@ const nextConfig = {
       // { protocol: 'https', hostname: 'lh3.googleusercontent.com', pathname: '/**' }
     ]
   },
+  async rewrites() {
+    // Workaround for some proxies/CDNs double-encoding dynamic segment brackets in Next chunk paths
+    // Example: "%5BbookingId%5D" becomes "%255BbookingId%255D" causing 404 and MIME errors.
+    return [
+      // Generic rule: fix any double-encoded brackets under app chunks
+      {
+        source: '/_next/static/chunks/app/:path*/%255B:segment%255D/:file*',
+        destination: '/_next/static/chunks/app/:path*/%5B:segment%5D/:file*'
+      },
+      // Specific chat booking route
+      {
+        source: '/_next/static/chunks/app/chat/%255BbookingId%255D/:file*',
+        destination: '/_next/static/chunks/app/chat/%5BbookingId%5D/:file*'
+      },
+      // Specific chat resort route
+      {
+        source: '/_next/static/chunks/app/chat/resort/%255BresortId%255D/:file*',
+        destination: '/_next/static/chunks/app/chat/resort/%5BresortId%5D/:file*'
+      }
+    ]
+  },
   async headers() {
     const isDev = process.env.NODE_ENV !== 'production'
     return [
