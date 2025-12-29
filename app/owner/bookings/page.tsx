@@ -27,9 +27,9 @@ export default function OwnerBookingsPage(){
     try {
       const { data, error } = await supabase
         .from('resorts')
-        .select('id, name')
+        .select('id, name, status')
         .eq('owner_id', userId)
-        .eq('status', 'approved')
+        .in('status', ['approved', 'pending']) // Include pending for testing
       if (!error && data) {
         setOwnerResorts(data)
       }

@@ -33,7 +33,19 @@ export default function ReviewForm({ resortId, bookingId, onSubmitted }: { resor
         p_content: content,
       })
       if (error) {
-        setError(error.message)
+        // Provide user-friendly error messages
+        const msg = error.message || ''
+        if (msg.includes('not_authenticated')) {
+          setError('Please sign in to submit a review.')
+        } else if (msg.includes('booking_not_eligible')) {
+          setError('Your booking must be confirmed and completed (past checkout date) to leave a review.')
+        } else if (msg.includes('duplicate_review')) {
+          setError('You have already reviewed this booking.')
+        } else if (msg.includes('invalid_rating')) {
+          setError('Please select a rating between 1 and 5 stars.')
+        } else {
+          setError(msg || 'Failed to submit review. Please try again.')
+        }
       } else {
         setRating(5); setTitle(''); setContent('')
         onSubmitted()

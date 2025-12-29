@@ -331,11 +331,24 @@ export default function EditResort(){
 
         {/* Advanced Pricing Mode */}
         {pricingMode === 'advanced' && (
-          <PricingConfigurator
-            value={pricingConfig}
-            onChange={setPricingConfig}
-            capacity={typeof capacity === 'number' ? capacity : undefined}
-          />
+          <div className="space-y-4">
+            <Link
+              href={`/owner/pricing-settings/${resortId}`}
+              className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-resort-500 to-blue-500 text-white rounded-xl font-semibold hover:from-resort-600 hover:to-blue-600 transition-all shadow-lg hover:shadow-xl"
+            >
+              <FiDollarSign className="w-5 h-5" />
+              Open Advanced Pricing Settings
+              <span className="text-sm opacity-80">(Time Slots, Guest Tiers, Pricing Matrix)</span>
+            </Link>
+            <p className="text-sm text-center text-slate-500">
+              Configure custom time slots, guest tiers, and set prices for each combination.
+            </p>
+            <PricingConfigurator
+              value={pricingConfig}
+              onChange={setPricingConfig}
+              capacity={typeof capacity === 'number' ? capacity : undefined}
+            />
+          </div>
         )}
 
         {/* Guest Capacity (shown in both modes) */}

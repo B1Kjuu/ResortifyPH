@@ -61,6 +61,16 @@ export default function ResortsPage(){
   const [showTotalPrice, setShowTotalPrice] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [filtersOpen, setFiltersOpen] = useState<boolean>(false)
+  const [showScrollTop, setShowScrollTop] = useState(false)
+
+  // Scroll to top handler
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
   
   // Airbnb-style categories
   const categories = [
@@ -378,17 +388,18 @@ export default function ResortsPage(){
   }, [position, showNearby, resorts])
 
   return (
-    <div className="w-full min-h-screen bg-white">
-      {/* Compact Header */}
-      <div className="w-full border-b border-slate-200 bg-white sticky top-0 z-40">
-        <div className="px-6 sm:px-10 lg:px-20 py-3">
-          <div className="flex items-center justify-between gap-4">
+    <div className="w-full min-h-screen bg-white overflow-x-hidden">
+      {/* Compact Header - Sticky */}
+      <div className="w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md sticky top-14 sm:top-16 z-40">
+        <div className="px-4 sm:px-6 lg:px-8 xl:px-12 py-3 sm:py-4 max-w-[1800px] mx-auto">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Explore Resorts</h1>
-              <p className="text-sm text-slate-500 mt-0.5">Discover amazing stays across the Philippines</p>
-              <p className="text-xs text-resort-600 mt-0.5">Find private staycations and family-friendly resort getaways.</p>
-              {/* Results summary (kept prominent for tests) */}
-              <p className="text-xs text-slate-600 mt-1" aria-live="polite" data-testid="results-count">Showing {filteredResorts.length} resorts</p>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900">Explore Resorts</h1>
+              <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Discover amazing stays across the Philippines</p>
+              {/* Results summary */}
+              <p className="text-xs text-resort-600 font-medium mt-1" aria-live="polite" data-testid="results-count">
+                {loading ? 'Loading...' : `${filteredResorts.length} resort${filteredResorts.length !== 1 ? 's' : ''} found`}
+              </p>
             </div>
             {/* View Mode Toggle - Desktop */}
             <div className="hidden md:flex items-center gap-1 bg-slate-100 rounded-xl p-1">
@@ -407,100 +418,113 @@ export default function ResortsPage(){
             </div>
           </div>
           {/* Mobile View Mode Toggle */}
-          <div className="md:hidden mt-3 flex items-center gap-1 bg-slate-100 rounded-xl p-1 w-full">
-            <button onClick={() => setViewMode('grid')} className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${viewMode === 'grid' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>Grid</button>
-            <button onClick={() => setViewMode('split')} className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${viewMode === 'split' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>Split</button>
-            <button onClick={() => setViewMode('map')} className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${viewMode === 'map' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>Map</button>
+          <div className="md:hidden mt-2 flex items-center gap-1 bg-slate-100 rounded-xl p-1 w-full">
+            <button onClick={() => setViewMode('grid')} className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all ${viewMode === 'grid' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'}`}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z"/></svg>
+              Grid
+            </button>
+            <button onClick={() => setViewMode('split')} className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all ${viewMode === 'split' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'}`}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+              Split
+            </button>
+            <button onClick={() => setViewMode('map')} className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all ${viewMode === 'map' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'}`}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7"/></svg>
+              Map
+            </button>
           </div>
         </div>
 
-        {/* Category Chips - Airbnb Style */}
+        {/* Category Chips - Horizontal Scroll with hidden scrollbar */}
         <div className="border-t border-slate-100">
-          <div className="px-6 sm:px-10 lg:px-20">
-            <div className="flex items-center gap-2 py-3 overflow-x-auto scrollbar-hide">
-              <button onClick={() => { setSelectedCategory(null); setSelectedType('all') }} className={`flex-shrink-0 flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all ${!selectedCategory ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}>
-                <FaUmbrellaBeach className="w-5 h-5" />
-                <span className="text-xs font-medium whitespace-nowrap">All</span>
+          <div className="px-4 sm:px-6 lg:px-8 xl:px-12 max-w-[1800px] mx-auto">
+            <div className="flex items-center gap-1 sm:gap-2 py-2 sm:py-3 overflow-x-auto scrollbar-hide">
+              <button onClick={() => { setSelectedCategory(null); setSelectedType('all') }} className={`flex-shrink-0 flex flex-col items-center gap-0.5 sm:gap-1 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl transition-all ${!selectedCategory ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}>
+                <FaUmbrellaBeach className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-[10px] sm:text-xs font-medium whitespace-nowrap">All</span>
               </button>
               {categories.map((cat) => (
                 <button key={cat.id} onClick={() => {
                   setSelectedCategory(cat.id)
                   if (['beach','mountain','nature','city','countryside','staycation','private','villa','glamping','farmstay','spa'].includes(cat.id)) setSelectedType(cat.id); else setSelectedType('all')
-                }} className={`flex-shrink-0 flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all ${selectedCategory === cat.id ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`} aria-label={cat.id === 'pool' ? 'Amazing swim spots' : undefined}>
-                  <span className="text-xl">{cat.icon}</span>
-                  <span className="text-xs font-medium whitespace-nowrap flex items-center gap-1">
+                }} className={`flex-shrink-0 flex flex-col items-center gap-0.5 sm:gap-1 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl transition-all ${selectedCategory === cat.id ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`} aria-label={cat.id === 'pool' ? 'Amazing swim spots' : undefined}>
+                  <span className="text-base sm:text-xl">{cat.icon}</span>
+                  <span className="text-[10px] sm:text-xs font-medium whitespace-nowrap flex items-center gap-1">
                     {cat.label}
-                    {typeAccentBg[cat.id] && (<span className={`inline-block w-1.5 h-1.5 rounded-full ${typeAccentBg[cat.id]}`} />)}
+                    {typeAccentBg[cat.id] && (<span className={`hidden sm:inline-block w-1.5 h-1.5 rounded-full ${typeAccentBg[cat.id]}`} />)}
                   </span>
                 </button>
               ))}
-              {/* Desktop type select */}
-              <div className="hidden md:block flex-shrink-0 pl-4 border-l border-slate-200 ml-auto">
-                <Select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} ariaLabel="Filter by resort type" className="flex-shrink-0 min-w-[140px]">
-                  <option value="all">All Types</option>
-                  {RESORT_TYPES.map((t) => (<option key={t.id} value={t.id}>{t.label}</option>))}
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          {/* Compact Filters Bar */}
-          <div className="overflow-x-auto overflow-y-visible scrollbar-hide">
-            <div className="px-6 sm:px-10 lg:px-20 flex items-center gap-3 mb-6 flex-nowrap md:flex-wrap">
-              {/* Geolocation warning */}
-              {geoError && (
-                <div className="mb-4 flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
-                  <span>⚠️</span>
-                  <span>{geoError}. Please enable location in your browser.</span>
-                  <button onClick={() => requestLocation()} className="ml-auto text-amber-600 hover:text-amber-800 underline text-xs">Retry</button>
-                </div>
-              )}
-              {/* Near Me */}
-              {mounted && geoSupported && (
-                <button onClick={() => { if (!showNearby) { setShowNearby(true); requestLocation() } else { setShowNearby(false) } }} disabled={geoLoading} className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${showNearby && position ? 'bg-emerald-500 text-white border-emerald-500' : geoLoading ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-white text-slate-700 border-slate-300 hover:border-emerald-400 hover:text-emerald-600'}`}>
-                  {geoLoading ? (<div className="w-4 h-4 border-2 border-slate-300 border-t-transparent rounded-full animate-spin" />) : (
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"/></svg>
-                  )}
-                  {geoLoading ? 'Locating...' : (<span className="inline-flex items-center gap-1"><span>Near Me</span>{showNearby && position ? <FiCheck className="w-4 h-4" /> : null}</span>)}
-                </button>
-              )}
-              {/* Search */}
-              <div className="relative md:flex-1 flex-shrink-0 w-64 min-w-[200px] max-w-md">
-                <svg className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                <input type="text" placeholder="Search resorts..." aria-label="Search resorts" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 bg-white" />
-              </div>
-              {/* Location */}
-              <div className="w-40 flex-shrink-0">
-                <LocationCombobox value={selectedLocation === 'all' ? '' : selectedLocation} onChange={(province) => setSelectedLocation(province || 'all')} placeholder="Location" ariaLabel="Filter by location" variant="hero" />
-              </div>
-              {/* Type (mobile-only to avoid duplicate accessible labels with desktop select) */}
-              <Select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} ariaLabel="Filter by resort type" className="flex-shrink-0 min-w-[140px] md:hidden">
-                <option value="all">All Types</option>
-                {RESORT_TYPES.map((t) => (<option key={t.id} value={t.id}>{t.label}</option>))}
-              </Select>
-              {/* Guests */}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <input type="number" inputMode="numeric" min={1} value={guestCount === 'all' ? '' : guestCount} onChange={(e) => { const raw = e.target.value; if (raw === '') { setGuestCount('all'); return } const n = Number(raw); setGuestCount(Number.isFinite(n) && n > 0 ? String(n) : 'all') }} placeholder="Guests" aria-label="Filter by guest count" className="px-3 py-2 h-10 min-w-[110px] border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white" />
-                {guestCount !== 'all' && (<button type="button" onClick={() => setGuestCount('all')} className="px-2 py-2 h-10 rounded-lg text-sm text-slate-700 border border-slate-300 hover:bg-slate-50" aria-label="Clear guest filter">Clear</button>)}
-              </div>
-              {/* Sort */}
-              <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} ariaLabel="Sort resorts" className="flex-shrink-0 min-w-[110px]">
-                <option value="newest">Newest</option>
-                <option value="price-asc">Price ↑</option>
-                <option value="price-desc">Price ↓</option>
-              </Select>
-              {/* Total toggle */}
-              <button type="button" onClick={() => setShowTotalPrice(v => !v)} className={`flex-shrink-0 px-3 py-2 h-10 min-w-[90px] rounded-lg text-sm font-medium border transition-colors ${showTotalPrice ? 'bg-resort-600 text-white border-resort-600' : 'bg-white text-slate-700 border-slate-300 hover:border-resort-400'}`} aria-pressed={showTotalPrice}>Total</button>
-              {/* Clear All */}
-              <button type="button" onClick={() => { setSearchTerm(''); setSelectedType('all'); setSelectedLocation('all'); setGuestCount('all'); setSelectedAmenities([]); setSortBy('newest'); setPriceRange(priceBounds); setDateFrom(null); setDateTo(null) }} className="flex-shrink-0 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors">Clear All</button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="px-6 sm:px-10 lg:px-20">
+      {/* Filters Section - Below sticky header */}
+      <div className="w-full bg-slate-50 border-b border-slate-200">
+        <div className="px-4 sm:px-6 lg:px-8 xl:px-12 max-w-[1800px] mx-auto py-3 sm:py-4">
+          {/* Geolocation warning */}
+          {geoError && (
+            <div className="mb-3 flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs sm:text-sm text-amber-700">
+              <span>⚠️</span>
+              <span className="flex-1">{geoError}. Please enable location.</span>
+              <button onClick={() => requestLocation()} className="text-amber-600 hover:text-amber-800 underline text-xs">Retry</button>
+            </div>
+          )}
+          
+          {/* Filter Controls - Stacked on mobile, inline on desktop */}
+          <div className="flex flex-col gap-3">
+            {/* Row 1: Search + Location + Near Me */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+              {/* Near Me */}
+              {mounted && geoSupported && (
+                <button onClick={() => { if (!showNearby) { setShowNearby(true); requestLocation() } else { setShowNearby(false) } }} disabled={geoLoading} className={`flex-shrink-0 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all border ${showNearby && position ? 'bg-emerald-500 text-white border-emerald-500' : geoLoading ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-white text-slate-700 border-slate-300 hover:border-emerald-400 hover:text-emerald-600'}`}>
+                  {geoLoading ? (<div className="w-4 h-4 border-2 border-slate-300 border-t-transparent rounded-full animate-spin" />) : (
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"/></svg>
+                  )}
+                  <span>{geoLoading ? 'Locating...' : 'Near Me'}</span>
+                  {showNearby && position && <FiCheck className="w-4 h-4" />}
+                </button>
+              )}
+              {/* Search */}
+              <div className="relative flex-1 min-w-0">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <input type="text" placeholder="Search resorts..." aria-label="Search resorts" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 bg-white" />
+              </div>
+              {/* Location */}
+              <div className="flex-1 sm:flex-initial sm:w-48">
+                <LocationCombobox value={selectedLocation === 'all' ? '' : selectedLocation} onChange={(province) => setSelectedLocation(province || 'all')} placeholder="Location" ariaLabel="Filter by location" variant="hero" />
+              </div>
+            </div>
+            
+            {/* Row 2: Type + Guests + Sort + Actions */}
+            <div className="flex flex-wrap gap-2">
+              {/* Type */}
+              <Select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} ariaLabel="Filter by resort type" className="flex-1 sm:flex-initial min-w-[120px]">
+                <option value="all">All Types</option>
+                {RESORT_TYPES.map((t) => (<option key={t.id} value={t.id}>{t.label}</option>))}
+              </Select>
+              {/* Guests */}
+              <div className="flex items-center gap-1">
+                <input type="number" inputMode="numeric" min={1} value={guestCount === 'all' ? '' : guestCount} onChange={(e) => { const raw = e.target.value; if (raw === '') { setGuestCount('all'); return } const n = Number(raw); setGuestCount(Number.isFinite(n) && n > 0 ? String(n) : 'all') }} placeholder="Guests" aria-label="Filter by guest count" className="px-3 py-2.5 w-20 sm:w-24 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white" />
+              </div>
+              {/* Sort */}
+              <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} ariaLabel="Sort resorts" className="flex-1 sm:flex-initial min-w-[100px]">
+                <option value="newest">Newest</option>
+                <option value="price-asc">Price ↑</option>
+                <option value="price-desc">Price ↓</option>
+              </Select>
+              {/* Total toggle */}
+              <button type="button" onClick={() => setShowTotalPrice(v => !v)} className={`flex-shrink-0 px-3 py-2.5 rounded-xl text-sm font-medium border transition-colors ${showTotalPrice ? 'bg-resort-600 text-white border-resort-600' : 'bg-white text-slate-700 border-slate-300 hover:border-resort-400'}`} aria-pressed={showTotalPrice}>Total</button>
+              {/* Clear All */}
+              <button type="button" onClick={() => { setSearchTerm(''); setSelectedType('all'); setSelectedLocation('all'); setGuestCount('all'); setSelectedAmenities([]); setSortBy('newest'); setPriceRange(priceBounds); setDateFrom(null); setDateTo(null) }} className="flex-shrink-0 px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 rounded-xl font-medium transition-colors border border-transparent hover:border-red-200">Clear</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-4 sm:px-6 lg:px-8 xl:px-12 max-w-[1800px] mx-auto py-4 sm:py-6 pb-8 sm:pb-12">
         {/* Expandable Filters */}
-        <details className="mb-6 group" open={filtersOpen}>
+        <details className="mb-4 sm:mb-6 group" open={filtersOpen}>
           <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-600 hover:text-slate-900 select-none">
             <svg className="w-4 h-4 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
             More filters (dates, price, amenities)
@@ -536,16 +560,30 @@ export default function ResortsPage(){
           </div>
         </details>
 
-        {/* Results summary duplicate */}
+        {/* Results summary */}
         <div className="mb-3"><p className="text-sm text-slate-600" aria-live="polite">Showing {filteredResorts.length} resorts</p></div>
 
         {/* Resorts Display */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">{[...Array(12)].map((_, i) => <SkeletonCard key={i} />)}</div>
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">{[...Array(12)].map((_, i) => <SkeletonCard key={i} />)}</div>
         ) : filteredResorts.length === 0 ? (
-          <div className="text-center py-16"><div className="flex justify-center mb-4"><FiSearch className="w-12 h-12 text-slate-600" /></div><h3 className="text-2xl font-bold text-slate-900 mb-2">No resorts found</h3><p className="text-slate-600 mb-6">Try adjusting your search or filters</p></div>
+          <div className="text-center py-12 sm:py-16">
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-slate-100 flex items-center justify-center">
+                <FiSearch className="w-8 h-8 sm:w-10 sm:h-10 text-slate-400" />
+              </div>
+            </div>
+            <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">No resorts found</h3>
+            <p className="text-slate-600 mb-6 text-sm sm:text-base">Try adjusting your search or filters</p>
+            <button
+              onClick={() => { setSearchTerm(''); setSelectedType('all'); setSelectedLocation('all'); setGuestCount('all'); setSelectedAmenities([]); setSortBy('newest'); setPriceRange(priceBounds); setDateFrom(null); setDateTo(null); setSelectedCategory(null) }}
+              className="px-6 py-2.5 bg-resort-600 hover:bg-resort-700 text-white rounded-xl font-medium transition-colors"
+            >
+              Clear all filters
+            </button>
+          </div>
         ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
             {filteredResorts.map((resort) => (
               <div key={resort.id} className="relative">
                 {showNearby && position && resort.distance !== null && (
@@ -600,6 +638,19 @@ export default function ResortsPage(){
             <span>Show list</span>
           </button>
         </div>
+      )}
+
+      {/* Scroll to Top Button */}
+      {mounted && showScrollTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="fixed bottom-6 right-6 z-50 w-12 h-12 bg-resort-600 hover:bg-resort-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center group"
+          aria-label="Scroll to top"
+        >
+          <svg className="w-5 h-5 transition-transform group-hover:-translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+          </svg>
+        </button>
       )}
     </div>
   )

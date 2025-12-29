@@ -11,10 +11,11 @@ import { toast } from 'sonner'
 import DateRangePicker from '../../../components/DateRangePicker'
 import LocationCombobox from '../../../components/LocationCombobox'
 import BookingTypeSelector from '../../../components/BookingTypeSelector'
+import TimeSlotCalendar from '../../../components/TimeSlotCalendar'
 import { format } from 'date-fns'
 import ChatLink from '../../../components/ChatLink'
 import DisclaimerBanner from '../../../components/DisclaimerBanner'
-import { FiArrowLeft, FiMapPin, FiDollarSign, FiUsers, FiUser, FiTag, FiCheck } from 'react-icons/fi'
+import { FiArrowLeft, FiMapPin, FiDollarSign, FiUsers, FiUser, FiTag, FiCheck, FiCalendar } from 'react-icons/fi'
 import { FaUmbrellaBeach, FaStar } from 'react-icons/fa'
 import { 
   BookingType, 
@@ -22,6 +23,7 @@ import {
   getDayType, 
   getGuestTier,
   DEFAULT_DOWNPAYMENT_PERCENTAGE,
+  AvailableTimeSlot,
 } from '../../../lib/bookingTypes'
 import type { ResortPricingConfig } from '../../../lib/validations'
 
@@ -47,6 +49,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
   const [bookedDates, setBookedDates] = useState<string[]>([])
   const [selectedRange, setSelectedRange] = useState<{ from: Date | undefined; to: Date | undefined }>({ from: undefined, to: undefined })
   const [activeImage, setActiveImage] = useState(0)
+  const [showLightbox, setShowLightbox] = useState(false)
   const [guests, setGuests] = useState(1)
   const [childrenCount, setChildrenCount] = useState(0)
   const [petsCount, setPetsCount] = useState(0)
@@ -60,6 +63,11 @@ export default function ResortDetail({ params }: { params: { id: string } }){
   const [latestBookingId, setLatestBookingId] = useState<string | null>(null)
   const [reviews, setReviews] = useState<any[]>([])
   const [eligibleReviewBookingId, setEligibleReviewBookingId] = useState<string | null>(null)
+  // New state for advanced time-slot calendar
+  const [useTimeSlotCalendar, setUseTimeSlotCalendar] = useState(false)
+  const [dynamicPrice, setDynamicPrice] = useState<number | null>(null)
+  const [dynamicPriceLoading, setDynamicPriceLoading] = useState(false)
+  const [selectedDbSlotId, setSelectedDbSlotId] = useState<string | null>(null)
   const bookingCardRef = useRef<HTMLDivElement | null>(null)
   const router = useRouter()
 
@@ -105,6 +113,11 @@ export default function ResortDetail({ params }: { params: { id: string } }){
         }
 
         setResort(resortData)
+        
+        // Check if resort uses advanced pricing (database-backed time slots)
+        if (resortData.use_advanced_pricing) {
+          setUseTimeSlotCalendar(true)
+        }
 
         // Get owner info - with error handling
         if (resortData.owner_id) {
@@ -248,6 +261,38 @@ export default function ResortDetail({ params }: { params: { id: string } }){
     return () => { sub.unsubscribe(); if (timer) clearTimeout(timer) }
   }, [params.id])
 
+  // Fetch dynamic price when using TimeSlotCalendar and a slot is selected
+  useEffect(() => {
+    async function fetchDynamicPrice() {
+      if (!useTimeSlotCalendar || !selectedSingleDate || !selectedDbSlotId || !params.id) {
+        setDynamicPrice(null)
+        return
+      }
+      
+      setDynamicPriceLoading(true)
+      try {
+        const dateStr = format(selectedSingleDate, 'yyyy-MM-dd')
+        const response = await fetch(
+          `/api/resorts/${params.id}/calculate-price?date=${dateStr}&slot_id=${selectedDbSlotId}&guest_count=${guests}`
+        )
+        
+        if (response.ok) {
+          const data = await response.json()
+          setDynamicPrice(data.totalPrice)
+        } else {
+          setDynamicPrice(null)
+        }
+      } catch (err) {
+        console.error('Failed to fetch price:', err)
+        setDynamicPrice(null)
+      } finally {
+        setDynamicPriceLoading(false)
+      }
+    }
+    
+    fetchDynamicPrice()
+  }, [useTimeSlotCalendar, selectedSingleDate, selectedDbSlotId, guests, params.id])
+
   function handleQuickExplore(province: string | null) {
     const selectedProvince = province || ''
     setQuickExploreProvince(selectedProvince)
@@ -320,8 +365,13 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
     const provinceInfo = getProvinceInfo(resort?.location)
     
-    // Get time slot details if selected
+    // Get time slot details if selected (for legacy time slots)
     const timeSlotDetails = selectedTimeSlot ? getTimeSlotById(selectedTimeSlot) : null
+    
+    // Determine which pricing mode to use
+    const isAdvancedPricing = useTimeSlotCalendar && selectedDbSlotId && dynamicPrice
+    const finalPrice = isAdvancedPricing ? dynamicPrice : totalCost
+    const finalSlotId = isAdvancedPricing ? selectedDbSlotId : selectedTimeSlot
 
     let newId: string | null = null
     let error: any = null
@@ -336,10 +386,10 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       p_resort_region_name: resort.region_name ?? provinceInfo?.regionName ?? null,
       // New booking type fields
       p_booking_type: bookingType || stayType,
-      p_time_slot_id: selectedTimeSlot,
+      p_time_slot_id: finalSlotId,
       p_check_in_time: timeSlotDetails?.startTime ?? null,
       p_check_out_time: timeSlotDetails?.endTime ?? null,
-      p_total_price: totalCost,
+      p_total_price: finalPrice,
       p_downpayment_amount: downpaymentAmount,
       // Legacy fields
       p_stay_type: stayType,
@@ -365,10 +415,10 @@ export default function ResortDetail({ params }: { params: { id: string } }){
           date_to: format(bookingDateTo, 'yyyy-MM-dd'),
           guest_count: guests,
           booking_type: bookingType || null,
-          time_slot_id: selectedTimeSlot || null,
+          time_slot_id: finalSlotId || null,
           check_in_time: timeSlotDetails?.startTime ?? null,
           check_out_time: timeSlotDetails?.endTime ?? null,
-          total_price: totalCost,
+          total_price: finalPrice,
           downpayment_amount: downpaymentAmount,
           children_count: childrenCount,
           pets_count: petsCount,
@@ -389,10 +439,17 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
     if (error) {
       const msg = (error.message || '').toLowerCase()
-      const friendly = msg.includes('overlap') || msg.includes('check_violation')
-        ? 'Your selected dates overlap with an existing booking.'
-        : error.message
-      toast.error(`Error: ${friendly}`)
+      let friendly = error.message
+      
+      if (msg.includes('overlap') || msg.includes('check_violation')) {
+        friendly = 'Your selected dates overlap with an existing booking.'
+      } else if (msg.includes('duplicate_pending')) {
+        friendly = 'You already have a pending booking request for this resort. Please wait for the owner to respond or cancel your existing request before making a new one.'
+      } else if (msg.includes('self_booking') || msg.includes('own_resort')) {
+        friendly = 'You cannot book your own resort.'
+      }
+      
+      toast.error(friendly)
     } else {
       // Create chat and send automatic welcome message
       if (newId) {
@@ -543,83 +600,117 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
   return (
     <>
-    <div className="w-full min-h-screen bg-gradient-to-b from-resort-50 to-white px-4 sm:px-6 lg:px-10 py-10">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <Link href="/resorts" className="text-sm text-resort-500 font-semibold inline-flex items-center gap-1 hover:text-resort-600">
+    <div className="w-full min-h-screen bg-gradient-to-b from-resort-50 to-white px-4 sm:px-6 lg:px-10 py-6 sm:py-10">
+      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
+        <Link href="/resorts" className="text-xs sm:text-sm text-resort-500 font-semibold inline-flex items-center gap-1 hover:text-resort-600">
           <FiArrowLeft aria-hidden className="inline-block" /> Back to Resorts
         </Link>
 
-        <div className="grid lg:grid-cols-[1.55fr_1fr] gap-6">
+        <div className="grid lg:grid-cols-[1.55fr_1fr] gap-4 sm:gap-6">
           {/* Main Content */}
           <div className="space-y-4">
             {/* Gallery */}
-            <div className="bg-white rounded-2xl p-3 shadow-sm border border-slate-100 space-y-3">
-              <div className="relative w-full h-[320px] sm:h-[420px] rounded-xl overflow-hidden bg-gradient-to-br from-resort-200 to-resort-300">
+            <div className="bg-white rounded-xl sm:rounded-2xl p-2 sm:p-3 shadow-card border border-slate-100 space-y-2 sm:space-y-3">
+              {/* Main Image - Clickable */}
+              <button
+                type="button"
+                onClick={() => galleryImages.length > 0 && setShowLightbox(true)}
+                className="relative w-full h-[240px] sm:h-[320px] lg:h-[420px] rounded-lg sm:rounded-xl overflow-hidden bg-gradient-to-br from-resort-200 to-resort-300 cursor-pointer group"
+              >
                 {galleryImages.length > 0 ? (
-                  <Image
-                    src={galleryImages[activeImage]}
-                    alt={resort.name}
-                    fill
-                    className="object-cover"
-                    sizes="(min-width: 1024px) 65vw, 100vw"
-                    priority
-                    unoptimized
-                  />
+                  <>
+                    <Image
+                      src={galleryImages[activeImage]}
+                      alt={resort.name}
+                      fill
+                      className="object-cover transition-transform group-hover:scale-105"
+                      sizes="(min-width: 1024px) 65vw, 100vw"
+                      priority
+                      unoptimized
+                    />
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium text-slate-800 shadow-lg flex items-center gap-2">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                        </svg>
+                        View all {galleryImages.length} photos
+                      </div>
+                    </div>
+                    {/* Photo counter badge */}
+                    <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      {activeImage + 1} / {galleryImages.length}
+                    </div>
+                  </>
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-6xl">
+                  <div className="w-full h-full flex items-center justify-center text-4xl sm:text-6xl">
                     <FaUmbrellaBeach aria-hidden className="text-white/80" />
                   </div>
                 )}
-                <div className="absolute top-4 right-4">
-                  <span className={`px-3 py-1.5 rounded-full text-xs font-semibold shadow ${
+                <div className="absolute top-3 right-3 sm:top-4 sm:right-4">
+                  <span className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-semibold shadow ${
                     resort.status === 'approved' ? 'bg-green-500 text-white' : 
                     resort.status === 'pending' ? 'bg-yellow-500 text-white' : 'bg-red-500 text-white'
                   }`}>
                     {resort.status === 'approved' ? 'Available' : resort.status.charAt(0).toUpperCase() + resort.status.slice(1)}
                   </span>
                 </div>
-              </div>
+              </button>
 
               {galleryImages.length > 1 && (
                 <>
                   {/* Mobile: horizontal scroll thumbnails */}
-                  <div className="sm:hidden flex gap-2 overflow-x-auto snap-x snap-mandatory py-1">
-                    {galleryImages.slice(0, 8).map((img: string, idx: number) => (
+                  <div className="sm:hidden flex gap-1.5 overflow-x-auto snap-x snap-mandatory py-1 -mx-1 px-1 scrollbar-hide">
+                    {galleryImages.map((img: string, idx: number) => (
                       <button
                         key={idx}
                         type="button"
                         onClick={() => setActiveImage(idx)}
-                        className={`relative flex-shrink-0 w-24 h-16 rounded-lg overflow-hidden border snap-start fade-in-up ${activeImage === idx ? 'border-resort-500 ring-2 ring-resort-200' : 'border-slate-200'}`}
+                        className={`relative flex-shrink-0 w-16 h-12 rounded-lg overflow-hidden border snap-start fade-in-up ${activeImage === idx ? 'border-resort-500 ring-2 ring-resort-200' : 'border-slate-200 hover:border-slate-300'}`}
                         style={{ animationDelay: `${idx * 60}ms` }}
                         aria-label={`Show photo ${idx + 1}`}
                       >
-                        <Image src={img} alt={`Photo ${idx + 1}`} fill className="object-cover" sizes="96px" />
+                        <Image src={img} alt={`Photo ${idx + 1}`} fill className="object-cover" sizes="64px" unoptimized />
                       </button>
                     ))}
                   </div>
-                  {/* Desktop: grid thumbnails */}
-                  <div className="hidden sm:grid grid-cols-5 gap-2">
-                    {galleryImages.slice(0, 5).map((img: string, idx: number) => (
+                  {/* Desktop: grid thumbnails - show all images */}
+                  <div className="hidden sm:grid grid-cols-5 md:grid-cols-6 gap-2">
+                    {galleryImages.slice(0, 11).map((img: string, idx: number) => (
                       <button
                         key={idx}
                         type="button"
                         onClick={() => setActiveImage(idx)}
-                        className={`relative h-18 rounded-lg overflow-hidden border fade-in-up ${activeImage === idx ? 'border-resort-500 ring-2 ring-resort-200' : 'border-slate-200'}`}
+                        className={`relative h-16 md:h-20 rounded-lg overflow-hidden border fade-in-up ${activeImage === idx ? 'border-resort-500 ring-2 ring-resort-200' : 'border-slate-200 hover:border-slate-300'}`}
                         style={{ animationDelay: `${idx * 80}ms` }}
                         aria-label={`Show photo ${idx + 1}`}
                       >
-                        <Image src={img} alt={`Photo ${idx + 1}`} fill className="object-cover" sizes="120px" />
+                        <Image src={img} alt={`Photo ${idx + 1}`} fill className="object-cover" sizes="120px" unoptimized />
                       </button>
                     ))}
+                    {/* Show more button if > 11 images */}
+                    {galleryImages.length > 11 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowLightbox(true)}
+                        className="relative h-16 md:h-20 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 hover:bg-slate-200 transition flex items-center justify-center"
+                        aria-label={`View all ${galleryImages.length} photos`}
+                      >
+                        <span className="text-sm font-semibold text-slate-600">+{galleryImages.length - 11}</span>
+                      </button>
+                    )}
                   </div>
                 </>
               )}
             </div>
 
             {/* Overview */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-5">
+            <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-card border border-slate-100 space-y-4 sm:space-y-5">
               <div className="space-y-2">
-                <h1 className="text-3xl font-bold text-resort-900">{resort.name}</h1>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-resort-900">{resort.name}</h1>
                 {/* Average Rating Badge */}
                 {reviews && reviews.length > 0 && (
                   <div className="flex items-center gap-2">
@@ -632,22 +723,22 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                     <span className="text-xs text-slate-600">{reviews.length} review{reviews.length !== 1 ? 's' : ''}</span>
                   </div>
                 )}
-                <div className="flex items-center gap-2 text-base text-slate-600">
+                <div className="flex items-center gap-2 text-sm sm:text-base text-slate-600">
                   <FiMapPin aria-hidden />
                   <span>{resort.location}</span>
                 </div>
               </div>
 
-              <div className="grid sm:grid-cols-3 gap-3">
-                <div className="flex items-center gap-3 bg-resort-50 p-4 rounded-xl">
-                  <FiDollarSign aria-hidden className="text-xl" />
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-1 sm:gap-3 bg-resort-50 p-2.5 sm:p-4 rounded-xl text-center sm:text-left">
+                  <FiDollarSign aria-hidden className="text-lg sm:text-xl text-resort-600" />
                   <div>
-                    <p className="text-xs text-slate-600">Price per night</p>
-                    <p className="text-lg font-bold text-resort-900">₱{resort.price?.toLocaleString()}</p>
+                    <p className="text-[10px] sm:text-xs text-slate-600">Per night</p>
+                    <p className="text-sm sm:text-lg font-bold text-resort-900">₱{resort.price?.toLocaleString()}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 bg-resort-50 p-4 rounded-xl">
-                  <FiUsers aria-hidden className="text-xl" />
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-1 sm:gap-3 bg-resort-50 p-2.5 sm:p-4 rounded-xl text-center sm:text-left">
+                  <FiUsers aria-hidden className="text-lg sm:text-xl text-resort-600" />
                   <div>
                     <p className="text-xs text-slate-600">Capacity</p>
                     <p className="text-lg font-bold text-resort-900">{resort.capacity} guests</p>
@@ -793,10 +884,10 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
           {/* Booking Card */}
           <div className="lg:col-span-1">
-            <div ref={bookingCardRef} className="bg-white rounded-2xl p-5 shadow-md border border-slate-100 lg:sticky lg:top-4 space-y-4">
+            <div ref={bookingCardRef} className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-card border border-slate-100 lg:sticky lg:top-4 space-y-3 sm:space-y-4">
               <div className="flex items-baseline justify-between">
-                <h2 className="text-xl font-bold text-resort-900">Book Your Stay</h2>
-                <span className="text-sm text-slate-500">Flexible dates</span>
+                <h2 className="text-lg sm:text-xl font-bold text-resort-900">Book Your Stay</h2>
+                <span className="text-xs sm:text-sm text-slate-500">Flexible dates</span>
               </div>
 
               {/* New Booking Type Selector */}
@@ -862,17 +953,69 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    {bookingType === 'daytour' ? 'Select Date' : 'Select Dates'}
+                  <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                    <FiCalendar className="w-4 h-4" />
+                    {useTimeSlotCalendar ? 'Select Date & Time Slot' : (bookingType === 'daytour' ? 'Select Date' : 'Select Dates')}
                   </label>
-                  <DateRangePicker 
-                    bookedDates={bookedDates}
-                    onSelectRange={setSelectedRange}
-                    selectedRange={selectedRange}
-                    singleDateMode={bookingType === 'daytour'}
-                    onSelectSingleDate={setSelectedSingleDate}
-                    selectedSingleDate={selectedSingleDate}
-                  />
+                  
+                  {/* Toggle between calendar modes if resort has advanced pricing */}
+                  {resort?.use_advanced_pricing && (
+                    <div className="flex gap-2 mb-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUseTimeSlotCalendar(true)
+                          setSelectedRange({ from: undefined, to: undefined })
+                        }}
+                        className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${
+                          useTimeSlotCalendar 
+                            ? 'bg-resort-500 text-white border-resort-500' 
+                            : 'bg-white text-slate-600 border-slate-200 hover:border-resort-300'
+                        }`}
+                      >
+                        Time Slot Booking
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUseTimeSlotCalendar(false)
+                          setSelectedDbSlotId(null)
+                          setDynamicPrice(null)
+                        }}
+                        className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${
+                          !useTimeSlotCalendar 
+                            ? 'bg-resort-500 text-white border-resort-500' 
+                            : 'bg-white text-slate-600 border-slate-200 hover:border-resort-300'
+                        }`}
+                      >
+                        Date Range
+                      </button>
+                    </div>
+                  )}
+                  
+                  {/* TimeSlotCalendar for advanced pricing */}
+                  {useTimeSlotCalendar ? (
+                    <TimeSlotCalendar
+                      resortId={params.id}
+                      selectedDate={selectedSingleDate ?? null}
+                      onSelectDate={(date) => {
+                        setSelectedSingleDate(date)
+                        setSelectedDbSlotId(null) // Reset slot when date changes
+                      }}
+                      selectedSlotId={selectedDbSlotId}
+                      onSelectSlot={(slotId) => setSelectedDbSlotId(slotId)}
+                      showSlotSelector={true}
+                    />
+                  ) : (
+                    <DateRangePicker 
+                      bookedDates={bookedDates}
+                      onSelectRange={setSelectedRange}
+                      selectedRange={selectedRange}
+                      singleDateMode={bookingType === 'daytour'}
+                      onSelectSingleDate={setSelectedSingleDate}
+                      selectedSingleDate={selectedSingleDate}
+                    />
+                  )}
                 </div>
 
                 <div className="space-y-1">
@@ -914,7 +1057,38 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                 </div>
               </div>
 
-              {nights > 0 && (
+              {/* Pricing display - Dynamic for TimeSlotCalendar, calculated for legacy */}
+              {useTimeSlotCalendar && selectedSingleDate && selectedDbSlotId ? (
+                <div className="bg-resort-50 rounded-lg p-3 space-y-2">
+                  {dynamicPriceLoading ? (
+                    <div className="flex items-center justify-center py-2">
+                      <div className="animate-spin h-5 w-5 border-2 border-resort-500 border-t-transparent rounded-full" />
+                      <span className="ml-2 text-sm text-slate-600">Calculating price...</span>
+                    </div>
+                  ) : dynamicPrice ? (
+                    <>
+                      <div className="flex justify-between text-sm text-slate-700">
+                        <span>Selected time slot</span>
+                        <span>₱{dynamicPrice.toLocaleString()}</span>
+                      </div>
+                      <div className="border-t border-resort-200 pt-2 flex justify-between font-bold text-resort-900">
+                        <span>Total</span>
+                        <span>₱{dynamicPrice.toLocaleString()}</span>
+                      </div>
+                      {downpaymentPercentage > 0 && downpaymentPercentage < 100 && (
+                        <div className="border-t border-resort-200 pt-2 flex justify-between text-sm text-resort-700">
+                          <span>Downpayment ({downpaymentPercentage}%)</span>
+                          <span className="font-semibold">₱{Math.round(dynamicPrice * downpaymentPercentage / 100).toLocaleString()}</span>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-sm text-slate-500 text-center py-2">
+                      Price not available for this combination
+                    </p>
+                  )}
+                </div>
+              ) : nights > 0 && (
                 <div className="bg-resort-50 rounded-lg p-3 space-y-2">
                   <div className="flex justify-between text-sm text-slate-700">
                     <span>₱{baseRate.toLocaleString()} × {nights} {bookingType === 'daytour' ? 'day' : `night${nights > 1 ? 's' : ''}`}</span>
@@ -985,6 +1159,81 @@ export default function ResortDetail({ params }: { params: { id: string } }){
           >
             Request to Book
           </button>
+        </div>
+      </div>
+    )}
+
+    {/* Image Lightbox Modal */}
+    {showLightbox && galleryImages.length > 0 && (
+      <div className="fixed inset-0 z-[100] bg-black/95 flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 text-white">
+          <span className="font-medium">{activeImage + 1} / {galleryImages.length}</span>
+          <button
+            onClick={() => setShowLightbox(false)}
+            className="p-2 hover:bg-white/10 rounded-full transition"
+            aria-label="Close gallery"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        {/* Main Image */}
+        <div className="flex-1 flex items-center justify-center px-4 relative">
+          {/* Previous button */}
+          <button
+            onClick={() => setActiveImage((prev) => (prev === 0 ? galleryImages.length - 1 : prev - 1))}
+            className="absolute left-4 p-3 bg-white/10 hover:bg-white/20 rounded-full transition text-white z-10"
+            aria-label="Previous image"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          
+          <div className="relative w-full max-w-5xl h-[60vh] sm:h-[70vh]">
+            <Image
+              src={galleryImages[activeImage]}
+              alt={`${resort.name} - Photo ${activeImage + 1}`}
+              fill
+              className="object-contain"
+              sizes="100vw"
+              priority
+              unoptimized
+            />
+          </div>
+          
+          {/* Next button */}
+          <button
+            onClick={() => setActiveImage((prev) => (prev === galleryImages.length - 1 ? 0 : prev + 1))}
+            className="absolute right-4 p-3 bg-white/10 hover:bg-white/20 rounded-full transition text-white z-10"
+            aria-label="Next image"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+        
+        {/* Thumbnail strip */}
+        <div className="p-4 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-2 justify-center">
+            {galleryImages.map((img: string, idx: number) => (
+              <button
+                key={idx}
+                onClick={() => setActiveImage(idx)}
+                className={`relative flex-shrink-0 w-16 h-12 sm:w-20 sm:h-14 rounded-lg overflow-hidden transition ${
+                  activeImage === idx 
+                    ? 'ring-2 ring-white opacity-100' 
+                    : 'opacity-50 hover:opacity-80'
+                }`}
+              >
+                <Image src={img} alt={`Thumbnail ${idx + 1}`} fill className="object-cover" sizes="80px" unoptimized />
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     )}

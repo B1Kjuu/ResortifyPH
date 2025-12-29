@@ -268,46 +268,46 @@ export default function CreateResort() {
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-12 max-w-4xl mx-auto">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 max-w-4xl mx-auto">
         <Link
           href="/owner/dashboard"
-          className="inline-flex items-center gap-2 text-resort-600 hover:text-resort-700 font-semibold mb-6 transition-colors"
+          className="inline-flex items-center gap-2 text-resort-600 hover:text-resort-700 font-semibold mb-4 sm:mb-6 transition-colors text-sm sm:text-base"
         >
           <span>←</span>
           <span>Back to Dashboard</span>
         </Link>
 
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-3">
-            <FaUmbrellaBeach className="w-8 h-8 text-resort-600" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-resort-600 to-blue-600 bg-clip-text text-transparent">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+            <FaUmbrellaBeach className="w-6 h-6 sm:w-8 sm:h-8 text-resort-600" />
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-resort-600 to-ocean-500 bg-clip-text text-transparent">
               Create New Resort
             </h1>
           </div>
-          <p className="text-lg text-slate-600 pl-14">
+          <p className="text-sm sm:text-lg text-slate-600 pl-8 sm:pl-14">
             Submit your resort for approval. Fill in all details carefully.
           </p>
-          <div className="mt-4 pl-14">
+          <div className="mt-3 sm:mt-4 sm:pl-14">
             <DisclaimerBanner title="Owner Payment Notice">
               ResortifyPH does not process payments. Please share payment details with guests in chat and verify incoming transfers before confirming stays.
             </DisclaimerBanner>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="bg-white border-2 border-slate-200 rounded-2xl shadow-lg p-8 space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="bg-white border-2 border-slate-200 rounded-xl sm:rounded-2xl shadow-card p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">Resort Name *</label>
+            <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1.5 sm:mb-2">Resort Name *</label>
             <input
               type="text"
               placeholder="e.g., Paradise Beach Resort"
-              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors"
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors text-sm sm:text-base"
               {...register('name')}
             />
             {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">Province/Region *</label>
+            <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1.5 sm:mb-2">Province/Region *</label>
             <Controller
               name="location"
               control={control}

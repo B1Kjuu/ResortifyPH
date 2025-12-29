@@ -226,13 +226,15 @@ export default function OwnerBookingsContent(props: Props){
                   <p className="text-sm text-slate-600 mt-1">View confirmed bookings or add existing reservations</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  {allResorts && allResorts.length > 0 && onAddManualBooking && (
+                  {allResorts && allResorts.length > 0 && onAddManualBooking ? (
                     <button
                       onClick={() => setShowManualBookingModal(true)}
                       className="px-4 py-2 bg-gradient-to-r from-resort-500 to-blue-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all border-2 border-resort-400"
                     >
                       + Add Existing Booking
                     </button>
+                  ) : (
+                    <span className="text-xs text-slate-400 italic">Create a resort first to add bookings</span>
                   )}
                   <div className="flex items-center gap-2">
                     <label className="text-sm text-slate-600">Resort:</label>

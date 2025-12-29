@@ -3,25 +3,45 @@
 @tailwind utilities;
 
 :root {
-  --resortify-primary: #0b6bff;
+  --resortify-primary: #22c55e;
+  --resortify-secondary: #0ea5e9;
+  --resortify-accent: #f97316;
   --resortify-muted: #6b7280;
 }
 
-html,
-body,
-#root {
+html {
   height: 100%;
+  overflow-x: hidden;
 }
 
 body {
   @apply bg-white text-slate-900 antialiased;
+  min-height: 100%;
+  overflow-x: hidden;
 }
 
+#root {
+  height: 100%;
+}
+
+/* Responsive container with better breakpoints */
 .container {
-  max-width: 1100px;
+  max-width: 1280px;
   margin-left: auto;
   margin-right: auto;
   padding: 0 1rem;
+}
+
+@media (min-width: 640px) {
+  .container {
+    padding: 0 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    padding: 0 2rem;
+  }
 }
 
 /* Hide scrollbar for horizontal scroll containers */
@@ -76,6 +96,84 @@ a:not([class]) {
 /* Custom gradient text */
 .gradient-text {
   @apply bg-gradient-to-r from-resort-500 to-resort-600 bg-clip-text text-transparent;
+}
+
+/* Ocean gradient text */
+.gradient-text-ocean {
+  @apply bg-gradient-to-r from-ocean-500 to-ocean-600 bg-clip-text text-transparent;
+}
+
+/* Sunset gradient text */
+.gradient-text-sunset {
+  @apply bg-gradient-to-r from-sunset-500 to-sunset-600 bg-clip-text text-transparent;
+}
+
+/* Glass effect for cards */
+.glass-card {
+  @apply bg-white/80 backdrop-blur-lg border border-white/20 shadow-card;
+}
+
+/* Enhanced card styles */
+.card-elevated {
+  @apply bg-white rounded-2xl border border-slate-100 shadow-card transition-all duration-300;
+}
+
+.card-elevated:hover {
+  @apply shadow-card-hover -translate-y-1;
+}
+
+/* Gradient backgrounds */
+.bg-gradient-tropical {
+  @apply bg-gradient-to-br from-resort-400 via-ocean-400 to-resort-500;
+}
+
+.bg-gradient-sunset {
+  @apply bg-gradient-to-r from-sunset-400 via-sunset-500 to-coral-500;
+}
+
+.bg-gradient-ocean {
+  @apply bg-gradient-to-br from-ocean-400 to-ocean-600;
+}
+
+/* Subtle background patterns */
+.bg-dots-pattern {
+  background-image: radial-gradient(circle, #e2e8f0 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Input focus states */
+input:focus, select:focus, textarea:focus {
+  @apply ring-2 ring-resort-400 ring-offset-1 border-resort-400;
+}
+
+/* Better mobile tap targets */
+@media (max-width: 640px) {
+  button, a, input, select, textarea {
+    min-height: 44px;
+  }
+  
+  .btn-mobile {
+    @apply py-3 px-4 text-base;
+  }
+}
+
+/* Section spacing utilities */
+.section-padding {
+  @apply py-12 sm:py-16 lg:py-20;
+}
+
+.section-padding-sm {
+  @apply py-8 sm:py-12 lg:py-16;
+}
+
+/* Page layout wrapper */
+.page-wrapper {
+  @apply min-h-screen w-full;
+}
+
+/* Content wrapper with max width */
+.content-wrapper {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
 }
 
 /* Calendar styling: lightweight, non-invasive overrides to preserve library layout */

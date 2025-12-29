@@ -151,18 +151,18 @@ export default function ProfilePage(){
   }
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-resort-50 to-resort-100 px-4 sm:px-6 lg:px-8 py-10">
+    <div className="w-full min-h-screen bg-gradient-to-br from-resort-50 via-white to-ocean-50 px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
       <div className="max-w-4xl mx-auto">
-        <Link href={profile.is_admin ? '/admin/command-center' : profile.role === 'owner' ? '/owner/empire' : '/guest/adventure-hub'} className="inline-flex items-center gap-2 text-resort-600 hover:text-resort-700 font-semibold mb-8 transition-colors">
+        <Link href={profile.is_admin ? '/admin/command-center' : profile.role === 'owner' ? '/owner/empire' : '/guest/adventure-hub'} className="inline-flex items-center gap-2 text-resort-600 hover:text-resort-700 font-semibold mb-6 sm:mb-8 transition-colors text-sm sm:text-base">
           <FiArrowLeft aria-hidden />
           <span>Back to Dashboard</span>
         </Link>
 
-        <div className="bg-white rounded-3xl shadow-2xl border-2 border-slate-200 overflow-hidden">
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-card overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-resort-500 via-blue-500 to-resort-600 px-8 py-16 text-white text-center relative overflow-hidden flex flex-col items-center">
-            <div className="absolute top-4 right-4 text-5xl opacity-20"><FaHotel aria-hidden /></div>
-            <div className="relative w-28 h-28 bg-white/20 backdrop-blur-sm rounded-full mx-auto mb-6 flex items-center justify-center text-6xl shadow-2xl border-2 border-white/20 overflow-hidden">
+          <div className="bg-gradient-to-r from-resort-500 via-ocean-500 to-resort-600 px-4 sm:px-8 py-10 sm:py-16 text-white text-center relative overflow-hidden flex flex-col items-center">
+            <div className="absolute top-4 right-4 text-3xl sm:text-5xl opacity-20"><FaHotel aria-hidden /></div>
+            <div className="relative w-20 h-20 sm:w-28 sm:h-28 bg-white/20 backdrop-blur-sm rounded-full mx-auto mb-4 sm:mb-6 flex items-center justify-center text-4xl sm:text-6xl shadow-2xl border-2 border-white/20 overflow-hidden">
               {profile.avatar_url ? (
                 <img src={profile.avatar_url} alt="Profile avatar" className="w-full h-full object-cover" />
               ) : (
@@ -216,43 +216,43 @@ export default function ProfilePage(){
                 </svg>
               </label>
             </div>
-            <h1 className="text-4xl font-bold mb-3">{profile.full_name || 'User'}</h1>
-            <div className="flex items-center justify-center gap-3">
-              <span className={`inline-block px-6 py-2 rounded-full text-sm font-bold ${getRoleBadgeColor()} border-2 border-current`}>
+            <h1 className="text-2xl sm:text-4xl font-bold mb-2 sm:mb-3">{profile.full_name || 'User'}</h1>
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+              <span className={`inline-block px-4 sm:px-6 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold ${getRoleBadgeColor()} border-2 border-current`}>
                 {getRoleLabel()}
               </span>
-              <span className="text-white/80 font-semibold">•</span>
-              <span className="text-white/90 font-medium">Member since {new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+              <span className="text-white/80 font-semibold hidden sm:inline">•</span>
+              <span className="text-white/90 font-medium text-xs sm:text-base">Member since {new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
             </div>
           </div>
 
           {/* Message */}
           {message && (
-            <div className={`mx-8 mt-6 px-4 py-3 rounded-lg text-sm font-semibold ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
+            <div className={`mx-4 sm:mx-8 mt-4 sm:mt-6 px-4 py-3 rounded-lg text-sm font-semibold ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
               {message.text}
             </div>
           )}
 
           {/* Profile Info */}
-          <div className="px-8 py-10">
+          <div className="px-4 sm:px-8 py-6 sm:py-10">
             {/* Email requirement notice */}
             {!profile.email && (
-              <div className="mb-6 px-4 py-3 rounded-lg bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm font-semibold">
+              <div className="mb-4 sm:mb-6 px-4 py-3 rounded-lg bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs sm:text-sm font-semibold">
                 Email missing: You’ll receive in-app notifications only. Add an email to ensure booking and review emails reach you.
               </div>
             )}
             {/* Tabs */}
-            <div className="mb-6 flex items-center justify-center gap-2">
-              <button onClick={() => setActiveTab('personal')} className={`px-4 py-2 rounded-full text-sm font-semibold border ${activeTab==='personal' ? 'bg-resort-600 text-white border-resort-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>Personal Info</button>
-              <button onClick={() => setActiveTab('account')} className={`px-4 py-2 rounded-full text-sm font-semibold border ${activeTab==='account' ? 'bg-resort-600 text-white border-resort-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>Account</button>
-              <button onClick={() => setActiveTab('travel')} className={`px-4 py-2 rounded-full text-sm font-semibold border ${activeTab==='travel' ? 'bg-resort-600 text-white border-resort-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>Travel</button>
+            <div className="mb-4 sm:mb-6 flex items-center justify-center gap-1 sm:gap-2 overflow-x-auto">
+              <button onClick={() => setActiveTab('personal')} className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold border whitespace-nowrap ${activeTab==='personal' ? 'bg-resort-600 text-white border-resort-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>Personal</button>
+              <button onClick={() => setActiveTab('account')} className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold border whitespace-nowrap ${activeTab==='account' ? 'bg-resort-600 text-white border-resort-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>Account</button>
+              <button onClick={() => setActiveTab('travel')} className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold border whitespace-nowrap ${activeTab==='travel' ? 'bg-resort-600 text-white border-resort-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>Travel</button>
             </div>
             
             {activeTab === 'personal' && (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Email */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+                <label className="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-700 mb-2">
                   <FiMail aria-hidden />
                   <span>Email Address</span>
                 </label>

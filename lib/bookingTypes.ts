@@ -1,10 +1,12 @@
 // Booking Types for Philippine Resort Industry
 // Supports daytour, overnight, and 22-hour bookings with flexible time slots
+// Updated to support owner-customizable pricing and availability
 
 export type BookingType = 'daytour' | 'overnight' | '22hrs'
 
 export type DayType = 'weekday' | 'weekend' // weekend includes holidays
 
+// Local/static time slot interface (for fallback/default slots)
 export interface TimeSlot {
   id: string
   label: string
@@ -13,6 +15,66 @@ export interface TimeSlot {
   crossesMidnight: boolean // true if checkout is next day
   hours: number
   bookingType: BookingType
+}
+
+// Database-backed time slot from resort_time_slots table
+export interface ResortTimeSlot {
+  id: string // UUID from database
+  resort_id: string
+  slot_type: BookingType
+  label: string
+  start_time: string // TIME format (HH:mm:ss)
+  end_time: string
+  crosses_midnight: boolean
+  hours: number
+  is_active: boolean
+  sort_order: number
+  created_at?: string
+  updated_at?: string
+}
+
+// Database-backed guest tier from resort_guest_tiers table
+export interface ResortGuestTier {
+  id: string // UUID from database
+  resort_id: string
+  label: string
+  min_guests: number
+  max_guests: number | null // NULL means unlimited
+  sort_order: number
+  is_active: boolean
+  created_at?: string
+  updated_at?: string
+}
+
+// Database-backed pricing entry from resort_pricing_matrix table
+export interface ResortPricingEntry {
+  id: string // UUID from database
+  resort_id: string
+  time_slot_id: string
+  guest_tier_id: string
+  day_type: DayType
+  price: number
+  created_at?: string
+  updated_at?: string
+}
+
+// Combined availability result from get_available_time_slots function
+export interface AvailableTimeSlot {
+  slot_id: string
+  slot_type: BookingType
+  label: string
+  start_time: string
+  end_time: string
+  hours: number
+  is_available: boolean
+}
+
+// Price lookup result from get_booking_price function
+export interface BookingPriceResult {
+  price: number
+  guest_tier_id: string
+  guest_tier_label: string
+  day_type: DayType
 }
 
 // Available time slots for each booking type
@@ -311,7 +373,7 @@ export function hasConflict(
 // Default downpayment percentage
 export const DEFAULT_DOWNPAYMENT_PERCENTAGE = 50
 
-// Export combined pricing form structure
+// Export combined pricing form structure (legacy - for backward compatibility)
 export interface ResortPricingConfig {
   enabledBookingTypes: BookingType[]
   enabledTimeSlots: string[] // slot IDs
@@ -327,3 +389,196 @@ export const DEFAULT_PRICING_CONFIG: ResortPricingConfig = {
   pricing: [],
   downpaymentPercentage: DEFAULT_DOWNPAYMENT_PERCENTAGE,
 }
+
+// =================================================================
+// Advanced Pricing System Types (Database-backed)
+// =================================================================
+
+// Complete resort pricing configuration (new system)
+export interface AdvancedResortPricing {
+  resortId: string
+  useAdvancedPricing: boolean
+  allowSplitDay: boolean // Allow daytour + overnight same day
+  downpaymentPercentage: number
+  timeSlots: ResortTimeSlot[]
+  guestTiers: ResortGuestTier[]
+  pricingMatrix: ResortPricingEntry[]
+}
+
+// Form data for creating/editing time slots
+export interface TimeSlotFormData {
+  slot_type: BookingType
+  label: string
+  start_time: string // HH:mm format
+  end_time: string
+  crosses_midnight: boolean
+  hours: number
+  is_active: boolean
+  sort_order: number
+}
+
+// Form data for creating/editing guest tiers
+export interface GuestTierFormData {
+  label: string
+  min_guests: number
+  max_guests: number | null
+  is_active: boolean
+  sort_order: number
+}
+
+// Form data for creating/editing pricing matrix entries
+export interface PricingEntryFormData {
+  time_slot_id: string
+  guest_tier_id: string
+  day_type: DayType
+  price: number
+}
+
+// Default time slots when creating new resort
+export const DEFAULT_TIME_SLOT_TEMPLATES: TimeSlotFormData[] = [
+  {
+    slot_type: 'daytour',
+    label: 'Daytour: 8:00 AM - 5:00 PM',
+    start_time: '08:00',
+    end_time: '17:00',
+    crosses_midnight: false,
+    hours: 9,
+    is_active: true,
+    sort_order: 1,
+  },
+  {
+    slot_type: 'overnight',
+    label: 'Overnight: 7:00 PM - 6:00 AM',
+    start_time: '19:00',
+    end_time: '06:00',
+    crosses_midnight: true,
+    hours: 11,
+    is_active: true,
+    sort_order: 2,
+  },
+  {
+    slot_type: '22hrs',
+    label: '22 Hours: 8:00 AM - 6:00 AM (+1 day)',
+    start_time: '08:00',
+    end_time: '06:00',
+    crosses_midnight: true,
+    hours: 22,
+    is_active: true,
+    sort_order: 3,
+  },
+]
+
+// Default guest tiers when creating new resort
+export const DEFAULT_GUEST_TIER_TEMPLATES: GuestTierFormData[] = [
+  { label: 'Up to 10 guests', min_guests: 1, max_guests: 10, is_active: true, sort_order: 1 },
+  { label: '11-20 guests', min_guests: 11, max_guests: 20, is_active: true, sort_order: 2 },
+  { label: '21-30 guests', min_guests: 21, max_guests: 30, is_active: true, sort_order: 3 },
+  { label: '31+ guests', min_guests: 31, max_guests: null, is_active: true, sort_order: 4 },
+]
+
+// Helper to format database time (HH:mm:ss) to display format
+export function formatDbTime(time: string): string {
+  const [hours, minutes] = time.split(':').map(Number)
+  const period = hours >= 12 ? 'PM' : 'AM'
+  const hours12 = hours % 12 || 12
+  return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`
+}
+
+// Helper to calculate hours between two times
+export function calculateHours(startTime: string, endTime: string, crossesMidnight: boolean): number {
+  const [startH, startM] = startTime.split(':').map(Number)
+  const [endH, endM] = endTime.split(':').map(Number)
+  
+  let startMinutes = startH * 60 + startM
+  let endMinutes = endH * 60 + endM
+  
+  if (crossesMidnight && endMinutes < startMinutes) {
+    endMinutes += 24 * 60
+  }
+  
+  return (endMinutes - startMinutes) / 60
+}
+
+// Convert ResortTimeSlot to legacy TimeSlot format
+export function toTimeSlot(dbSlot: ResortTimeSlot): TimeSlot {
+  return {
+    id: dbSlot.id,
+    label: dbSlot.label,
+    startTime: dbSlot.start_time.substring(0, 5), // Remove seconds
+    endTime: dbSlot.end_time.substring(0, 5),
+    crossesMidnight: dbSlot.crosses_midnight,
+    hours: dbSlot.hours,
+    bookingType: dbSlot.slot_type,
+  }
+}
+
+// Convert ResortGuestTier to legacy GuestTier format
+export function toGuestTier(dbTier: ResortGuestTier): GuestTier {
+  return {
+    id: dbTier.id,
+    label: dbTier.label,
+    minGuests: dbTier.min_guests,
+    maxGuests: dbTier.max_guests,
+  }
+}
+
+// Find matching guest tier for a given guest count
+export function findMatchingTier(
+  guestCount: number, 
+  tiers: ResortGuestTier[]
+): ResortGuestTier | undefined {
+  return tiers
+    .filter(t => t.is_active)
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .find(tier => {
+      if (guestCount >= tier.min_guests) {
+        if (tier.max_guests === null || guestCount <= tier.max_guests) {
+          return true
+        }
+      }
+      return false
+    })
+}
+
+// Get price from pricing matrix
+export function getMatrixPrice(
+  timeSlotId: string,
+  guestTierId: string,
+  dayType: DayType,
+  matrix: ResortPricingEntry[]
+): number | null {
+  const entry = matrix.find(
+    e => e.time_slot_id === timeSlotId && 
+         e.guest_tier_id === guestTierId && 
+         e.day_type === dayType
+  )
+  return entry?.price ?? null
+}
+
+// Check if pricing matrix is complete (all combinations have prices)
+export function isPricingMatrixComplete(
+  timeSlots: ResortTimeSlot[],
+  guestTiers: ResortGuestTier[],
+  matrix: ResortPricingEntry[]
+): { complete: boolean; missing: Array<{ slotLabel: string; tierLabel: string; dayType: DayType }> } {
+  const missing: Array<{ slotLabel: string; tierLabel: string; dayType: DayType }> = []
+  const dayTypes: DayType[] = ['weekday', 'weekend']
+  
+  for (const slot of timeSlots.filter(s => s.is_active)) {
+    for (const tier of guestTiers.filter(t => t.is_active)) {
+      for (const dayType of dayTypes) {
+        const hasPrice = matrix.some(
+          e => e.time_slot_id === slot.id && 
+               e.guest_tier_id === tier.id && 
+               e.day_type === dayType
+        )
+        if (!hasPrice) {
+          missing.push({ slotLabel: slot.label, tierLabel: tier.label, dayType })
+        }
+      }
+    }
+  }
+  
+  return { complete: missing.length === 0, missing }
+}
+

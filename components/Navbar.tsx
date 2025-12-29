@@ -236,63 +236,64 @@ export default function Navbar(){
   return (
     <>
     <header className="bg-white border-b border-slate-200 w-full sticky top-0 z-50 shadow-sm">
-      <div className="w-full px-4 sm:px-6 lg:px-8 flex items-center h-16 max-w-7xl mx-auto">
+      <div className="w-full px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14 sm:h-16 max-w-7xl mx-auto">
         {/* Logo */}
-        <Link href={getHomeLink()} className="flex items-center gap-2 flex-shrink-0">
-          <div className="relative">
+        <Link href={getHomeLink()} className="flex items-center gap-2 flex-shrink-0 group">
+          <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-resort-500 to-resort-600 flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow overflow-hidden">
             <Image 
               src="/assets/ResortifyPH-LOGO-CLEAN.png" 
               alt="ResortifyPH Logo" 
-              width={36} 
-              height={36}
-              className="w-9 h-9"
+              width={28} 
+              height={28}
+              className="w-6 h-6 sm:w-7 sm:h-7"
+              priority
             />
           </div>
-          <span className="font-bold text-base sm:text-lg text-resort-600">ResortifyPH</span>
+          <span className="font-bold text-base sm:text-lg text-slate-900 hidden xs:inline">ResortifyPH</span>
         </Link>
 
         {/* Navigation - Desktop Only */}
-        <nav className="hidden lg:flex items-center gap-6 ml-8">
-          <Link href="/resorts" prefetch={false} onClick={(e) => handleExploreClick(e)} className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
+        <nav className="hidden lg:flex items-center gap-1 xl:gap-2 ml-6">
+          <Link href="/resorts" prefetch={false} onClick={(e) => handleExploreClick(e)} className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all">
             Explore
           </Link>
           {authChecked && user && !isAdminContext && (
             <Link
               href={userRole === 'owner' ? '/owner/chats' : '/guest/chats'}
-              className="text-sm font-medium text-slate-600 hover:text-resort-600 transition"
+              className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all"
             >
               Chats
             </Link>
           )}
           {authChecked && user && userRole === 'guest' && !isAdminContext && (
-            <Link href="/guest/adventure-hub" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
+            <Link href="/guest/adventure-hub" className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all">
               Adventure Hub
             </Link>
           )}
           {authChecked && user && userRole === 'guest' && !isAdminContext && (
-            <Link href="/guest/trips" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
+            <Link href="/guest/trips" className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all">
               My Trips
             </Link>
           )}
           {authChecked && user && userRole === 'owner' && !isAdminContext && (
             <>
-              <Link href="/owner/empire" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
+              <Link href="/owner/empire" className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all">
                 Empire
               </Link>
-              <Link href="/owner/my-resorts" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
+              <Link href="/owner/my-resorts" className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all">
                 My Properties
               </Link>
-              <Link href="/owner/bookings" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
+              <Link href="/owner/bookings" className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all">
                 Bookings
               </Link>
             </>
           )}
           {authChecked && isAdmin && (
             <>
-              <Link href="/admin/approvals" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
+              <Link href="/admin/approvals" className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all">
                 Approvals
               </Link>
-              <Link href="/admin/command-center" className="text-sm font-medium text-slate-600 hover:text-resort-600 transition">
+              <Link href="/admin/command-center" className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all">
                 Admin
               </Link>
             </>
@@ -300,9 +301,9 @@ export default function Navbar(){
         </nav>
 
         {/* Quick Filters - Desktop (Compact Pill) */}
-        <div className="hidden lg:flex flex-1 items-center ml-6 mr-6 max-w-md">
-          <div className="flex items-center gap-2 w-full px-4 py-2 rounded-full border border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow">
-            <svg className="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="hidden lg:flex flex-1 items-center ml-6 mr-6 max-w-sm">
+          <div className="flex items-center gap-2 w-full px-4 py-2 rounded-full border border-slate-200 bg-slate-50 hover:bg-white hover:shadow-md hover:border-slate-300 transition-all cursor-pointer">
+            <svg className="w-4 h-4 text-resort-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <div className="flex-1 min-w-0">
@@ -328,47 +329,30 @@ export default function Navbar(){
         </div>
 
         {/* Right Section - Auth */}
-        <div className="flex items-center gap-2 ml-auto justify-end">
-          <button
-            onClick={() => setShowMobileMenu(true)}
-            className="lg:hidden px-2.5 py-1.5 text-sm font-semibold text-slate-600 bg-slate-100 rounded-full hover:bg-slate-200 transition whitespace-nowrap"
-            aria-label="Open menu"
-          >
-            <span className="sr-only">Menu</span>
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-          {/* Hide mobile Filters button to declutter navbar */}
-          {/* <button
-            onClick={() => setShowMobileFilters(true)}
-            className="lg:hidden px-3 py-1.5 text-sm font-semibold text-slate-600 bg-slate-100 rounded-full hover:bg-slate-200 transition whitespace-nowrap"
-            aria-label="Open quick filters"
-          >
-            Filters
-          </button> */}
+        <div className="flex items-center gap-2 sm:gap-3">
           {authChecked && user ? (
             <>
-              {/* Role Switcher */}
+              {/* Notifications Bell */}
               <NotificationsBell />
+              {/* Role Switcher - Hide on mobile */}
               {!isAdminContext && (
-                <div className="flex items-center gap-0.5 bg-slate-100 rounded-lg p-0.5">
+                <div className="hidden sm:flex items-center gap-0.5 bg-slate-100 rounded-full p-1">
                   <button
                     onClick={() => handleRoleSwitch('guest')}
-                    className={`px-2 py-1.5 text-xs font-medium rounded-md transition ${
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all ${
                       userRole === 'guest' 
-                        ? 'bg-resort-600 text-white' 
-                        : 'text-slate-600 hover:text-slate-900'
+                        ? 'bg-white text-resort-600 shadow-sm' 
+                        : 'text-slate-500 hover:text-slate-700'
                     }`}
                   >
                     Guest
                   </button>
                   <button
                     onClick={() => handleRoleSwitch('owner')}
-                    className={`px-2 py-1.5 text-xs font-medium rounded-md transition ${
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all ${
                       userRole === 'owner' 
-                        ? 'bg-resort-600 text-white' 
-                        : 'text-slate-600 hover:text-slate-900'
+                        ? 'bg-white text-resort-600 shadow-sm' 
+                        : 'text-slate-500 hover:text-slate-700'
                     }`}
                   >
                     Host
@@ -379,40 +363,57 @@ export default function Navbar(){
               <Link
                 href="/profile"
                 aria-label={profileEmail ? `Open profile for ${profileEmail}` : 'Open profile'}
-                className="p-1 rounded-full hover:bg-slate-100 transition"
+                className="p-1 rounded-full hover:bg-slate-100 transition hidden sm:block"
               >
                 {profileAvatarUrl ? (
                   <img
                     src={profileAvatarUrl}
                     alt={profileEmail ? `${profileEmail} avatar` : 'Profile avatar'}
-                    className="w-8 h-8 rounded-full object-cover border border-slate-200"
+                    className="w-8 h-8 rounded-full object-cover ring-2 ring-white shadow-sm"
                   />
                 ) : (
-                  <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-resort-400 to-resort-600 flex items-center justify-center text-white text-sm font-bold shadow-sm">
+                    {profileEmail ? profileEmail[0].toUpperCase() : 'U'}
+                  </div>
                 )}
               </Link>
               
               <button 
                 onClick={handleLogout} 
-                className="hidden sm:block px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition"
+                className="hidden lg:flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
               >
-                Sign out
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span>Sign out</span>
               </button>
             </>
           ) : authChecked ? (
-            <>
-              <Link href="/auth/signin" className="px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition whitespace-nowrap">
+            <div className="hidden sm:flex items-center gap-2">
+              <Link href="/auth/signin" className="px-4 py-2 text-sm font-semibold text-slate-700 hover:text-resort-600 hover:bg-slate-50 rounded-lg transition-all whitespace-nowrap">
                 Sign in
               </Link>
-              <Link href="/auth/signup" className="px-3 py-1.5 text-sm font-medium text-white bg-resort-600 hover:bg-resort-700 rounded-lg transition whitespace-nowrap">
+              <Link href="/auth/signup" className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-resort-500 to-resort-600 hover:from-resort-600 hover:to-resort-700 rounded-lg shadow-sm hover:shadow-md transition-all whitespace-nowrap">
                 Sign up
               </Link>
-            </>
+            </div>
           ) : (
-            <div className="text-xs text-slate-400">Loading...</div>
+            <div className="hidden sm:flex items-center gap-2">
+              <div className="w-16 h-8 bg-slate-100 rounded-lg animate-pulse" />
+              <div className="w-16 h-8 bg-slate-200 rounded-lg animate-pulse" />
+            </div>
           )}
+          
+          {/* Mobile Menu Button - Always visible on mobile */}
+          <button
+            onClick={() => setShowMobileMenu(true)}
+            className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition"
+            aria-label="Open menu"
+          >
+            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
         </div>
       </div>
     </header>
