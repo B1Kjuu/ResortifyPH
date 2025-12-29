@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { BookingType, DayType, GuestTier, BookingPricing, TIME_SLOTS } from './bookingTypes'
 
 const pesoField = (
   label: string,
@@ -30,6 +31,37 @@ const countField = (
   return required ? schema : schema.optional().nullable()
 }
 
+// Booking type enum
+const bookingTypeEnum = z.enum(['daytour', 'overnight', '22hrs'])
+
+// Day type enum (weekday vs weekend/holiday)
+const dayTypeEnum = z.enum(['weekday', 'weekend'])
+
+// Guest tier schema
+const guestTierSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  minGuests: z.number().min(1),
+  maxGuests: z.number().nullable(),
+})
+
+// Pricing entry schema
+const bookingPricingSchema = z.object({
+  bookingType: bookingTypeEnum,
+  dayType: dayTypeEnum,
+  guestTierId: z.string(),
+  price: z.number().min(0),
+})
+
+// Resort pricing configuration schema
+export const resortPricingConfigSchema = z.object({
+  enabledBookingTypes: z.array(bookingTypeEnum).min(1, 'At least one booking type must be enabled'),
+  enabledTimeSlots: z.array(z.string()).min(1, 'At least one time slot must be enabled'),
+  guestTiers: z.array(guestTierSchema).min(1, 'At least one guest tier is required'),
+  pricing: z.array(bookingPricingSchema),
+  downpaymentPercentage: z.number().min(0).max(100).default(50),
+})
+
 // Auth validations
 export const signUpSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -57,14 +89,17 @@ export const resortSchema = z.object({
   latitude: z.number().min(-90).max(90).optional().nullable(),
   longitude: z.number().min(-180).max(180).optional().nullable(),
   address: z.string().max(500, 'Address must be under 500 characters').optional().nullable(),
-  type: z.enum(['beach', 'mountain', 'nature', 'city', 'countryside'], {
+  type: z.enum(['beach', 'mountain', 'nature', 'city', 'countryside', 'staycation', 'private', 'villa', 'glamping', 'farmstay', 'spa'], {
     message: 'Please select a resort type',
   }),
-  price: pesoField('Base price', { min: 500, max: 1_000_000 }),
+  // Legacy pricing fields (kept for backwards compatibility)
+  price: pesoField('Base price', { required: false, min: 500, max: 1_000_000 }),
   day_tour_price: pesoField('Day tour price', { required: false, min: 500, max: 1_000_000 }),
   night_tour_price: pesoField('Night tour price', { required: false, min: 500, max: 1_000_000 }),
   overnight_price: pesoField('Overnight price', { required: false, min: 500, max: 1_000_000 }),
   additional_guest_fee: pesoField('Additional guest fee', { required: false, min: 0, max: 100_000 }),
+  // New tiered pricing configuration
+  pricing_config: resortPricingConfigSchema.optional().nullable(),
   capacity: countField('Guest capacity', { min: 1, max: 150 }),
   bedrooms: countField('Bedrooms', { required: false, min: 0, max: 50 }),
   bathrooms: countField('Bathrooms', { required: false, min: 0, max: 50 }),
@@ -84,14 +119,14 @@ export const resortSchema = z.object({
   parking_slots: countField('Parking slots', { required: false, min: 0, max: 50 }),
   nearby_landmarks: z.string().max(500, 'Nearby landmarks must be under 500 characters').optional().nullable().transform((s) => (s ? s.replace(/<[^>]*>/g, ' ').replace(/[\u0000-\u001F\u007F]/g, ' ').trim() : s)),
   bring_own_items: z.string().max(500, 'Bring your own items note must be under 500 characters').optional().nullable().transform((s) => (s ? s.replace(/<[^>]*>/g, ' ').replace(/[\u0000-\u001F\u007F]/g, ' ').trim() : s)),
-  // Verification-related optional fields
-  registration_number: z.string().min(3, 'Registration number is required').max(120),
-  dti_sec_certificate_url: z.string().url('Upload the DTI/SEC certificate (image URL required)'),
-  business_permit_url: z.string().url('Upload the Business Permit (image URL required)'),
-  gov_id_owner_url: z.string().url('Upload the Owner Government ID (image URL required)'),
-  website_url: z.string().url('Must be a valid URL').optional().nullable(),
-  facebook_url: z.string().url('Must be a valid URL').optional().nullable(),
-  instagram_url: z.string().url('Must be a valid URL').optional().nullable(),
+  // Verification-related optional fields - more details = better approval chances
+  registration_number: z.string().max(120).optional().nullable().transform((s) => (s?.trim() || null)),
+  dti_sec_certificate_url: z.string().url('Must be a valid URL').optional().nullable().or(z.literal('')),
+  business_permit_url: z.string().url('Must be a valid URL').optional().nullable().or(z.literal('')),
+  gov_id_owner_url: z.string().url('Must be a valid URL').optional().nullable().or(z.literal('')),
+  website_url: z.string().url('Must be a valid URL').optional().nullable().or(z.literal('')),
+  facebook_url: z.string().url('Must be a valid URL').optional().nullable().or(z.literal('')),
+  instagram_url: z.string().url('Must be a valid URL').optional().nullable().or(z.literal('')),
   contact_email_verified: z.boolean().default(false),
   contact_phone_verified: z.boolean().default(false),
   location_verified: z.boolean().default(false),
@@ -102,13 +137,27 @@ export const resortSchema = z.object({
 export const bookingSchema = z.object({
   date_from: z.string().min(1, 'Check-in date is required'),
   date_to: z.string().min(1, 'Check-out date is required'),
-  guest_count: z.number().min(1, 'At least 1 guest required').max(100, 'Too many guests'),
+  guest_count: z.number().min(1, 'At least 1 guest required').max(150, 'Too many guests'),
+  // New booking type fields
+  booking_type: bookingTypeEnum.optional(), // daytour, overnight, 22hrs
+  time_slot_id: z.string().optional(), // e.g., 'daytour_8am_5pm'
+  check_in_time: z.string().optional(), // HH:mm format
+  check_out_time: z.string().optional(), // HH:mm format
+  // Pricing at time of booking
+  total_price: z.number().min(0).optional(),
+  downpayment_amount: z.number().min(0).optional(),
+  day_type: dayTypeEnum.optional(), // weekday or weekend
+  guest_tier_id: z.string().optional(),
 }).refine((data) => {
   const from = new Date(data.date_from)
   const to = new Date(data.date_to)
-  return to > from
+  // For same-day bookings (daytour), from and to can be the same
+  if (data.booking_type === 'daytour') {
+    return to >= from
+  }
+  return to >= from // Allow same day for overnight that ends next day
 }, {
-  message: 'Check-out date must be after check-in date',
+  message: 'Check-out date must be on or after check-in date',
   path: ['date_to'],
 })
 
@@ -123,3 +172,4 @@ export type SignInInput = z.infer<typeof signInSchema>
 export type ResortInput = z.infer<typeof resortSchema>
 export type BookingInput = z.infer<typeof bookingSchema>
 export type ProfileInput = z.infer<typeof profileSchema>
+export type ResortPricingConfig = z.infer<typeof resortPricingConfigSchema>

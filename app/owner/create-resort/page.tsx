@@ -11,9 +11,10 @@ import { toast } from 'sonner'
 import ImageUploader from '../../../components/ImageUploader'
 import LocationCombobox from '../../../components/LocationCombobox'
 import LocationPicker from '../../../components/LocationPicker'
+import PricingConfigurator from '../../../components/PricingConfigurator'
 import { getProvinceInfo } from '../../../lib/locations'
 import { supabase } from '../../../lib/supabaseClient'
-import { resortSchema, type ResortInput } from '../../../lib/validations'
+import { resortSchema, type ResortInput, type ResortPricingConfig } from '../../../lib/validations'
 import DisclaimerBanner from '../../../components/DisclaimerBanner'
 import { FiMapPin, FiDollarSign, FiUsers, FiCamera, FiCheck, FiClock } from 'react-icons/fi'
 import { FaUmbrellaBeach, FaMountain, FaLeaf, FaCity, FaTractor, FaSwimmer, FaStar } from 'react-icons/fa'
@@ -58,6 +59,7 @@ const defaultResortValues: Partial<ResortInput> = {
   night_tour_price: null,
   overnight_price: null,
   additional_guest_fee: null,
+  pricing_config: null,
   capacity: undefined,
   bedrooms: null,
   bathrooms: null,
@@ -89,6 +91,7 @@ export default function CreateResort() {
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [isAuthorized, setIsAuthorized] = useState(false)
+  const [pricingMode, setPricingMode] = useState<'simple' | 'advanced'>('advanced')
 
   const {
     register,
@@ -186,11 +189,12 @@ export default function CreateResort() {
       region_code: provinceInfo?.regionCode ?? null,
       region_name: provinceInfo?.regionName ?? null,
       type: values.type,
-      price: values.price,
+      price: values.price ?? null,
       day_tour_price: values.day_tour_price ?? null,
       night_tour_price: values.night_tour_price ?? null,
       overnight_price: values.overnight_price ?? null,
       additional_guest_fee: values.additional_guest_fee ?? null,
+      pricing_config: values.pricing_config ?? null,
       capacity: values.capacity,
       bedrooms: values.bedrooms ?? null,
       bathrooms: values.bathrooms ?? null,
@@ -356,10 +360,134 @@ export default function CreateResort() {
           </div>
 
           <div className="bg-gradient-to-br from-resort-50 to-blue-50 border-2 border-resort-200 rounded-xl p-6 space-y-4">
-            <div className="flex items-center gap-2 mb-2">
-              <FiDollarSign className="w-5 h-5" />
-              <h3 className="text-lg font-bold text-slate-900">Pricing Options</h3>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <FiDollarSign className="w-5 h-5" />
+                <h3 className="text-lg font-bold text-slate-900">Pricing Options</h3>
+              </div>
+              <div className="flex bg-white rounded-lg border border-slate-300 p-1">
+                <button
+                  type="button"
+                  onClick={() => setPricingMode('simple')}
+                  className={`px-3 py-1.5 rounded text-sm font-medium transition ${
+                    pricingMode === 'simple' 
+                      ? 'bg-resort-500 text-white' 
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  Simple
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPricingMode('advanced')}
+                  className={`px-3 py-1.5 rounded text-sm font-medium transition ${
+                    pricingMode === 'advanced' 
+                      ? 'bg-resort-500 text-white' 
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  Advanced
+                </button>
+              </div>
             </div>
+
+            {pricingMode === 'simple' && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Simple Mode:</strong> Set flat rates for day tour, overnight, and 22-hour stays. Good for resorts with fixed pricing.
+                </p>
+              </div>
+            )}
+
+            {pricingMode === 'advanced' && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mb-4">
+                <p className="text-sm text-emerald-800">
+                  <strong>Advanced Mode:</strong> Set different prices for weekdays vs weekends, and create guest count tiers (e.g., 20 pax vs 30 pax). 
+                  Perfect for Philippine resorts with tiered pricing.
+                </p>
+              </div>
+            )}
+
+            {/* Advanced Pricing Configurator */}
+            {pricingMode === 'advanced' && (
+              <Controller
+                name="pricing_config"
+                control={control}
+                render={({ field }) => (
+                  <PricingConfigurator
+                    value={field.value ?? null}
+                    onChange={(config) => field.onChange(config)}
+                    capacity={watch('capacity') || 50}
+                  />
+                )}
+              />
+            )}
+
+            {/* Simple/Legacy Pricing Fields */}
+            {pricingMode === 'simple' && (
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Base Price per Night (₱) *</label>
+                  <input
+                    type="number"
+                    placeholder="e.g., 5000"
+                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors bg-white"
+                    {...register('price', {
+                      setValueAs: (value) => (value === '' ? undefined : Number(value)),
+                    })}
+                  />
+                  {errors.price && <p className="text-xs text-red-500 mt-1">{errors.price.message}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Day Tour Price (₱)</label>
+                  <input
+                    type="number"
+                    placeholder="e.g., 4999"
+                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors bg-white"
+                    {...register('day_tour_price', {
+                      setValueAs: (value) => (value === '' ? null : Number(value)),
+                    })}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Night Tour Price (₱)</label>
+                  <input
+                    type="number"
+                    placeholder="e.g., 5999"
+                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors bg-white"
+                    {...register('night_tour_price', {
+                      setValueAs: (value) => (value === '' ? null : Number(value)),
+                    })}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Overnight Stay (₱)</label>
+                  <input
+                    type="number"
+                    placeholder="e.g., 7999"
+                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors bg-white"
+                    {...register('overnight_price', {
+                      setValueAs: (value) => (value === '' ? null : Number(value)),
+                    })}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Additional Guest Fee (₱)</label>
+                  <input
+                    type="number"
+                    placeholder="e.g., 350"
+                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors bg-white"
+                    {...register('additional_guest_fee', {
+                      setValueAs: (value) => (value === '' ? null : Number(value)),
+                    })}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Verification details (optional) */}
             <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-xl p-6 space-y-4">
@@ -367,103 +495,63 @@ export default function CreateResort() {
                 <span className="w-5 h-5 inline-block">🔒</span>
                 <h3 className="text-lg font-bold text-slate-900">Verification Details (Optional)</h3>
               </div>
-              <p className="text-sm text-slate-600">These are required for submission to help admins verify your resort.</p>
+              <div className="bg-amber-100 border border-amber-300 rounded-lg p-3 mb-4">
+                <p className="text-sm text-amber-800 font-medium">
+                  💡 <strong>Tip:</strong> The more verification details you provide, the better your chances of getting approved quickly. 
+                  Business documents and social media links help build trust with guests.
+                </p>
+              </div>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">Business Registration Number</label>
-                  <input className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl" {...register('registration_number')} />
+                  <input className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl" placeholder="Optional" {...register('registration_number')} />
                   {errors.registration_number && <p className="text-xs text-red-500 mt-1">{errors.registration_number.message as any}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">DTI/SEC Certificate (Image)</label>
-                  <ImageUploader bucket="verification-docs" onUpload={(urls) => setValue('dti_sec_certificate_url', urls[0] || '', { shouldValidate: true })} />
-                  {errors.dti_sec_certificate_url && <p className="text-xs text-red-500 mt-1">{errors.dti_sec_certificate_url.message as any}</p>}
+                  <ImageUploader 
+                    bucket="verification-docs" 
+                    multiple={false}
+                    maxFiles={1}
+                    existingUrls={watch('dti_sec_certificate_url') ? [watch('dti_sec_certificate_url') as string] : []}
+                    onUpload={(urls) => setValue('dti_sec_certificate_url', urls[0] || '', { shouldValidate: true })} 
+                    onRemove={() => setValue('dti_sec_certificate_url', '', { shouldValidate: true })}
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">Business Permit (Image)</label>
-                  <ImageUploader bucket="verification-docs" onUpload={(urls) => setValue('business_permit_url', urls[0] || '', { shouldValidate: true })} />
-                  {errors.business_permit_url && <p className="text-xs text-red-500 mt-1">{errors.business_permit_url.message as any}</p>}
+                  <ImageUploader 
+                    bucket="verification-docs" 
+                    multiple={false}
+                    maxFiles={1}
+                    existingUrls={watch('business_permit_url') ? [watch('business_permit_url') as string] : []}
+                    onUpload={(urls) => setValue('business_permit_url', urls[0] || '', { shouldValidate: true })} 
+                    onRemove={() => setValue('business_permit_url', '', { shouldValidate: true })}
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">Owner Government ID (Image)</label>
-                  <ImageUploader bucket="verification-docs" onUpload={(urls) => setValue('gov_id_owner_url', urls[0] || '', { shouldValidate: true })} />
-                  {errors.gov_id_owner_url && <p className="text-xs text-red-500 mt-1">{errors.gov_id_owner_url.message as any}</p>}
+                  <ImageUploader 
+                    bucket="verification-docs" 
+                    multiple={false}
+                    maxFiles={1}
+                    existingUrls={watch('gov_id_owner_url') ? [watch('gov_id_owner_url') as string] : []}
+                    onUpload={(urls) => setValue('gov_id_owner_url', urls[0] || '', { shouldValidate: true })} 
+                    onRemove={() => setValue('gov_id_owner_url', '', { shouldValidate: true })}
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Website</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Website <span className="text-slate-400 font-normal">(optional)</span></label>
                   <input className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl" placeholder="https://" {...register('website_url')} />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Facebook Page</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Facebook Page <span className="text-slate-400 font-normal">(optional)</span></label>
                   <input className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl" placeholder="https://facebook.com/..." {...register('facebook_url')} />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Instagram</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Instagram <span className="text-slate-400 font-normal">(optional)</span></label>
                   <input className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl" placeholder="https://instagram.com/..." {...register('instagram_url')} />
                 </div>
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Base Price per Night (₱) *</label>
-                <input
-                  type="number"
-                  placeholder="e.g., 5000"
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors bg-white"
-                  {...register('price', {
-                    setValueAs: (value) => (value === '' ? undefined : Number(value)),
-                  })}
-                />
-                {errors.price && <p className="text-xs text-red-500 mt-1">{errors.price.message}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Day Tour Price (₱)</label>
-                <input
-                  type="number"
-                  placeholder="e.g., 4999"
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors bg-white"
-                  {...register('day_tour_price', {
-                    setValueAs: (value) => (value === '' ? null : Number(value)),
-                  })}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Night Tour Price (₱)</label>
-                <input
-                  type="number"
-                  placeholder="e.g., 5999"
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors bg-white"
-                  {...register('night_tour_price', {
-                    setValueAs: (value) => (value === '' ? null : Number(value)),
-                  })}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Overnight Stay (₱)</label>
-                <input
-                  type="number"
-                  placeholder="e.g., 7999"
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors bg-white"
-                  {...register('overnight_price', {
-                    setValueAs: (value) => (value === '' ? null : Number(value)),
-                  })}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Additional Guest Fee (₱)</label>
-                <input
-                  type="number"
-                  placeholder="e.g., 350"
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors bg-white"
-                  {...register('additional_guest_fee', {
-                    setValueAs: (value) => (value === '' ? null : Number(value)),
-                  })}
-                />
               </div>
             </div>
           </div>
@@ -668,30 +756,13 @@ export default function CreateResort() {
               <FiCamera className="w-5 h-5" />
               <label className="text-sm font-bold text-slate-700">Resort Images</label>
             </div>
-            <ImageUploader onUpload={handleImageUpload} />
+            <ImageUploader 
+              onUpload={handleImageUpload} 
+              existingUrls={images}
+              onRemove={removeImage}
+              maxFiles={10}
+            />
             {errors.images && <p className="text-xs text-red-500 mt-2">{errors.images.message}</p>}
-
-            {images.length > 0 && (
-              <div className="mt-4 space-y-3">
-                <div className="px-4 py-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 font-semibold inline-flex items-center gap-1">
-                  <FiCheck className="w-4 h-4" /> {images.length} image(s) uploaded
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {images.map((url) => (
-                    <div key={url} className="relative group">
-                      <img src={url} alt="Uploaded" className="w-full h-32 object-cover rounded-lg border-2 border-slate-200" />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(url)}
-                        className="absolute top-2 right-2 bg-white/90 text-red-600 text-xs font-bold px-2 py-1 rounded shadow"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="flex gap-4 pt-6">

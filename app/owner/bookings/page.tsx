@@ -4,6 +4,7 @@ import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import OwnerBookingsContent from '../../../components/OwnerBookingsContent'
 import { eachDayOfInterval } from 'date-fns'
+import { toast as sonnerToast } from 'sonner'
 
 export default function OwnerBookingsPage(){
   type Toast = { message: string; type: 'success' | 'error' | '' }
@@ -16,8 +17,27 @@ export default function OwnerBookingsPage(){
   const [selectedDayBookings, setSelectedDayBookings] = useState([] as any[])
   const [hoverTooltip, setHoverTooltip] = useState(null as { x: number, y: number, text: string } | null)
   const [selectedBookings, setSelectedBookings] = useState(new Set<string>())
+  const [ownerResorts, setOwnerResorts] = useState<{ id: string; name: string }[]>([])
   const calendarRef = React.useRef<HTMLDivElement | null>(null)
   const router = useRouter()
+
+  // Load owner's resorts for manual booking feature
+  async function loadOwnerResorts(){
+    if (!userId) return
+    try {
+      const { data, error } = await supabase
+        .from('resorts')
+        .select('id, name')
+        .eq('owner_id', userId)
+        .eq('status', 'approved')
+      if (!error && data) {
+        setOwnerResorts(data)
+      }
+    } catch (err) {
+      console.error('Load resorts error:', err)
+    }
+  }
+
   async function loadOwnerBookings(){
     if (!userId) return
 
@@ -95,6 +115,7 @@ export default function OwnerBookingsPage(){
     if (!userId) return
 
     loadOwnerBookings()
+    loadOwnerResorts()
 
     // Subscribe to real-time changes with simple debounce to avoid bursts
     let refreshTimer: NodeJS.Timeout | null = null
@@ -500,6 +521,50 @@ export default function OwnerBookingsPage(){
     }
   }
 
+  // Add manual booking for dates booked before using the platform
+  async function addManualBooking(data: { resort_id: string; date_from: string; date_to: string; guest_name: string; guest_count: number; notes: string }){
+    if (!userId) {
+      setToast({ message: 'You must be logged in', type: 'error' })
+      return
+    }
+
+    try {
+      // Create a booking entry with owner as the "guest" (manual/external booking)
+      // These are marked as confirmed immediately since they're existing reservations
+      const { data: newBooking, error } = await supabase
+        .from('bookings')
+        .insert({
+          resort_id: data.resort_id,
+          guest_id: userId, // Owner creates as placeholder guest
+          date_from: data.date_from,
+          date_to: data.date_to,
+          guest_count: data.guest_count || 1,
+          status: 'confirmed',
+          // Store guest name and notes in a notes field if available, or use verified_notes
+          verified_notes: data.guest_name ? `External booking: ${data.guest_name}${data.notes ? ' - ' + data.notes : ''}` : (data.notes || 'External booking (made before platform)'),
+          payment_verified_at: new Date().toISOString(), // Mark as verified since it's manual
+          verified_by: userId,
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Manual booking error:', error)
+        setToast({ message: `Error: ${error.message}`, type: 'error' })
+        sonnerToast.error('Failed to add booking')
+        return
+      }
+
+      setToast({ message: 'Booking added successfully!', type: 'success' })
+      sonnerToast.success('External booking added to calendar')
+      loadOwnerBookings()
+    } catch (err) {
+      console.error('Add manual booking error:', err)
+      setToast({ message: 'Error adding booking', type: 'error' })
+      sonnerToast.error('Failed to add booking')
+    }
+  }
+
   function toggleSelectAll(bookingsList: any[]){
     const allIds = bookingsList.map(b => b.id)
     const allSelected = allIds.every(id => selectedBookings.has(id))
@@ -661,6 +726,8 @@ export default function OwnerBookingsPage(){
       bulkApproveCancellations={bulkApproveCancellations}
       bulkDeclineCancellations={bulkDeclineCancellations}
       cancelBooking={cancelBooking}
+      allResorts={ownerResorts}
+      onAddManualBooking={addManualBooking}
     />
   )
 }

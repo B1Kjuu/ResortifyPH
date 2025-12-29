@@ -5,6 +5,16 @@ import SkeletonTable from './SkeletonTable'
 import ChatLink from './ChatLink'
 import { DayPicker } from 'react-day-picker'
 import DisclaimerBanner from './DisclaimerBanner'
+import { format } from 'date-fns'
+
+type ManualBookingData = {
+  resort_id: string
+  date_from: string
+  date_to: string
+  guest_name: string
+  guest_count: number
+  notes: string
+}
 
 type Props = {
   loading: boolean
@@ -38,6 +48,9 @@ type Props = {
   bulkApproveCancellations: () => void
   bulkDeclineCancellations: () => void
   cancelBooking: (id: string) => void
+  // Manual booking props
+  allResorts?: { id: string; name: string }[]
+  onAddManualBooking?: (data: ManualBookingData) => Promise<void>
 }
 
 export default function OwnerBookingsContent(props: Props){
@@ -49,6 +62,7 @@ export default function OwnerBookingsContent(props: Props){
     selectedBookings, toggleSelect, toggleSelectAll, bulkDeleteBookings,
     deleteBooking, confirmBooking, rejectBooking, updateVerificationDetails, togglePaymentVerified,
     approveCancellation, declineCancellation, bulkApproveCancellations, bulkDeclineCancellations, cancelBooking,
+    allResorts, onAddManualBooking,
   } = props
 
   // Top-level owner nav tabs
@@ -56,6 +70,18 @@ export default function OwnerBookingsContent(props: Props){
   const [showOnlyVerified, setShowOnlyVerified] = React.useState(false)
   const [showOnlyCancellations, setShowOnlyCancellations] = React.useState(false)
   const [verificationEdits, setVerificationEdits] = React.useState<Record<string, { method: string; reference: string; notes: string }>>({})
+  
+  // Manual booking modal state
+  const [showManualBookingModal, setShowManualBookingModal] = React.useState(false)
+  const [manualBookingForm, setManualBookingForm] = React.useState({
+    resort_id: '',
+    date_from: '',
+    date_to: '',
+    guest_name: '',
+    guest_count: 1,
+    notes: ''
+  })
+  const [manualBookingSubmitting, setManualBookingSubmitting] = React.useState(false)
 
   const setEdit = (id: string, field: 'method' | 'reference' | 'notes', value: string) => {
     setVerificationEdits(prev => ({
@@ -63,6 +89,31 @@ export default function OwnerBookingsContent(props: Props){
       [id]: { method: prev[id]?.method || '', reference: prev[id]?.reference || '', notes: prev[id]?.notes || '', [field]: value }
     }))
   }
+
+  // Handle manual booking form submission
+  async function handleManualBookingSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!onAddManualBooking) return
+    if (!manualBookingForm.resort_id || !manualBookingForm.date_from || !manualBookingForm.date_to) {
+      return
+    }
+    setManualBookingSubmitting(true)
+    try {
+      await onAddManualBooking(manualBookingForm)
+      setShowManualBookingModal(false)
+      setManualBookingForm({
+        resort_id: '',
+        date_from: '',
+        date_to: '',
+        guest_name: '',
+        guest_count: 1,
+        notes: ''
+      })
+    } finally {
+      setManualBookingSubmitting(false)
+    }
+  }
+
   const now = new Date()
   const upcomingConfirmed = confirmedBookings.filter(b => new Date(b.date_to) >= now)
   const pastConfirmed = confirmedBookings.filter(b => new Date(b.date_to) < now)
@@ -172,21 +223,140 @@ export default function OwnerBookingsContent(props: Props){
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h2 className="text-3xl font-bold text-slate-900">Bookings Calendar</h2>
+                  <p className="text-sm text-slate-600 mt-1">View confirmed bookings or add existing reservations</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <label className="text-sm text-slate-600">Resort:</label>
-                  <select
-                    value={selectedResortId}
-                    onChange={(e) => setSelectedResortId(e.target.value)}
-                    className="px-3 py-2 border-2 border-slate-200 rounded-xl bg-white text-slate-900"
-                  >
-                    <option value="all">All resorts</option>
-                    {resortOptions.map(r => (
-                      <option key={r.id} value={r.id}>{r.name}</option>
-                    ))}
-                  </select>
+                <div className="flex items-center gap-3">
+                  {allResorts && allResorts.length > 0 && onAddManualBooking && (
+                    <button
+                      onClick={() => setShowManualBookingModal(true)}
+                      className="px-4 py-2 bg-gradient-to-r from-resort-500 to-blue-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all border-2 border-resort-400"
+                    >
+                      + Add Existing Booking
+                    </button>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm text-slate-600">Resort:</label>
+                    <select
+                      value={selectedResortId}
+                      onChange={(e) => setSelectedResortId(e.target.value)}
+                      className="px-3 py-2 border-2 border-slate-200 rounded-xl bg-white text-slate-900"
+                    >
+                      <option value="all">All resorts</option>
+                      {resortOptions.map(r => (
+                        <option key={r.id} value={r.id}>{r.name}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
+
+              {/* Add Existing Booking Modal */}
+              {showManualBookingModal && allResorts && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/40" onClick={() => setShowManualBookingModal(false)} />
+                  <div className="relative bg-white rounded-2xl border-2 border-slate-200 shadow-xl w-[95%] max-w-lg p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className="text-2xl font-bold text-slate-900">Add Existing Booking</h3>
+                        <p className="text-slate-600 text-sm">Block dates for bookings made before using this platform</p>
+                      </div>
+                      <button
+                        type="button"
+                        className="px-3 py-2 rounded-lg border-2 border-slate-200 hover:bg-slate-50"
+                        onClick={() => setShowManualBookingModal(false)}
+                      >✖</button>
+                    </div>
+                    <form onSubmit={handleManualBookingSubmit} className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">Resort *</label>
+                        <select
+                          required
+                          value={manualBookingForm.resort_id}
+                          onChange={(e) => setManualBookingForm(prev => ({ ...prev, resort_id: e.target.value }))}
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white"
+                        >
+                          <option value="">Select a resort</option>
+                          {allResorts.map(r => (
+                            <option key={r.id} value={r.id}>{r.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-bold text-slate-700 mb-1">Check-in Date *</label>
+                          <input
+                            type="date"
+                            required
+                            value={manualBookingForm.date_from}
+                            onChange={(e) => setManualBookingForm(prev => ({ ...prev, date_from: e.target.value }))}
+                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-bold text-slate-700 mb-1">Check-out Date *</label>
+                          <input
+                            type="date"
+                            required
+                            value={manualBookingForm.date_to}
+                            min={manualBookingForm.date_from || undefined}
+                            onChange={(e) => setManualBookingForm(prev => ({ ...prev, date_to: e.target.value }))}
+                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">Guest Name (optional)</label>
+                        <input
+                          type="text"
+                          placeholder="e.g., Juan dela Cruz"
+                          value={manualBookingForm.guest_name}
+                          onChange={(e) => setManualBookingForm(prev => ({ ...prev, guest_name: e.target.value }))}
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">Number of Guests</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={manualBookingForm.guest_count}
+                          onChange={(e) => setManualBookingForm(prev => ({ ...prev, guest_count: parseInt(e.target.value) || 1 }))}
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">Notes (optional)</label>
+                        <textarea
+                          rows={2}
+                          placeholder="Any additional details about this booking"
+                          value={manualBookingForm.notes}
+                          onChange={(e) => setManualBookingForm(prev => ({ ...prev, notes: e.target.value }))}
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl resize-none"
+                        />
+                      </div>
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+                        💡 <strong>Note:</strong> This booking will be marked as confirmed and will block the selected dates on your calendar. Use this for reservations made outside this platform.
+                      </div>
+                      <div className="flex gap-3 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowManualBookingModal(false)}
+                          className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-xl font-semibold hover:bg-slate-50"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={manualBookingSubmitting || !manualBookingForm.resort_id || !manualBookingForm.date_from || !manualBookingForm.date_to}
+                          className="flex-1 px-4 py-3 bg-gradient-to-r from-resort-500 to-blue-500 text-white rounded-xl font-bold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {manualBookingSubmitting ? 'Adding...' : 'Add Booking'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
 
               <div className="bg-white border-2 border-slate-200 rounded-2xl p-4">
                 <div ref={calendarRef} className="relative calendar-custom two-months">

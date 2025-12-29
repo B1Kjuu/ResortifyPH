@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { supabase } from '../../../lib/supabaseClient'
@@ -10,11 +10,20 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import DateRangePicker from '../../../components/DateRangePicker'
 import LocationCombobox from '../../../components/LocationCombobox'
+import BookingTypeSelector from '../../../components/BookingTypeSelector'
 import { format } from 'date-fns'
 import ChatLink from '../../../components/ChatLink'
 import DisclaimerBanner from '../../../components/DisclaimerBanner'
 import { FiArrowLeft, FiMapPin, FiDollarSign, FiUsers, FiUser, FiTag, FiCheck } from 'react-icons/fi'
 import { FaUmbrellaBeach, FaStar } from 'react-icons/fa'
+import { 
+  BookingType, 
+  getTimeSlotById, 
+  getDayType, 
+  getGuestTier,
+  DEFAULT_DOWNPAYMENT_PERCENTAGE,
+} from '../../../lib/bookingTypes'
+import type { ResortPricingConfig } from '../../../lib/validations'
 
 export default function ResortDetail({ params }: { params: { id: string } }){
   function formatTime12h(t?: string | null) {
@@ -42,7 +51,10 @@ export default function ResortDetail({ params }: { params: { id: string } }){
   const [childrenCount, setChildrenCount] = useState(0)
   const [petsCount, setPetsCount] = useState(0)
   const [booking, setBooking] = useState(false)
-  const [stayType, setStayType] = useState<'day_12h' | 'overnight_22h'>('overnight_22h')
+  const [bookingType, setBookingType] = useState<BookingType | null>(null)
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null)
+  const [selectedSingleDate, setSelectedSingleDate] = useState<Date | undefined>(undefined)
+  const [stayType, setStayType] = useState<'day_12h' | 'overnight_22h'>('overnight_22h') // legacy fallback
   const [message, setMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null)
   const [quickExploreProvince, setQuickExploreProvince] = useState('')
   const [latestBookingId, setLatestBookingId] = useState<string | null>(null)
@@ -256,25 +268,30 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       return
     }
 
-    if (!selectedRange.from || !selectedRange.to) {
-      toast.error('Please select check-in and check-out dates')
-      return
-    }
-
-    // Enforce same-day for Day Tour (12h)
-    if (stayType === 'day_12h') {
-      const sameDay = format(selectedRange.from, 'yyyy-MM-dd') === format(selectedRange.to, 'yyyy-MM-dd')
-      if (!sameDay) {
-        toast.error('Day Tour must start and end on the same day')
+    // Date validation based on booking type
+    const isDaytour = bookingType === 'daytour'
+    
+    if (isDaytour) {
+      if (!selectedSingleDate) {
+        toast.error('Please select a date for your daytour')
+        return
+      }
+    } else {
+      if (!selectedRange.from || !selectedRange.to) {
+        toast.error('Please select check-in and check-out dates')
         return
       }
     }
 
+    // Get the booking dates
+    const bookingDateFrom = isDaytour ? selectedSingleDate! : selectedRange.from!
+    const bookingDateTo = isDaytour ? selectedSingleDate! : selectedRange.to!
+
     // Guard against overlapping with already booked dates (confirmed bookings)
     try {
       const chosen: string[] = []
-      const start = new Date(selectedRange.from)
-      const end = new Date(selectedRange.to)
+      const start = new Date(bookingDateFrom)
+      const end = new Date(bookingDateTo)
       const cursor = new Date(start)
       while (cursor <= end) {
         chosen.push(format(cursor, 'yyyy-MM-dd'))
@@ -302,19 +319,29 @@ export default function ResortDetail({ params }: { params: { id: string } }){
     toast.loading('Creating booking...')
 
     const provinceInfo = getProvinceInfo(resort?.location)
+    
+    // Get time slot details if selected
+    const timeSlotDetails = selectedTimeSlot ? getTimeSlotById(selectedTimeSlot) : null
 
     let newId: string | null = null
     let error: any = null
     const rpcRes = await supabase.rpc('create_booking_safe', {
       p_resort_id: resort.id,
       p_guest_id: user.id,
-      p_date_from: format(selectedRange.from, 'yyyy-MM-dd'),
-      p_date_to: format(selectedRange.to, 'yyyy-MM-dd'),
+      p_date_from: format(bookingDateFrom, 'yyyy-MM-dd'),
+      p_date_to: format(bookingDateTo, 'yyyy-MM-dd'),
       p_guest_count: guests,
       p_resort_province: resort.location ?? null,
       p_resort_region_code: resort.region_code ?? provinceInfo?.regionCode ?? null,
       p_resort_region_name: resort.region_name ?? provinceInfo?.regionName ?? null,
-      // optional: pass stay type if RPC handles it (ignored otherwise)
+      // New booking type fields
+      p_booking_type: bookingType || stayType,
+      p_time_slot_id: selectedTimeSlot,
+      p_check_in_time: timeSlotDetails?.startTime ?? null,
+      p_check_out_time: timeSlotDetails?.endTime ?? null,
+      p_total_price: totalCost,
+      p_downpayment_amount: downpaymentAmount,
+      // Legacy fields
       p_stay_type: stayType,
       p_children_count: childrenCount,
       p_pets_count: petsCount,
@@ -334,9 +361,15 @@ export default function ResortDetail({ params }: { params: { id: string } }){
         .insert({
           resort_id: resort.id,
           guest_id: user.id,
-          date_from: format(selectedRange.from, 'yyyy-MM-dd'),
-          date_to: format(selectedRange.to, 'yyyy-MM-dd'),
+          date_from: format(bookingDateFrom, 'yyyy-MM-dd'),
+          date_to: format(bookingDateTo, 'yyyy-MM-dd'),
           guest_count: guests,
+          booking_type: bookingType || null,
+          time_slot_id: selectedTimeSlot || null,
+          check_in_time: timeSlotDetails?.startTime ?? null,
+          check_out_time: timeSlotDetails?.endTime ?? null,
+          total_price: totalCost,
+          downpayment_amount: downpaymentAmount,
           children_count: childrenCount,
           pets_count: petsCount,
           status: 'pending',
@@ -390,10 +423,15 @@ export default function ResortDetail({ params }: { params: { id: string } }){
             })
 
             // Send automatic welcome message to notify owner
+            const dateMessage = bookingType === 'daytour' && selectedSingleDate
+              ? `on ${format(selectedSingleDate, 'MMM dd, yyyy')}`
+              : selectedRange.from && selectedRange.to
+                ? `from ${format(selectedRange.from, 'MMM dd, yyyy')} to ${format(selectedRange.to, 'MMM dd, yyyy')}`
+                : ''
             await supabase.from('chat_messages').insert({
               chat_id: chat.id,
               sender_id: user.id,
-              content: `Hi! I'd like to book ${resort.name} from ${format(selectedRange.from, 'MMM dd, yyyy')} to ${format(selectedRange.to, 'MMM dd, yyyy')} for ${guests} ${guests === 1 ? 'guest' : 'guests'}. Looking forward to hearing from you!`,
+              content: `Hi! I'd like to book ${resort.name} ${dateMessage} for ${guests} ${guests === 1 ? 'guest' : 'guests'}. Looking forward to hearing from you!`,
             })
             // Notify owner for booking-created message
             try {
@@ -456,9 +494,45 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       ? [resort.image_url]
       : []
 
-  const baseRate = stayType === 'day_12h' ? (resort.day_tour_price ?? resort.price) : (resort.overnight_price ?? resort.price)
-  const nights = selectedRange.from && selectedRange.to ? Math.max(1, Math.ceil((selectedRange.to.getTime() - selectedRange.from.getTime()) / (1000 * 60 * 60 * 24))) : 0
+  // Pricing configuration
+  const pricingConfig: ResortPricingConfig | null = resort.pricing_config || null
+  const hasAdvancedPricing = pricingConfig?.pricing && pricingConfig.pricing.length > 0
+  
+  // Get selected date for pricing calculation
+  const selectedDate = bookingType === 'daytour' ? selectedSingleDate : selectedRange.from
+  
+  // Calculate price based on new or legacy pricing
+  const calculatePrice = (): number => {
+    if (hasAdvancedPricing && selectedDate && bookingType) {
+      const dayType = getDayType(selectedDate)
+      const tier = getGuestTier(guests, pricingConfig!.guestTiers)
+      if (tier) {
+        const priceEntry = pricingConfig!.pricing.find(p =>
+          p.bookingType === bookingType && p.dayType === dayType && p.guestTierId === tier.id
+        )
+        if (priceEntry) return priceEntry.price
+      }
+    }
+    
+    // Legacy pricing fallback
+    if (bookingType === 'daytour') return resort.day_tour_price ?? resort.price ?? 0
+    if (bookingType === 'overnight') return resort.night_tour_price ?? resort.price ?? 0
+    if (bookingType === '22hrs') return resort.overnight_price ?? resort.price ?? 0
+    
+    // Fallback to stayType for backwards compatibility
+    return stayType === 'day_12h' ? (resort.day_tour_price ?? resort.price) : (resort.overnight_price ?? resort.price)
+  }
+  
+  const baseRate = calculatePrice()
+  
+  // Calculate nights/days count
+  const nights = bookingType === 'daytour' 
+    ? (selectedSingleDate ? 1 : 0)
+    : (selectedRange.from && selectedRange.to ? Math.max(1, Math.ceil((selectedRange.to.getTime() - selectedRange.from.getTime()) / (1000 * 60 * 60 * 24))) : 0)
+    
   const totalCost = baseRate * nights
+  const downpaymentPercentage = pricingConfig?.downpaymentPercentage ?? DEFAULT_DOWNPAYMENT_PERCENTAGE
+  const downpaymentAmount = Math.round((totalCost * downpaymentPercentage) / 100)
 
   function scrollToBookingCard(){
     const el = bookingCardRef.current
@@ -725,22 +799,60 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                 <span className="text-sm text-slate-500">Flexible dates</span>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-700">Stay Type</label>
-                <div className="mt-1">
-                  {/* Styled select for stay type/time */}
-                  <div className="relative">
-                    <select value={stayType} onChange={(e) => setStayType(e.target.value as any)} className="appearance-none w-full px-3 py-2 h-10 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white pr-9">
-                      <option value="day_12h">Day Tour (12 hours, same-day)</option>
-                      <option value="overnight_22h">Overnight (22 hours)</option>
-                    </select>
-                    <svg className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
+              {/* New Booking Type Selector */}
+              {hasAdvancedPricing ? (
+                <BookingTypeSelector
+                  pricingConfig={pricingConfig}
+                  selectedBookingType={bookingType}
+                  selectedTimeSlot={selectedTimeSlot}
+                  selectedDate={selectedDate ?? null}
+                  guestCount={guests}
+                  onBookingTypeChange={(type) => {
+                    setBookingType(type)
+                    setSelectedTimeSlot(null)
+                    // Reset date selection when switching types
+                    if (type === 'daytour') {
+                      setSelectedRange({ from: undefined, to: undefined })
+                    } else {
+                      setSelectedSingleDate(undefined)
+                    }
+                  }}
+                  onTimeSlotChange={setSelectedTimeSlot}
+                  legacyPricing={{
+                    day_tour_price: resort.day_tour_price,
+                    night_tour_price: resort.night_tour_price,
+                    overnight_price: resort.overnight_price,
+                  }}
+                />
+              ) : (
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700">Stay Type</label>
+                  <div className="mt-1">
+                    {/* Legacy styled select for stay type/time */}
+                    <div className="relative">
+                      <select 
+                        value={bookingType || stayType} 
+                        onChange={(e) => {
+                          const val = e.target.value
+                          if (val === 'daytour' || val === 'overnight' || val === '22hrs') {
+                            setBookingType(val)
+                          } else {
+                            setStayType(val as any)
+                          }
+                        }} 
+                        className="appearance-none w-full px-3 py-2 h-10 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white pr-9"
+                      >
+                        <option value="daytour">Daytour (8am - 5pm)</option>
+                        <option value="overnight">Overnight (7pm - 6am)</option>
+                        <option value="22hrs">22 Hours (extended stay)</option>
+                      </select>
+                      <svg className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
-                <p className="text-xs text-slate-500 mt-1">Pricing uses {stayType === 'day_12h' ? 'Day Tour' : 'Overnight'} rate when available.</p>
-              </div>
+              )}
 
               {message && (
                 <div className={`px-4 py-3 rounded-lg text-sm font-semibold ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
@@ -750,11 +862,16 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Select Dates</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    {bookingType === 'daytour' ? 'Select Date' : 'Select Dates'}
+                  </label>
                   <DateRangePicker 
                     bookedDates={bookedDates}
                     onSelectRange={setSelectedRange}
                     selectedRange={selectedRange}
+                    singleDateMode={bookingType === 'daytour'}
+                    onSelectSingleDate={setSelectedSingleDate}
+                    selectedSingleDate={selectedSingleDate}
                   />
                 </div>
 
@@ -800,13 +917,19 @@ export default function ResortDetail({ params }: { params: { id: string } }){
               {nights > 0 && (
                 <div className="bg-resort-50 rounded-lg p-3 space-y-2">
                   <div className="flex justify-between text-sm text-slate-700">
-                    <span>₱{baseRate.toLocaleString()} × {nights} {stayType === 'day_12h' ? 'day' : `night${nights > 1 ? 's' : ''}`}</span>
+                    <span>₱{baseRate.toLocaleString()} × {nights} {bookingType === 'daytour' ? 'day' : `night${nights > 1 ? 's' : ''}`}</span>
                     <span>₱{totalCost.toLocaleString()}</span>
                   </div>
                   <div className="border-t border-resort-200 pt-2 flex justify-between font-bold text-resort-900">
                     <span>Total</span>
                     <span>₱{totalCost.toLocaleString()}</span>
                   </div>
+                  {downpaymentPercentage > 0 && downpaymentPercentage < 100 && (
+                    <div className="border-t border-resort-200 pt-2 flex justify-between text-sm text-resort-700">
+                      <span>Downpayment ({downpaymentPercentage}%)</span>
+                      <span className="font-semibold">₱{downpaymentAmount.toLocaleString()}</span>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -847,11 +970,11 @@ export default function ResortDetail({ params }: { params: { id: string } }){
           <div className="flex items-center gap-3">
             <div className="text-sm">
               <p className="font-bold text-resort-900">₱{baseRate?.toLocaleString()}</p>
-                      <p className="text-xs text-slate-600">{stayType === 'day_12h' ? 'per day' : 'per night'}</p>
+                      <p className="text-xs text-slate-600">{bookingType === 'daytour' ? 'per day' : 'per night'}</p>
             </div>
             {nights > 0 && (
               <div className="text-xs text-slate-700">
-                <span className="font-semibold">{nights}</span> night{nights > 1 ? 's' : ''}
+                <span className="font-semibold">{nights}</span> {bookingType === 'daytour' ? 'day' : `night${nights > 1 ? 's' : ''}`}
               </div>
             )}
           </div>

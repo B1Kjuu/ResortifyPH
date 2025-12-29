@@ -5,6 +5,7 @@ import ImageUploader from '../../../../components/ImageUploader'
 import LocationCombobox from '../../../../components/LocationCombobox'
 import Select from '../../../../components/Select'
 import DisclaimerBanner from '../../../../components/DisclaimerBanner'
+import PricingConfigurator from '../../../../components/PricingConfigurator'
 import { getProvinceInfo } from '../../../../lib/locations'
 import { supabase } from '../../../../lib/supabaseClient'
 import { useRouter, useParams } from 'next/navigation'
@@ -12,6 +13,7 @@ import { FiMapPin, FiDollarSign, FiUsers, FiCamera, FiCheck, FiClock, FiSave, Fi
 import { FaStar } from 'react-icons/fa'
 import { FaUmbrellaBeach, FaMountain, FaLeaf, FaCity, FaTractor } from 'react-icons/fa'
 import { RESORT_TYPES } from '../../../../lib/resortTypes'
+import { ResortPricingConfig } from '../../../../lib/validations'
 
 export default function EditResort(){
   const params = useParams()
@@ -43,6 +45,8 @@ export default function EditResort(){
   const [parkingSlots, setParkingSlots] = useState<number | ''>('')
   const [nearbyLandmarks, setNearbyLandmarks] = useState('')
   const [bringOwnItems, setBringOwnItems] = useState('')
+  const [pricingConfig, setPricingConfig] = useState<ResortPricingConfig | null>(null)
+  const [pricingMode, setPricingMode] = useState<'simple' | 'advanced'>('advanced')
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [isAuthorized, setIsAuthorized] = useState(false)
@@ -118,6 +122,8 @@ export default function EditResort(){
       setParkingSlots(resort.parking_slots || '')
       setNearbyLandmarks(resort.nearby_landmarks || '')
       setBringOwnItems(resort.bring_own_items || '')
+      setPricingConfig(resort.pricing_config || null)
+      setPricingMode(resort.pricing_config ? 'advanced' : 'simple')
       
       setUserId(session.user.id)
       setIsAuthorized(true)
@@ -170,6 +176,7 @@ export default function EditResort(){
         parking_slots: parkingSlots ? Number(parkingSlots) : null,
         nearby_landmarks: nearbyLandmarks,
         bring_own_items: bringOwnItems,
+        pricing_config: pricingMode === 'advanced' ? pricingConfig : null,
         updated_at: new Date() 
       })
       .eq('id', resortId)
@@ -268,6 +275,45 @@ export default function EditResort(){
           </Select>
         </div>
 
+        {/* Pricing Mode Toggle */}
+        <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <FiDollarSign className="w-5 h-5 text-slate-700" />
+            <label className="text-sm font-bold text-slate-700">Pricing Mode</label>
+          </div>
+          <div className="flex gap-3 mb-4">
+            <button
+              type="button"
+              onClick={() => setPricingMode('simple')}
+              className={`flex-1 px-4 py-3 rounded-xl font-semibold transition-all ${
+                pricingMode === 'simple'
+                  ? 'bg-resort-500 text-white shadow-md'
+                  : 'bg-white border-2 border-slate-200 text-slate-600 hover:border-resort-300'
+              }`}
+            >
+              Simple Pricing
+            </button>
+            <button
+              type="button"
+              onClick={() => setPricingMode('advanced')}
+              className={`flex-1 px-4 py-3 rounded-xl font-semibold transition-all ${
+                pricingMode === 'advanced'
+                  ? 'bg-resort-500 text-white shadow-md'
+                  : 'bg-white border-2 border-slate-200 text-slate-600 hover:border-resort-300'
+              }`}
+            >
+              Advanced Pricing
+            </button>
+          </div>
+          <p className="text-xs text-slate-500">
+            {pricingMode === 'simple'
+              ? 'Set a single price per night for your resort.'
+              : 'Configure tiered pricing with daytour, overnight, and 22-hour options, plus weekday/weekend rates.'}
+          </p>
+        </div>
+
+        {/* Simple Pricing Mode */}
+        {pricingMode === 'simple' && (
         <div className="grid md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiDollarSign className="w-4 h-4" /> Price per Night (₱) *</label>
@@ -277,10 +323,23 @@ export default function EditResort(){
               placeholder="e.g., 5000" 
               value={price as any} 
               onChange={e => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
-              required
+              required={pricingMode === 'simple'}
             />
           </div>
+        </div>
+        )}
 
+        {/* Advanced Pricing Mode */}
+        {pricingMode === 'advanced' && (
+          <PricingConfigurator
+            value={pricingConfig}
+            onChange={setPricingConfig}
+            capacity={typeof capacity === 'number' ? capacity : undefined}
+          />
+        )}
+
+        {/* Guest Capacity (shown in both modes) */}
+        <div className="grid md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiUsers className="w-4 h-4" /> Guest Capacity *</label>
             <input 

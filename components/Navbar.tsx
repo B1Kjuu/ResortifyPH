@@ -6,6 +6,7 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { supabase } from '../lib/supabaseClient'
 import LocationCombobox from './LocationCombobox'
 import NotificationsBell from './NotificationsBell'
+import { toast } from 'sonner'
 
 export default function Navbar(){
   const [user, setUser] = useState<any>(null)
@@ -129,22 +130,45 @@ export default function Navbar(){
   async function handleRoleSwitch(newRole: string) {
     if (newRole === userRole) return
     
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ role: newRole })
-        .eq('id', user?.id)
-      
-      if (error) throw error
-      
-      setUserRole(newRole)
-      
-      if (newRole === 'owner') router.push('/owner/empire')
-      else if (newRole === 'guest') router.push('/guest/adventure-hub')
-    } catch (err) {
-      console.error('Role switch error:', err)
-      alert('Failed to switch role')
-    }
+    // Show confirmation toast before switching
+    const roleLabel = newRole === 'owner' ? 'Host' : 'Guest'
+    const currentLabel = userRole === 'owner' ? 'Host' : 'Guest'
+    
+    toast(
+      `Switch from ${currentLabel} to ${roleLabel}?`,
+      {
+        description: newRole === 'owner' 
+          ? 'As a Host, you can manage your resorts and bookings.' 
+          : 'As a Guest, you can browse and book resorts.',
+        action: {
+          label: 'Switch',
+          onClick: async () => {
+            try {
+              const { error } = await supabase
+                .from('profiles')
+                .update({ role: newRole })
+                .eq('id', user?.id)
+              
+              if (error) throw error
+              
+              setUserRole(newRole)
+              toast.success(`Switched to ${roleLabel} mode`)
+              
+              if (newRole === 'owner') router.push('/owner/empire')
+              else if (newRole === 'guest') router.push('/guest/adventure-hub')
+            } catch (err) {
+              console.error('Role switch error:', err)
+              toast.error('Failed to switch role')
+            }
+          }
+        },
+        cancel: {
+          label: 'Cancel',
+          onClick: () => {}
+        },
+        duration: 10000,
+      }
+    )
   }
 
   function applyQuickFilter(province: string | null) {

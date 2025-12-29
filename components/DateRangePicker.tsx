@@ -11,6 +11,9 @@ interface DateRangePickerProps {
   selectedRange: { from: Date | undefined; to: Date | undefined }
   months?: number // explicit number of months to render
   preferTwoMonthsOnDesktop?: boolean // show 2 months on >=768px, else 1
+  singleDateMode?: boolean // For daytour: select single date only
+  onSelectSingleDate?: (date: Date | undefined) => void
+  selectedSingleDate?: Date | undefined
 }
 
 export default function DateRangePicker({ 
@@ -19,6 +22,9 @@ export default function DateRangePicker({
   selectedRange, 
   months,
   preferTwoMonthsOnDesktop,
+  singleDateMode = false,
+  onSelectSingleDate,
+  selectedSingleDate,
 }: DateRangePickerProps) {
   const [monthCount, setMonthCount] = useState(1)
   const wrapperRef = useRef<HTMLDivElement | null>(null)
@@ -96,6 +102,59 @@ export default function DateRangePicker({
     }
 
     onSelectRange({ from: range.from, to: range.to })
+  }
+
+  // Handle single date selection (for daytour)
+  const handleSingleSelect = (date: Date | undefined) => {
+    if (!date) {
+      onSelectSingleDate?.(undefined)
+      return
+    }
+    
+    // Check if selected date is booked
+    const isBooked = disabledDates.some(disabledDate => 
+      format(disabledDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
+    )
+    
+    if (isBooked) {
+      onSelectSingleDate?.(undefined)
+      return
+    }
+    
+    onSelectSingleDate?.(date)
+  }
+
+  // Single date mode (for daytour)
+  if (singleDateMode) {
+    return (
+      <div ref={wrapperRef} className="w-full">
+        <DayPicker
+          mode="single"
+          selected={selectedSingleDate}
+          onSelect={handleSingleSelect}
+          disabled={disabledDays}
+          numberOfMonths={monthCount}
+          className={`calendar-custom ${monthCount === 2 ? 'two-months' : ''}`}
+          modifiers={{
+            booked: futureBookedDates,
+          }}
+          modifiersClassNames={{
+            booked: 'day-booked',
+          }}
+          styles={{
+            root: { width: '100%' },
+            months: { display: 'flex', gap: '16px', justifyContent: 'flex-start', flexWrap: 'wrap' },
+          }}
+        />
+        {selectedSingleDate && (
+          <div className="mt-4 p-3 bg-blue-50 rounded-md border border-blue-200">
+            <p className="text-sm text-blue-900 font-medium">
+              Date: {format(selectedSingleDate, 'EEEE, MMM dd, yyyy')}
+            </p>
+          </div>
+        )}
+      </div>
+    )
   }
 
   return (

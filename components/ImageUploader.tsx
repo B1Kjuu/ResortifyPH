@@ -1,39 +1,103 @@
 'use client'
 import React, { useState, useRef, useId } from 'react'
 import { supabase } from '../lib/supabaseClient'
-import { FiFolder, FiUpload, FiLoader, FiInfo, FiCheck } from 'react-icons/fi'
+import { FiFolder, FiLoader, FiInfo, FiCheck, FiX } from 'react-icons/fi'
+import { toast } from 'sonner'
 
 type Props = {
   bucket?: string
   onUpload?: (urls: string[]) => void
+  existingUrls?: string[]
+  onRemove?: (url: string) => void
+  multiple?: boolean
+  maxFiles?: number
 }
 
-export default function ImageUploader({ bucket = 'resort-images', onUpload }: Props){
-  const [files, setFiles] = useState<FileList | null>(null)
+export default function ImageUploader({ 
+  bucket = 'resort-images', 
+  onUpload, 
+  existingUrls = [],
+  onRemove,
+  multiple = true,
+  maxFiles = 10
+}: Props){
   const [uploading, setUploading] = useState(false)
-  const [uploadedUrls, setUploadedUrls] = useState<string[]>([])
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
   const inputId = useId()
 
-  async function handleUpload(){
-    if (!files) return
+  // Upload images immediately when files are selected
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>){
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    const totalFiles = existingUrls.length + files.length
+    if (totalFiles > maxFiles) {
+      toast.error(`Maximum ${maxFiles} images allowed. You have ${existingUrls.length} and tried to add ${files.length}.`)
+      return
+    }
+
     setUploading(true)
-    const urls: string[] = []
+    const newUrls: string[] = []
+    const progress: Record<string, number> = {}
+
     for (let i = 0; i < files.length; i++){
       const file = files[i]
-      const filePath = `${Date.now()}_${file.name}`
-      const { data, error } = await supabase.storage.from(bucket).upload(filePath, file)
-      if (error){
-        console.error(error)
-        continue
+      const fileName = file.name
+      progress[fileName] = 0
+      setUploadProgress({ ...progress })
+
+      try {
+        const filePath = `${Date.now()}_${file.name}`
+        const { data, error } = await supabase.storage.from(bucket).upload(filePath, file)
+        
+        if (error){
+          console.error(error)
+          toast.error(`Failed to upload ${fileName}`)
+          continue
+        }
+
+        const { data: publicData } = supabase.storage.from(bucket).getPublicUrl(filePath)
+        newUrls.push(publicData.publicUrl)
+        progress[fileName] = 100
+        setUploadProgress({ ...progress })
+        toast.success(`Uploaded ${fileName}`)
+      } catch (err) {
+        console.error(err)
+        toast.error(`Error uploading ${fileName}`)
       }
-      const { data: publicData } = supabase.storage.from(bucket).getPublicUrl(filePath)
-      urls.push(publicData.publicUrl)
     }
+
     setUploading(false)
-    setUploadedUrls(urls)
-    onUpload?.(urls)
+    setUploadProgress({})
+    
+    if (newUrls.length > 0) {
+      onUpload?.(newUrls)
+    }
+
+    // Reset the input so the same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }
+
+  async function handleRemoveImage(url: string){
+    // Extract file path from URL for deletion from storage
+    try {
+      const urlParts = url.split('/')
+      const fileName = urlParts[urlParts.length - 1]
+      
+      // Attempt to delete from storage (may fail if permissions issue, but continue anyway)
+      await supabase.storage.from(bucket).remove([fileName])
+    } catch (err) {
+      console.warn('Could not delete from storage:', err)
+    }
+    
+    onRemove?.(url)
+    toast.success('Image removed')
+  }
+
+  const allUrls = existingUrls
 
   return (
     <div className="space-y-4">
@@ -41,32 +105,16 @@ export default function ImageUploader({ bucket = 'resort-images', onUpload }: Pr
         <input 
           ref={fileInputRef}
           type="file" 
-          multiple 
+          multiple={multiple}
           accept="image/*"
-          onChange={(e) => setFiles(e.target.files)} 
+          onChange={handleFileChange}
+          disabled={uploading}
           className="hidden"
           id={`image-input-${inputId}`}
         />
         <label 
           htmlFor={`image-input-${inputId}`}
-          className="inline-flex items-center gap-2 px-6 py-3 border-2 border-slate-300 rounded-xl font-semibold text-slate-700 hover:border-resort-400 hover:bg-resort-50 transition-all cursor-pointer bg-white shadow-sm"
-        >
-          <FiFolder className="w-5 h-5" />
-          <span>Choose Files</span>
-        </label>
-        
-        {files && (
-          <div className="flex items-center gap-3 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
-            <span className="text-blue-600 font-semibold text-sm">
-              {files.length} file{files.length !== 1 ? 's' : ''} selected
-            </span>
-          </div>
-        )}
-        
-        <button 
-          onClick={handleUpload} 
-          disabled={uploading || !files}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-resort-500 to-blue-500 text-white rounded-xl font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+          className={`inline-flex items-center gap-2 px-6 py-3 border-2 border-slate-300 rounded-xl font-semibold text-slate-700 hover:border-resort-400 hover:bg-resort-50 transition-all cursor-pointer bg-white shadow-sm ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           {uploading ? (
             <>
@@ -75,27 +123,39 @@ export default function ImageUploader({ bucket = 'resort-images', onUpload }: Pr
             </>
           ) : (
             <>
-              <FiUpload className="w-5 h-5" />
-              <span>Upload Images</span>
+              <FiFolder className="w-5 h-5" />
+              <span>{multiple ? 'Choose Files' : 'Choose File'}</span>
             </>
           )}
-        </button>
+        </label>
+        
+        {allUrls.length > 0 && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+            <FiCheck className="text-green-600 w-4 h-4" />
+            <span className="text-green-700 font-semibold text-sm">
+              {allUrls.length} image{allUrls.length !== 1 ? 's' : ''} uploaded
+            </span>
+          </div>
+        )}
       </div>
       
       <div className="text-xs text-slate-500">
-        <p className="flex items-center gap-1"><FiInfo className="w-4 h-4" /> <strong>Tip:</strong> Upload high-quality photos showing pool, rooms, amenities, and outdoor areas. Maximum 10 images recommended.</p>
+        <p className="flex items-center gap-1">
+          <FiInfo className="w-4 h-4" /> 
+          <strong>Tip:</strong> Images upload automatically when selected. Maximum {maxFiles} images. Click the × to remove an image.
+        </p>
       </div>
       
-      {uploadedUrls.length > 0 && (
+      {allUrls.length > 0 && (
         <div className="space-y-3 p-4 bg-green-50 border-2 border-green-200 rounded-xl">
           <div className="flex items-center gap-2">
             <FiCheck className="text-green-600 w-5 h-5" />
             <div className="text-sm font-semibold text-green-800">
-              Successfully uploaded {uploadedUrls.length} image{uploadedUrls.length !== 1 ? 's' : ''}
+              {allUrls.length} image{allUrls.length !== 1 ? 's' : ''} ready
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {uploadedUrls.map((url, index) => (
+            {allUrls.map((url, index) => (
               <div key={url} className="relative group">
                 <img 
                   src={url} 
@@ -105,6 +165,16 @@ export default function ImageUploader({ bucket = 'resort-images', onUpload }: Pr
                 <div className="absolute top-2 left-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded">
                   {index + 1}
                 </div>
+                {onRemove && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImage(url)}
+                    className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                    title="Remove image"
+                  >
+                    <FiX className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             ))}
           </div>

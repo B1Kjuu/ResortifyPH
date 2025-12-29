@@ -3,11 +3,27 @@ import { NextRequest, NextResponse } from 'next/server'
 // Simple in-memory IP-based rate limiter (best-effort). For production, use Redis (e.g., Upstash).
 const WINDOW_MS = 60 * 1000 // 1 minute
 const MAX_REQUESTS = 10 // per WINDOW_MS
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000 // Cleanup every 5 minutes
 
 type Entry = { count: number; windowStart: number }
 const buckets = new Map<string, Entry>()
+let lastCleanup = Date.now()
+
+// Cleanup stale entries to prevent memory leak
+function cleanupStaleEntries() {
+  const now = Date.now()
+  if (now - lastCleanup < CLEANUP_INTERVAL_MS) return
+  
+  for (const [key, entry] of buckets.entries()) {
+    if (now - entry.windowStart > WINDOW_MS * 2) {
+      buckets.delete(key)
+    }
+  }
+  lastCleanup = now
+}
 
 function allow(ip: string | undefined): boolean {
+  cleanupStaleEntries()
   const key = ip || 'unknown'
   const now = Date.now()
   const entry = buckets.get(key)
