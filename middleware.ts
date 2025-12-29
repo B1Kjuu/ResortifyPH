@@ -63,6 +63,21 @@ export default function middleware(req: NextRequest) {
     ? `default-src 'self'; img-src ${imgSources}; script-src 'self' 'nonce-${nonce}' 'strict-dynamic'; style-src 'self' 'unsafe-inline'; connect-src 'self' ${supabaseHost} ${supabaseWss} ${nominatim}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
     : `default-src 'self'; img-src ${imgSources}; script-src 'self' 'nonce-${nonce}' 'unsafe-eval' 'strict-dynamic'; style-src 'self' 'unsafe-inline'; connect-src 'self' ${supabaseHost} ${supabaseWss} ${nominatim} ws:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
 
+  // Normalize double-encoded bracket segments in Next static chunk paths
+  // e.g. %255BbookingId%255D -> %5BbookingId%5D
+  if (pathname.startsWith('/_next/static/chunks/app/')) {
+    const fixedPath = pathname
+      .replaceAll('%255B', '%5B')
+      .replaceAll('%255D', '%5D')
+    if (fixedPath !== pathname) {
+      const url = req.nextUrl.clone()
+      url.pathname = fixedPath
+      const rewriteRes = NextResponse.rewrite(url, { request: { headers } })
+      rewriteRes.headers.set('Content-Security-Policy', csp)
+      return rewriteRes
+    }
+  }
+
   const res = NextResponse.next({ request: { headers } })
   res.headers.set('Content-Security-Policy', csp)
   return res
