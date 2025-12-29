@@ -96,18 +96,16 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
         // Get owner info - with error handling
         if (resortData.owner_id) {
-          const { data: ownerData, error: ownerError } = await supabase
+          const { data: ownerData } = await supabase
             .from('profiles')
             .select('id, email, full_name, role, is_admin')
             .eq('id', resortData.owner_id)
-            .single()
+            .maybeSingle()
           
           if (!mounted) return
 
-          if (!ownerError && ownerData) {
+          if (ownerData) {
             setOwner(ownerData)
-          } else if (ownerError) {
-            console.warn('Owner fetch warning (non-critical):', ownerError)
           }
         }
 
