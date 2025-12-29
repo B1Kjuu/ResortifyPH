@@ -142,16 +142,22 @@ a:not([class]) {
 }
 
 /* Input focus states */
-input:focus, select:focus, textarea:focus {
+input:focus,
+select:focus,
+textarea:focus {
   @apply ring-2 ring-resort-400 ring-offset-1 border-resort-400;
 }
 
 /* Better mobile tap targets */
 @media (max-width: 640px) {
-  button, a, input, select, textarea {
+  button,
+  a,
+  input,
+  select,
+  textarea {
     min-height: 44px;
   }
-  
+
   .btn-mobile {
     @apply py-3 px-4 text-base;
   }
