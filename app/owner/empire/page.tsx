@@ -13,6 +13,7 @@ export default function Empire(){
   const [stats, setStats] = useState({ totalBookings: 0, pending: 0, confirmed: 0, rejected: 0 })
   const [loading, setLoading] = useState(true)
   const [bookings, setBookings] = useState<any[]>([])
+  const [ownedResortIds, setOwnedResortIds] = useState<string[]>([])
   const [selectedResortId, setSelectedResortId] = useState<string>('all')
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [selectedDayBookings, setSelectedDayBookings] = useState<any[]>([])
@@ -63,6 +64,7 @@ export default function Empire(){
 
         if (resorts && resorts.length > 0) {
           const resortIds = resorts.map(r => r.id)
+          setOwnedResortIds(resortIds)
 
           const { data: bookings } = await supabase
             .from('bookings')
@@ -118,6 +120,74 @@ export default function Empire(){
     
     return () => { mounted = false }
   }, [])
+
+  // Recalculate stats/bookings when underlying table changes (e.g., deletes)
+  useEffect(() => {
+    let mounted = true
+    async function refresh() {
+      if (!profile?.id) return
+      try {
+        // If resort IDs are not ready, fetch them
+        let resortIds = ownedResortIds
+        if (!resortIds || resortIds.length === 0) {
+          const { data: resorts } = await supabase
+            .from('resorts')
+            .select('id')
+            .eq('owner_id', profile.id)
+          resortIds = (resorts || []).map(r => r.id)
+          setOwnedResortIds(resortIds)
+        }
+
+        let statsData = { totalBookings: 0, pending: 0, confirmed: 0, rejected: 0 }
+        if (resortIds.length > 0) {
+          const { data: rows } = await supabase
+            .from('bookings')
+            .select('status')
+            .in('resort_id', resortIds)
+          const pending = (rows || []).filter(b => b.status === 'pending').length
+          const confirmed = (rows || []).filter(b => b.status === 'confirmed').length
+          const rejected = (rows || []).filter(b => ['rejected','cancelled','canceled'].includes(String(b.status || '').toLowerCase())).length
+          statsData = { totalBookings: (rows || []).length, pending, confirmed, rejected }
+        }
+
+        const { data: rpcData } = await supabase.rpc('get_owner_bookings')
+        const enrichedBookings = (rpcData || []).map((row: any) => ({
+          id: row.booking_id,
+          resort_id: row.resort_id,
+          guest_id: row.guest_id,
+          date_from: row.date_from,
+          date_to: row.date_to,
+          guest_count: row.guest_count,
+          status: row.status,
+          created_at: row.created_at,
+          resort: { id: row.resort_id, name: row.resort_name },
+          guest: { id: row.guest_id, full_name: row.guest_full_name, email: row.guest_email }
+        }))
+
+        if (mounted) {
+          setStats(statsData)
+          setBookings(enrichedBookings)
+        }
+      } catch (e) {
+        console.warn('Refresh owner stats/bookings failed:', e)
+      }
+    }
+
+    const channel = supabase
+      .channel('owner-bookings')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, (payload) => {
+        // Only react if the change relates to one of the owner's resorts
+        const resortId = (payload.new as any)?.resort_id || (payload.old as any)?.resort_id
+        if (!resortId || (ownedResortIds.length > 0 && !ownedResortIds.includes(resortId))) return
+        refresh()
+      })
+      .subscribe()
+
+    return () => {
+      mounted = false
+      supabase.removeChannel(channel)
+    }
+  }, [profile?.id, ownedResortIds])
 
   // Avoid early returns before hooks; render loading state inline if needed
 

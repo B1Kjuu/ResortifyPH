@@ -473,8 +473,8 @@ export default function ResortsPage(){
               <div className="w-40 flex-shrink-0">
                 <LocationCombobox value={selectedLocation === 'all' ? '' : selectedLocation} onChange={(province) => setSelectedLocation(province || 'all')} placeholder="Location" ariaLabel="Filter by location" variant="hero" />
               </div>
-              {/* Type */}
-              <Select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} ariaLabel="Filter by resort type" className="flex-shrink-0 min-w-[140px]">
+              {/* Type (mobile-only to avoid duplicate accessible labels with desktop select) */}
+              <Select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} ariaLabel="Filter by resort type" className="flex-shrink-0 min-w-[140px] md:hidden">
                 <option value="all">All Types</option>
                 {RESORT_TYPES.map((t) => (<option key={t.id} value={t.id}>{t.label}</option>))}
               </Select>
