@@ -60,8 +60,8 @@ export default function middleware(req: NextRequest) {
 
   const nominatim = 'https://nominatim.openstreetmap.org'
   const csp = isProd
-    ? `default-src 'self'; img-src ${imgSources}; script-src 'self' 'nonce-${nonce}' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ${supabaseHost} ${supabaseWss} ${nominatim}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
-    : `default-src 'self'; img-src ${imgSources}; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; connect-src 'self' ${supabaseHost} ${supabaseWss} ${nominatim} ws:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
+    ? `default-src 'self'; img-src ${imgSources}; script-src 'self' 'nonce-${nonce}' 'strict-dynamic'; style-src 'self' 'unsafe-inline'; connect-src 'self' ${supabaseHost} ${supabaseWss} ${nominatim}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
+    : `default-src 'self'; img-src ${imgSources}; script-src 'self' 'nonce-${nonce}' 'unsafe-eval' 'strict-dynamic'; style-src 'self' 'unsafe-inline'; connect-src 'self' ${supabaseHost} ${supabaseWss} ${nominatim} ws:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
 
   const res = NextResponse.next({ request: { headers } })
   res.headers.set('Content-Security-Policy', csp)

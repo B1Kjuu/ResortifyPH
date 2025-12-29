@@ -1,6 +1,7 @@
 import './globals.css'
 import React from 'react'
 import { headers } from 'next/headers'
+import Script from 'next/script'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { Toaster } from 'sonner'
@@ -90,8 +91,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        <script
+        <Script
+          id="jsonld"
           type="application/ld+json"
+          nonce={nonce}
+          // Use beforeInteractive to ensure JSON-LD is available early without violating CSP
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
@@ -105,15 +110,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthHashHandler />
         <Toaster position="top-right" richColors />
         {/* Ensure a 'load' event fires promptly after DOM is ready for tests */}
-        <script
+        <Script
+          id="emit-load-event"
+          nonce={nonce}
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `window.addEventListener('DOMContentLoaded', function(){ try { window.dispatchEvent(new Event('load')); } catch {} });`,
           }}
         />
         {/* Provide nonce to Next internal scripts; suppress hydration warnings */}
         {nonce && (
-          <script
+          <Script
+            id="next-internal-nonce"
             nonce={nonce}
+            strategy="beforeInteractive"
             dangerouslySetInnerHTML={{ __html: `window.__NEXT_SCRIPT_NONCE="${nonce}"` }}
             suppressHydrationWarning
           />

@@ -27,14 +27,22 @@ export default function CommandCenter(){
     
     async function loadStats(){
       // Load open reports for moderation queue only
-      const { data: openReports } = await supabase
+      // Handle historical data where status may be stored as 'in-review' (hyphen) instead of 'in_review' (underscore)
+      const { data: openReports, error } = await supabase
         .from('reports')
         .select('id, reporter_id, chat_id, message_id, target_user_id, reason, status, created_at')
-        .in('status', ['open','in_review'])
+        .in('status', ['open','in_review','in-review'])
         .order('created_at', { ascending: false })
 
+      if (error) {
+        console.error('Reports fetch error:', error)
+      }
       if (mounted) {
-        setReports(openReports || [])
+        setReports((openReports || []).map(r => ({
+          ...r,
+          // Normalize status for UI consistency
+          status: r.status === 'in-review' ? 'in_review' : r.status
+        })))
       }
     }
     
