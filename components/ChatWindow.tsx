@@ -438,27 +438,30 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
   }, [messages])
 
   return (
-    <div className="flex h-full min-h-[400px] w-full flex-col rounded-md border">
-      <div className="flex items-center justify-between border-b px-4 py-2 bg-gray-50">
-        <div>
-          <h3 className="font-semibold">{title || dynamicTitle || 'Chat'}</h3>
-          {onlineUsers.length > 0 && (
-            <div className="text-xs text-green-600 flex items-center gap-1">
-              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-              {onlineUsers.length} online
+    <div className="flex h-full w-full flex-col rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 bg-gradient-to-r from-slate-50 to-white">
+        <div className="min-w-0 flex-1">
+          <h3 className="font-semibold text-slate-900 truncate">{title || dynamicTitle || 'Chat'}</h3>
+          <div className="flex items-center gap-3 mt-0.5">
+            {onlineUsers.length > 0 && (
+              <div className="text-xs text-green-600 flex items-center gap-1">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                {onlineUsers.length} online
+              </div>
+            )}
+            <div className="text-xs text-amber-600 flex items-center gap-1">
+              <span aria-hidden>💳</span>
+              <span className="hidden sm:inline">Share payment instructions and receipt here.</span>
+              <span className="sm:hidden">Payment in chat</span>
             </div>
-          )}
-          <div className="text-xs text-amber-700 flex items-center gap-1 mt-0.5">
-            <span aria-hidden>💳</span>
-            Share payment instructions and receipt here.
           </div>
         </div>
         {chat && (
-          <div className="flex items-center gap-2">
-            <div className="text-xs text-gray-500">Chat ID: {chat.id.slice(0, 8)}</div>
+          <div className="flex items-center gap-1.5 ml-2 flex-shrink-0">
+            <span className="hidden sm:inline text-xs text-slate-400">ID: {chat.id.slice(0, 8)}</span>
             <ReportButton chatId={chat.id} />
             <button
-              className="ml-1 text-xs rounded-md border border-red-200 px-2 py-1 text-red-700 hover:bg-red-50"
+              className="text-xs rounded-lg border border-red-200 px-2 py-1.5 text-red-600 hover:bg-red-50 transition-colors"
               onClick={async () => {
                 try {
                   const { data: userRes } = await supabase.auth.getUser()
@@ -477,27 +480,33 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
               }}
               title="Delete chat from your view"
             >
-              Delete Chat
+              <span className="hidden sm:inline">Delete</span>
+              <span className="sm:hidden">×</span>
             </button>
           </div>
         )}
       </div>
       {sendError && (
-        <div className="mx-4 mt-2 rounded-md bg-red-50 px-3 py-2 text-xs text-red-700 border border-red-200">
+        <div className="mx-3 sm:mx-4 mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700 border border-red-200">
           Failed to send: {sendError}
         </div>
       )}
       {loading ? (
-        <div className="flex flex-1 items-center justify-center text-sm text-gray-500">Loading chat…</div>
+        <div className="flex flex-1 items-center justify-center text-sm text-slate-500">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 border-2 border-slate-300 border-t-resort-500 rounded-full animate-spin"></div>
+            Loading chat…
+          </div>
+        </div>
       ) : !userId ? (
-        <div className="flex flex-1 items-center justify-center text-sm text-gray-500">Sign in to chat.</div>
+        <div className="flex flex-1 items-center justify-center text-sm text-slate-500 p-4">Sign in to chat.</div>
       ) : !chat ? (
-        <div className="flex flex-1 items-center justify-center text-sm text-gray-500">
-          <div className="text-center">
-            <div className="mb-2 font-semibold">Chat not available</div>
-            <div className="text-xs text-gray-600 mb-3">This conversation might be archived or not created yet.</div>
+        <div className="flex flex-1 items-center justify-center text-sm text-slate-500 p-4">
+          <div className="text-center max-w-xs">
+            <div className="mb-2 font-semibold text-slate-700">Chat not available</div>
+            <div className="text-xs text-slate-500 mb-4">This conversation might be archived or not created yet.</div>
             <button
-              className="inline-flex items-center rounded-md border px-3 py-1 text-sm bg-slate-50 text-slate-700 hover:bg-slate-100"
+              className="inline-flex items-center rounded-lg border border-slate-200 px-4 py-2 text-sm bg-white text-slate-700 hover:bg-slate-50 shadow-sm transition-colors"
               onClick={async () => {
                 try {
                   const { data: userRes } = await supabase.auth.getUser()

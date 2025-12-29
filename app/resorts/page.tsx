@@ -120,6 +120,7 @@ export default function ResortsPage(){
   const [guestCount, setGuestCount] = useState(searchParams.get('guests') || 'all')
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>(searchParams.get('amenities')?.split(',').filter(Boolean) || [])
   const [sortBy, setSortBy] = useState<'newest' | 'price-asc' | 'price-desc'>((searchParams.get('sort') as any) || 'newest')
+  const [stayTypeFilter, setStayTypeFilter] = useState<'all' | 'daytour' | 'overnight'>(searchParams.get('stayType') as any || 'all')
   const [dateFrom, setDateFrom] = useState<Date | null>(searchParams.get('dateFrom') ? new Date(searchParams.get('dateFrom')!) : null)
   const [dateTo, setDateTo] = useState<Date | null>(searchParams.get('dateTo') ? new Date(searchParams.get('dateTo')!) : null)
   const [availableResortIds, setAvailableResortIds] = useState<string[] | null>(null)
@@ -158,6 +159,7 @@ export default function ResortsPage(){
     if (guestCount !== 'all') params.set('guests', guestCount)
     if (selectedAmenities.length > 0) params.set('amenities', selectedAmenities.join(','))
     if (sortBy !== 'newest') params.set('sort', sortBy)
+    if (stayTypeFilter !== 'all') params.set('stayType', stayTypeFilter)
     if (priceRange[0] !== priceBounds[0] || priceRange[1] !== priceBounds[1]) {
       params.set('priceMin', priceRange[0].toString())
       params.set('priceMax', priceRange[1].toString())
@@ -179,7 +181,7 @@ export default function ResortsPage(){
       // Fallback: direct history replacement
       try { window.history.replaceState(null, '', url) } catch {}
     }
-  }, [searchTerm, selectedType, selectedLocation, guestCount, selectedAmenities, sortBy, priceRange, priceBounds, dateFrom, dateTo, router])
+  }, [searchTerm, selectedType, selectedLocation, guestCount, selectedAmenities, sortBy, stayTypeFilter, priceRange, priceBounds, dateFrom, dateTo, router])
 
   useEffect(() => {
     let mounted = true
@@ -496,12 +498,18 @@ export default function ResortsPage(){
               </div>
             </div>
             
-            {/* Row 2: Type + Guests + Sort + Actions */}
+            {/* Row 2: Type + Stay Type + Guests + Sort + Actions */}
             <div className="flex flex-wrap gap-2">
               {/* Type */}
               <Select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} ariaLabel="Filter by resort type" className="flex-1 sm:flex-initial min-w-[120px]">
                 <option value="all">All Types</option>
                 {RESORT_TYPES.map((t) => (<option key={t.id} value={t.id}>{t.label}</option>))}
+              </Select>
+              {/* Stay Type Filter - daytour/overnight */}
+              <Select value={stayTypeFilter} onChange={(e) => setStayTypeFilter(e.target.value as any)} ariaLabel="Filter by stay type" className="flex-1 sm:flex-initial min-w-[110px]">
+                <option value="all">All Stays</option>
+                <option value="daytour">🌞 Daytour</option>
+                <option value="overnight">🌙 Overnight</option>
               </Select>
               {/* Guests */}
               <div className="flex items-center gap-1">
@@ -516,7 +524,7 @@ export default function ResortsPage(){
               {/* Total toggle */}
               <button type="button" onClick={() => setShowTotalPrice(v => !v)} className={`flex-shrink-0 px-3 py-2.5 rounded-xl text-sm font-medium border transition-colors ${showTotalPrice ? 'bg-resort-600 text-white border-resort-600' : 'bg-white text-slate-700 border-slate-300 hover:border-resort-400'}`} aria-pressed={showTotalPrice}>Total</button>
               {/* Clear All */}
-              <button type="button" onClick={() => { setSearchTerm(''); setSelectedType('all'); setSelectedLocation('all'); setGuestCount('all'); setSelectedAmenities([]); setSortBy('newest'); setPriceRange(priceBounds); setDateFrom(null); setDateTo(null) }} className="flex-shrink-0 px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 rounded-xl font-medium transition-colors border border-transparent hover:border-red-200">Clear</button>
+              <button type="button" onClick={() => { setSearchTerm(''); setSelectedType('all'); setSelectedLocation('all'); setGuestCount('all'); setSelectedAmenities([]); setSortBy('newest'); setStayTypeFilter('all'); setPriceRange(priceBounds); setDateFrom(null); setDateTo(null) }} className="flex-shrink-0 px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 rounded-xl font-medium transition-colors border border-transparent hover:border-red-200">Clear</button>
             </div>
           </div>
         </div>

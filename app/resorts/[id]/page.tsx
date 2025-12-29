@@ -47,6 +47,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [bookedDates, setBookedDates] = useState<string[]>([])
+  const [rawBookings, setRawBookings] = useState<Array<{ date_from: string; date_to: string; booking_type: string | null }>>([])
   const [selectedRange, setSelectedRange] = useState<{ from: Date | undefined; to: Date | undefined }>({ from: undefined, to: undefined })
   const [activeImage, setActiveImage] = useState(0)
   const [showLightbox, setShowLightbox] = useState(false)
@@ -137,27 +138,14 @@ export default function ResortDetail({ params }: { params: { id: string } }){
         // Get booked dates for this resort
         const { data: bookingsData } = await supabase
           .from('bookings')
-          .select('date_from, date_to, status')
+          .select('date_from, date_to, status, booking_type')
           .eq('resort_id', params.id)
           .in('status', ['pending', 'confirmed'])
 
         if (bookingsData && mounted) {
-          // Only mark CONFIRMED bookings as unavailable (pending bookings don't block dates)
-          const allBookedDates: string[] = []
-          bookingsData.forEach(booking => {
-            // Skip pending bookings - only confirmed ones block the calendar
-            if (booking.status !== 'confirmed') return
-            
-            const start = new Date(booking.date_from)
-            const end = new Date(booking.date_to)
-            const current = new Date(start)
-            
-            while (current <= end) {
-              allBookedDates.push(format(current, 'yyyy-MM-dd'))
-              current.setDate(current.getDate() + 1)
-            }
-          })
-          setBookedDates(allBookedDates)
+          // Store bookings with their types for slot-aware availability
+          // We'll compute bookedDates based on selected booking type in the UI
+          setRawBookings(bookingsData.filter(b => b.status === 'confirmed'))
         }
 
         // Get current user
@@ -189,13 +177,14 @@ export default function ResortDetail({ params }: { params: { id: string } }){
           }
 
           // Eligibility: completed confirmed booking without an existing review
+          // For daytour bookings (single day), allow review on the same day after checkout
           const { data: completedBooking } = await supabase
             .from('bookings')
             .select('id, date_to')
             .eq('resort_id', params.id)
             .eq('guest_id', session.user.id)
             .eq('status', 'confirmed')
-            .lt('date_to', new Date().toISOString().slice(0,10))
+            .lte('date_to', new Date().toISOString().slice(0,10)) // Changed to lte to include same-day
             .order('date_to', { ascending: false })
             .limit(1)
             .maybeSingle()
@@ -292,6 +281,58 @@ export default function ResortDetail({ params }: { params: { id: string } }){
     
     fetchDynamicPrice()
   }, [useTimeSlotCalendar, selectedSingleDate, selectedDbSlotId, guests, params.id])
+
+  // Compute slot-aware booked dates based on selected booking type
+  // - Daytour bookings only block other daytour bookings on the same date
+  // - Overnight bookings only block other overnight bookings on the same date
+  // - 22hrs bookings block the entire day
+  // - Long stay bookings (multi-day) block all dates in range for all types
+  const slotAwareBookedDates = useMemo(() => {
+    if (!rawBookings.length) return []
+    
+    const blockedDates: string[] = []
+    
+    rawBookings.forEach(booking => {
+      const start = new Date(booking.date_from)
+      const end = new Date(booking.date_to)
+      const isMultiDay = format(start, 'yyyy-MM-dd') !== format(end, 'yyyy-MM-dd')
+      
+      // For multi-day bookings, block all dates regardless of booking type
+      if (isMultiDay) {
+        const current = new Date(start)
+        while (current <= end) {
+          blockedDates.push(format(current, 'yyyy-MM-dd'))
+          current.setDate(current.getDate() + 1)
+        }
+        return
+      }
+      
+      // For single-day bookings, check if it conflicts with selected booking type
+      const dateStr = format(start, 'yyyy-MM-dd')
+      const existingType = booking.booking_type
+      
+      // 22hrs blocks everything
+      if (existingType === '22hrs') {
+        blockedDates.push(dateStr)
+        return
+      }
+      
+      // If user is booking the same type, block
+      if (bookingType && existingType === bookingType) {
+        blockedDates.push(dateStr)
+        return
+      }
+      
+      // For legacy types, treat day_12h as daytour and overnight_22h as overnight
+      if (existingType === 'day_12h' && bookingType === 'daytour') {
+        blockedDates.push(dateStr)
+      } else if (existingType === 'overnight_22h' && bookingType === 'overnight') {
+        blockedDates.push(dateStr)
+      }
+    })
+    
+    return [...new Set(blockedDates)] // Remove duplicates
+  }, [rawBookings, bookingType])
 
   function handleQuickExplore(province: string | null) {
     const selectedProvince = province || ''
@@ -1008,7 +1049,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                     />
                   ) : (
                     <DateRangePicker 
-                      bookedDates={bookedDates}
+                      bookedDates={slotAwareBookedDates}
                       onSelectRange={setSelectedRange}
                       selectedRange={selectedRange}
                       singleDateMode={bookingType === 'daytour'}

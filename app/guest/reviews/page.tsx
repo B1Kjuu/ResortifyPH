@@ -37,13 +37,15 @@ export default function MyReviewsPage(){
         setReviews(data || [])
 
         // Eligible to review: past confirmed bookings for this guest without an existing review
+        // For daytour bookings (single day), allow review on the same day after checkout time
+        // We use date_to <= today to include same-day completed bookings
         const today = new Date().toISOString().slice(0,10)
         const { data: bookings, error: bErr } = await supabase
           .from('bookings')
           .select('id, resort_id, date_to, resorts:resorts(id, name, location, images)')
           .eq('guest_id', uid)
           .eq('status', 'confirmed')
-          .lt('date_to', today)
+          .lte('date_to', today) // Changed to lte (less than or equal)
         if (bErr) throw bErr
 
         const bookingIds = (bookings || []).map((b: any) => b.id)

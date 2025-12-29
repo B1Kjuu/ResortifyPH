@@ -45,18 +45,57 @@ export default function TimeSlotCalendar({
       const gridStart = startOfWeek(firstOfMonth)
       const gridEnd = endOfWeek(lastOfMonth)
       
-      // Fetch availability for each date (batch by checking a few key dates)
+      // Collect dates for the grid
       const dates: Date[] = []
       let cursor = gridStart
       while (cursor <= gridEnd) {
         dates.push(new Date(cursor))
         cursor = addDays(cursor, 1)
+        if (dates.length > 42) break
       }
       
-      // For now, initialize with 'available' (in production, this would batch fetch from API)
+      // Initialize with loading state (none = unknown/loading)
       for (const date of dates) {
         const key = format(date, 'yyyy-MM-dd')
-        cache[key] = { daytour: 'available', overnight: 'available', '22hrs': 'available' }
+        cache[key] = { daytour: 'none', overnight: 'none', '22hrs': 'none' }
+      }
+      
+      // Fetch availability for each date from the API (batch in parallel, max 7 at a time)
+      const batchSize = 7
+      for (let i = 0; i < dates.length; i += batchSize) {
+        const batch = dates.slice(i, i + batchSize)
+        const promises = batch.map(async (date) => {
+          const key = format(date, 'yyyy-MM-dd')
+          try {
+            const response = await fetch(`/api/resorts/${resortId}/availability?date=${key}`)
+            if (response.ok) {
+              const data = await response.json()
+              const slots = data.availableSlots || []
+              
+              // Determine availability for each slot type
+              const slotAvail: SlotAvailability = { daytour: 'none', overnight: 'none', '22hrs': 'none' }
+              slots.forEach((slot: { slot_type: 'daytour' | 'overnight' | '22hrs'; is_available: boolean }) => {
+                slotAvail[slot.slot_type] = slot.is_available ? 'available' : 'booked'
+              })
+              
+              // If no slots configured, mark as 'none'
+              if (slots.length === 0) {
+                slotAvail.daytour = 'available'
+                slotAvail.overnight = 'available'
+              }
+              
+              return { key, slotAvail }
+            }
+          } catch {
+            // On error, mark as available (fallback)
+          }
+          return { key, slotAvail: { daytour: 'available', overnight: 'available', '22hrs': 'none' } as SlotAvailability }
+        })
+        
+        const results = await Promise.all(promises)
+        results.forEach(({ key, slotAvail }) => {
+          cache[key] = slotAvail
+        })
       }
       
       setAvailabilityCache(cache)

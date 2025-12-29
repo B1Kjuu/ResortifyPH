@@ -9,10 +9,16 @@ type Props = {
 export default function ResortChatPage({ params, searchParams }: Props) {
   const role = searchParams.as || 'guest'
   return (
-    <div className="mx-auto max-w-3xl p-4 space-y-3">
-      <DisclaimerBanner />
-      {/* Only pass title if provided; otherwise ChatWindow will fetch resort name */}
-      <ChatWindow resortId={params.resortId} participantRole={role} title={searchParams.title} />
+    <div className="h-[calc(100vh-80px)] flex flex-col">
+      <div className="mx-auto w-full max-w-4xl flex-1 flex flex-col p-3 sm:p-4 lg:p-6">
+        <div className="mb-3">
+          <DisclaimerBanner />
+        </div>
+        <div className="flex-1 min-h-0">
+          {/* Only pass title if provided; otherwise ChatWindow will fetch resort name */}
+          <ChatWindow resortId={params.resortId} participantRole={role} title={searchParams.title} />
+        </div>
+      </div>
     </div>
   )
 }
