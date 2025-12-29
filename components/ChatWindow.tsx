@@ -362,8 +362,8 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
                   .from('profiles')
                   .select('email')
                   .eq('id', ownerId)
-                  .single()
-                to = owner?.email
+                  .maybeSingle()
+                to = (owner as any)?.email
               }
             } else if (resortId) {
               const { data: r } = await supabase
@@ -377,8 +377,8 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
                   .from('profiles')
                   .select('email')
                   .eq('id', ownerId)
-                  .single()
-                to = owner?.email
+                  .maybeSingle()
+                to = (owner as any)?.email
               }
             }
 

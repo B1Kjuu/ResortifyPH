@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (bookingId && !to) {
+    if (bookingId && !to && sb) {
       const { data: booking } = await sb
         .from('bookings')
         .select('id, resort_id, resorts(name, owner_id), guest_id')
@@ -83,13 +83,13 @@ export async function POST(req: NextRequest) {
       resortName = resRow?.name ?? null
       const ownerId = resRow?.owner_id ?? null
       link = `/chat/${bookingId}?as=owner`
-      if (ownerId) {
+      if (ownerId && sb) {
         const { data: owner } = await sb
           .from('profiles')
           .select('email')
           .eq('id', ownerId)
-          .single()
-        ownerEmail = owner?.email ?? null
+          .maybeSingle()
+        ownerEmail = (owner as any)?.email ?? null
 
         // Ensure owner participant exists
         if (sb && chatId) {
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
           }
         }
       }
-    } else if (resortId && !to) {
+    } else if (resortId && !to && sb) {
       const { data: resort } = await sb
         .from('resorts')
         .select('name, owner_id')
@@ -114,13 +114,13 @@ export async function POST(req: NextRequest) {
       resortName = resort?.name ?? null
       const ownerId = resort?.owner_id ?? null
       link = `/chat/resort/${resortId}?as=owner`
-      if (ownerId) {
+      if (ownerId && sb) {
         const { data: owner } = await sb
           .from('profiles')
           .select('email')
           .eq('id', ownerId)
-          .single()
-        ownerEmail = owner?.email ?? null
+          .maybeSingle()
+        ownerEmail = (owner as any)?.email ?? null
 
         // Ensure owner participant exists
         if (sb && chatId) {
@@ -138,8 +138,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // If server Supabase is unavailable or owner email could not be resolved, skip sending instead of failing
     if (!ownerEmail && !to) {
-      return NextResponse.json({ error: "Owner email not found" }, { status: 404 })
+      return NextResponse.json({ ok: true, skipped: true, reason: 'owner-email-not-found-or-server-supabase-unavailable' }, { status: 202 })
     }
 
     const subject = resortName
@@ -182,7 +183,12 @@ export async function POST(req: NextRequest) {
     let res: any = null
     const finalTo = to ?? ownerEmail
     if (!dryRun && finalTo) {
-      res = await sendEmail({ to: finalTo, subject, html })
+      try {
+        res = await sendEmail({ to: finalTo, subject, html })
+      } catch (e: any) {
+        // Avoid hard failure; report as skipped
+        return NextResponse.json({ ok: true, skipped: true, reason: 'email-send-error', error: e?.message }, { status: 202 })
+      }
     }
 
     // Optional: log notification
