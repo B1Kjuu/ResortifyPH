@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { DayPicker, DateRange } from 'react-day-picker'
-import { format, eachDayOfInterval, parseISO } from 'date-fns'
+import { format, eachDayOfInterval, parseISO, differenceInDays, addDays } from 'date-fns'
+import { FiCalendar, FiClock, FiSun, FiMoon } from 'react-icons/fi'
 import 'react-day-picker/dist/style.css'
 
 interface DateRangePickerProps {
@@ -14,6 +15,10 @@ interface DateRangePickerProps {
   singleDateMode?: boolean // For daytour: select single date only
   onSelectSingleDate?: (date: Date | undefined) => void
   selectedSingleDate?: Date | undefined
+  // New props for time display
+  bookingType?: 'daytour' | 'overnight' | '22hrs' | null
+  checkInTime?: string // HH:mm format
+  checkOutTime?: string // HH:mm format
 }
 
 export default function DateRangePicker({ 
@@ -25,9 +30,44 @@ export default function DateRangePicker({
   singleDateMode = false,
   onSelectSingleDate,
   selectedSingleDate,
+  bookingType,
+  checkInTime,
+  checkOutTime,
 }: DateRangePickerProps) {
   const [monthCount, setMonthCount] = useState(1)
   const wrapperRef = useRef<HTMLDivElement | null>(null)
+
+  // Format time to 12-hour format
+  const formatTime12h = (time?: string) => {
+    if (!time) return ''
+    try {
+      const [h, m] = time.split(':').map(Number)
+      const ampm = h >= 12 ? 'PM' : 'AM'
+      const hr12 = ((h + 11) % 12) + 1
+      return `${hr12}:${String(m).padStart(2, '0')} ${ampm}`
+    } catch {
+      return time
+    }
+  }
+
+  // Get default times based on booking type
+  const getDefaultTimes = () => {
+    if (checkInTime && checkOutTime) {
+      return { checkIn: formatTime12h(checkInTime), checkOut: formatTime12h(checkOutTime) }
+    }
+    switch (bookingType) {
+      case 'daytour':
+        return { checkIn: '8:00 AM', checkOut: '5:00 PM' }
+      case 'overnight':
+        return { checkIn: '7:00 PM', checkOut: '6:00 AM' }
+      case '22hrs':
+        return { checkIn: '2:00 PM', checkOut: '12:00 PM' }
+      default:
+        return { checkIn: '2:00 PM', checkOut: '12:00 PM' }
+    }
+  }
+
+  const times = getDefaultTimes()
   
   // Convert booked date strings to Date objects
   const disabledDates = bookedDates.map(dateStr => parseISO(dateStr))
@@ -83,6 +123,44 @@ export default function DateRangePicker({
     if (!range) {
       onSelectRange({ from: undefined, to: undefined })
       return
+    }
+
+    // For overnight bookings, automatically set 'to' as the next day (always 2 days)
+    // Overnight is a 1-night package: check-in evening day 1, check-out morning day 2
+    if (bookingType === 'overnight' && range.from) {
+      const nextDay = addDays(range.from, 1)
+      // Force it to be exactly 2 days (1 night)
+      if (!range.to || differenceInDays(range.to, range.from) !== 1) {
+        // Check if next day is booked
+        const nextDayStr = format(nextDay, 'yyyy-MM-dd')
+        const isNextDayBooked = disabledDates.some(d => 
+          format(d, 'yyyy-MM-dd') === nextDayStr
+        )
+        if (isNextDayBooked) {
+          onSelectRange({ from: undefined, to: undefined })
+          return
+        }
+        onSelectRange({ from: range.from, to: nextDay })
+        return
+      }
+    }
+
+    // For 22hrs bookings, ensure at least 2 days but allow longer stays
+    if (bookingType === '22hrs' && range.from && range.to) {
+      if (differenceInDays(range.to, range.from) < 1) {
+        // Auto-extend to next day for minimum stay
+        const nextDay = addDays(range.from, 1)
+        const nextDayStr = format(nextDay, 'yyyy-MM-dd')
+        const isNextDayBooked = disabledDates.some(d => 
+          format(d, 'yyyy-MM-dd') === nextDayStr
+        )
+        if (isNextDayBooked) {
+          onSelectRange({ from: undefined, to: undefined })
+          return
+        }
+        onSelectRange({ from: range.from, to: nextDay })
+        return
+      }
     }
 
     // Check if selected range overlaps with booked dates
@@ -147,10 +225,31 @@ export default function DateRangePicker({
           }}
         />
         {selectedSingleDate && (
-          <div className="mt-4 p-3 bg-blue-50 rounded-md border border-blue-200">
-            <p className="text-sm text-blue-900 font-medium">
-              Date: {format(selectedSingleDate, 'EEEE, MMM dd, yyyy')}
+          <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <FiCalendar className="w-4 h-4 text-blue-600" />
+              <span className="text-sm font-semibold text-blue-900">Your Selected Date</span>
+            </div>
+            <p className="text-base font-medium text-gray-800">
+              {format(selectedSingleDate, 'EEEE, MMMM d, yyyy')}
             </p>
+            {bookingType && (
+              <div className="mt-3 pt-3 border-t border-blue-200/50 flex items-center gap-4 text-sm text-gray-600">
+                <div className="flex items-center gap-1.5">
+                  <FiSun className="w-4 h-4 text-amber-500" />
+                  <span>{times.checkIn}</span>
+                </div>
+                <span className="text-gray-400">→</span>
+                <div className="flex items-center gap-1.5">
+                  {bookingType === 'daytour' ? (
+                    <FiSun className="w-4 h-4 text-orange-500" />
+                  ) : (
+                    <FiMoon className="w-4 h-4 text-indigo-500" />
+                  )}
+                  <span>{times.checkOut}</span>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -178,13 +277,39 @@ export default function DateRangePicker({
         }}
       />
       {selectedRange.from && selectedRange.to && (
-        <div className="mt-4 p-3 bg-blue-50 rounded-md border border-blue-200">
-          <p className="text-sm text-blue-900 font-medium">
-            Check-in: {format(selectedRange.from, 'MMM dd, yyyy')}
-          </p>
-          <p className="text-sm text-blue-900 font-medium mt-1">
-            Check-out: {format(selectedRange.to, 'MMM dd, yyyy')}
-          </p>
+        <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <FiCalendar className="w-4 h-4 text-blue-600" />
+            <span className="text-sm font-semibold text-blue-900">Your Stay</span>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-wide">Check-in</p>
+                <p className="text-base font-medium text-gray-800">
+                  {format(selectedRange.from, 'EEE, MMM d, yyyy')}
+                </p>
+                {bookingType && (
+                  <div className="flex items-center gap-1 mt-1 text-sm text-gray-600">
+                    <FiClock className="w-3.5 h-3.5 text-blue-500" />
+                    <span>{times.checkIn}</span>
+                  </div>
+                )}
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-gray-500 uppercase tracking-wide">Check-out</p>
+                <p className="text-base font-medium text-gray-800">
+                  {format(selectedRange.to, 'EEE, MMM d, yyyy')}
+                </p>
+                {bookingType && (
+                  <div className="flex items-center justify-end gap-1 mt-1 text-sm text-gray-600">
+                    <FiClock className="w-3.5 h-3.5 text-blue-500" />
+                    <span>{times.checkOut}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

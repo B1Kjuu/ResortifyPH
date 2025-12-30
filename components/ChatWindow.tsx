@@ -438,30 +438,43 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
   }, [messages])
 
   return (
-    <div className="flex h-full w-full flex-col rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 bg-gradient-to-r from-slate-50 to-white">
+    <div className="flex h-full w-full flex-col rounded-xl sm:rounded-2xl border border-slate-200 bg-white shadow-lg sm:shadow-xl overflow-hidden">
+      {/* Chat Header - Modern gradient with better spacing */}
+      <div className="flex items-center justify-between border-b border-slate-100 px-3 sm:px-4 py-3 sm:py-4 bg-gradient-to-r from-blue-50 via-slate-50 to-white">
+        {/* Back button */}
+        <button
+          onClick={() => window.history.back()}
+          className="shrink-0 p-2 -ml-1 mr-2 rounded-xl hover:bg-slate-100 active:bg-slate-200 transition-all duration-200 touch-manipulation"
+          title="Go back"
+          aria-label="Go back"
+        >
+          <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        
         <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-slate-900 truncate">{title || dynamicTitle || 'Chat'}</h3>
-          <div className="flex items-center gap-3 mt-0.5">
+          <h3 className="font-bold text-slate-900 truncate text-base sm:text-lg">{title || dynamicTitle || 'Chat'}</h3>
+          <div className="flex items-center gap-2 sm:gap-3 mt-1">
             {onlineUsers.length > 0 && (
-              <div className="text-xs text-green-600 flex items-center gap-1">
-                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+              <div className="text-xs sm:text-sm text-emerald-600 flex items-center gap-1.5 font-medium">
+                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-sm shadow-emerald-500/50"></span>
                 {onlineUsers.length} online
               </div>
             )}
-            <div className="text-xs text-amber-600 flex items-center gap-1">
+            <div className="text-xs text-amber-600 flex items-center gap-1.5 bg-amber-50 px-2 py-0.5 rounded-full">
               <span aria-hidden>💳</span>
-              <span className="hidden sm:inline">Share payment instructions and receipt here.</span>
-              <span className="sm:hidden">Payment in chat</span>
+              <span className="hidden sm:inline font-medium">Share payment & receipt here</span>
+              <span className="sm:hidden font-medium">Payment</span>
             </div>
           </div>
         </div>
         {chat && (
-          <div className="flex items-center gap-1.5 ml-2 flex-shrink-0">
-            <span className="hidden sm:inline text-xs text-slate-400">ID: {chat.id.slice(0, 8)}</span>
+          <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+            <span className="hidden lg:inline text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded-md">ID: {chat.id.slice(0, 8)}</span>
             <ReportButton chatId={chat.id} />
             <button
-              className="text-xs rounded-lg border border-red-200 px-2 py-1.5 text-red-600 hover:bg-red-50 transition-colors"
+              className="text-xs rounded-lg border border-red-200 px-2.5 py-1.5 text-red-600 hover:bg-red-50 hover:border-red-300 active:bg-red-100 transition-all duration-200 font-medium"
               onClick={async () => {
                 try {
                   const { data: userRes } = await supabase.auth.getUser()

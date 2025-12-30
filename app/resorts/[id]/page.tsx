@@ -374,6 +374,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
     const bookingDateTo = isDaytour ? selectedSingleDate! : selectedRange.to!
 
     // Guard against overlapping with already booked dates (confirmed bookings)
+    // Use slotAwareBookedDates which considers booking type compatibility
     try {
       const chosen: string[] = []
       const start = new Date(bookingDateFrom)
@@ -383,7 +384,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
         chosen.push(format(cursor, 'yyyy-MM-dd'))
         cursor.setDate(cursor.getDate() + 1)
       }
-      const bookedSet = new Set(bookedDates)
+      const bookedSet = new Set(slotAwareBookedDates)
       const overlaps = chosen.some(d => bookedSet.has(d))
       if (overlaps) {
         toast.error('Selected dates overlap with an existing confirmed booking')
@@ -771,25 +772,25 @@ export default function ResortDetail({ params }: { params: { id: string } }){
               </div>
 
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-1 sm:gap-3 bg-resort-50 p-2.5 sm:p-4 rounded-xl text-center sm:text-left">
+                <div className="flex flex-col items-center gap-1 bg-resort-50 p-2.5 sm:p-4 rounded-xl text-center">
                   <FiDollarSign aria-hidden className="text-lg sm:text-xl text-resort-600" />
                   <div>
                     <p className="text-[10px] sm:text-xs text-slate-600">Per night</p>
                     <p className="text-sm sm:text-lg font-bold text-resort-900">₱{resort.price?.toLocaleString()}</p>
                   </div>
                 </div>
-                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-1 sm:gap-3 bg-resort-50 p-2.5 sm:p-4 rounded-xl text-center sm:text-left">
+                <div className="flex flex-col items-center gap-1 bg-resort-50 p-2.5 sm:p-4 rounded-xl text-center">
                   <FiUsers aria-hidden className="text-lg sm:text-xl text-resort-600" />
                   <div>
-                    <p className="text-xs text-slate-600">Capacity</p>
-                    <p className="text-lg font-bold text-resort-900">{resort.capacity} guests</p>
+                    <p className="text-[10px] sm:text-xs text-slate-600">Capacity</p>
+                    <p className="text-sm sm:text-lg font-bold text-resort-900">{resort.capacity} guests</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 bg-resort-50 p-4 rounded-xl">
-                  <FiTag aria-hidden className="text-xl" />
+                <div className="flex flex-col items-center gap-1 bg-resort-50 p-2.5 sm:p-4 rounded-xl text-center">
+                  <FiTag aria-hidden className="text-lg sm:text-xl text-resort-600" />
                   <div>
-                    <p className="text-xs text-slate-600">Type</p>
-                    <p className="text-lg font-bold text-resort-900">{resort.type || '—'}</p>
+                    <p className="text-[10px] sm:text-xs text-slate-600">Type</p>
+                    <p className="text-sm sm:text-lg font-bold text-resort-900">{resort.type || '—'}</p>
                   </div>
                 </div>
               </div>
@@ -942,12 +943,9 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                   onBookingTypeChange={(type) => {
                     setBookingType(type)
                     setSelectedTimeSlot(null)
-                    // Reset date selection when switching types
-                    if (type === 'daytour') {
-                      setSelectedRange({ from: undefined, to: undefined })
-                    } else {
-                      setSelectedSingleDate(undefined)
-                    }
+                    // Reset ALL date selections when switching types to prevent glitches
+                    setSelectedRange({ from: undefined, to: undefined })
+                    setSelectedSingleDate(undefined)
                   }}
                   onTimeSlotChange={setSelectedTimeSlot}
                   legacyPricing={{
@@ -968,6 +966,10 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                           const val = e.target.value
                           if (val === 'daytour' || val === 'overnight' || val === '22hrs') {
                             setBookingType(val)
+                            // Reset ALL date selections when switching types to prevent glitches
+                            setSelectedRange({ from: undefined, to: undefined })
+                            setSelectedSingleDate(undefined)
+                            setSelectedTimeSlot(null)
                           } else {
                             setStayType(val as any)
                           }
@@ -1055,45 +1057,63 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                       singleDateMode={bookingType === 'daytour'}
                       onSelectSingleDate={setSelectedSingleDate}
                       selectedSingleDate={selectedSingleDate}
+                      bookingType={bookingType}
                     />
                   )}
                 </div>
 
-                <div className="space-y-1">
-                  <label className="block text-sm font-semibold text-slate-700">Number of Guests</label>
-                  <input 
-                    type="number" 
-                    value={guests}
-                    onChange={(e) => setGuests(parseInt(e.target.value) || 1)}
-                    min={1}
-                    max={resort.capacity}
-                    className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-500"
-                  />
-                  <p className="text-xs text-slate-500">Maximum: {resort.capacity} guests</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
+                {/* Guests, Children, Pets - All in one row */}
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
                   <div className="space-y-1">
-                    <label className="block text-sm font-semibold text-slate-700">Children</label>
-                    <input
-                      type="number"
-                      value={childrenCount}
-                      onChange={(e) => setChildrenCount(Math.max(0, parseInt(e.target.value) || 0))}
-                      min={0}
-                      className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-500"
+                    <label className="block text-xs sm:text-sm font-semibold text-slate-700">Guests</label>
+                    <input 
+                      type="text" 
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      placeholder="1"
+                      value={guests === 1 ? '' : guests}
+                      onChange={(e) => {
+                        const val = e.target.value === '' ? 1 : parseInt(e.target.value) || 1
+                        setGuests(Math.min(Math.max(1, val), resort.capacity))
+                      }}
+                      onBlur={(e) => {
+                        if (e.target.value === '') setGuests(1)
+                      }}
+                      className="w-full px-2 sm:px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-500 text-center text-lg font-medium placeholder:text-slate-400"
                     />
-                    <p className="text-xs text-slate-500">Count ages under 13</p>
+                    <p className="text-[10px] sm:text-xs text-slate-500">Max: {resort.capacity}</p>
                   </div>
                   <div className="space-y-1">
-                    <label className="block text-sm font-semibold text-slate-700">Pets</label>
+                    <label className="block text-xs sm:text-sm font-semibold text-slate-700">Children</label>
                     <input
-                      type="number"
-                      value={petsCount}
-                      onChange={(e) => setPetsCount(Math.max(0, parseInt(e.target.value) || 0))}
-                      min={0}
-                      className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-500"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      placeholder="0"
+                      value={childrenCount === 0 ? '' : childrenCount}
+                      onChange={(e) => setChildrenCount(e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value) || 0))}
+                      onBlur={(e) => {
+                        if (e.target.value === '') setChildrenCount(0)
+                      }}
+                      className="w-full px-2 sm:px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-500 text-center text-lg font-medium placeholder:text-slate-400"
                     />
-                    <p className="text-xs text-slate-500">If allowed; fees may apply</p>
+                    <p className="text-[10px] sm:text-xs text-slate-500">Under 13</p>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-xs sm:text-sm font-semibold text-slate-700">Pets</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      placeholder="0"
+                      value={petsCount === 0 ? '' : petsCount}
+                      onChange={(e) => setPetsCount(e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value) || 0))}
+                      onBlur={(e) => {
+                        if (e.target.value === '') setPetsCount(0)
+                      }}
+                      className="w-full px-2 sm:px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-500 text-center text-lg font-medium placeholder:text-slate-400"
+                    />
+                    <p className="text-[10px] sm:text-xs text-slate-500">If allowed</p>
                   </div>
                 </div>
               </div>

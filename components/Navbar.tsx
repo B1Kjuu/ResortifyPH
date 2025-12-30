@@ -237,24 +237,27 @@ export default function Navbar(){
     <>
     <header className="bg-white border-b border-slate-200 w-full sticky top-0 z-50 shadow-sm">
       <div className="w-full px-4 sm:px-6 lg:px-8 flex items-center h-14 sm:h-16 max-w-7xl mx-auto">
-        {/* Left Section: Logo + Nav */}
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <Link href={getHomeLink()} className="flex items-center gap-2 group">
-            <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-resort-500 to-resort-600 flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow overflow-hidden">
-              <Image 
-                src="/assets/ResortifyPH-LOGO-CLEAN.png" 
-                alt="ResortifyPH Logo" 
-                width={28} 
-                height={28}
-                className="w-6 h-6 sm:w-7 sm:h-7"
-                priority
-              />
-            </div>
-            <span className="font-bold text-base sm:text-lg text-slate-900">ResortifyPH</span>
-          </Link>
+        {/* Left Section: Logo Only */}
+        <Link href={getHomeLink()} className="flex items-center gap-2 flex-shrink-0 group">
+          <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-resort-500 to-resort-600 flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow overflow-hidden">
+            <Image 
+              src="/assets/ResortifyPH-LOGO-CLEAN.png" 
+              alt="ResortifyPH Logo" 
+              width={28} 
+              height={28}
+              className="w-6 h-6 sm:w-7 sm:h-7"
+              priority
+            />
+          </div>
+          <span className="hidden sm:inline font-bold text-base sm:text-lg text-slate-900">ResortifyPH</span>
+        </Link>
 
-          {/* Navigation - Desktop Only */}
-          <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
+        {/* Left spacer */}
+        <div className="flex-1" />
+
+        {/* Center Section: Navigation + Search - Desktop Only */}
+        <div className="hidden lg:flex items-center gap-4">
+          <nav className="flex items-center gap-1 xl:gap-2">
             <Link href="/resorts" prefetch={false} onClick={(e) => handleExploreClick(e)} className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all">
               Explore
             </Link>
@@ -299,39 +302,39 @@ export default function Navbar(){
               </Link>
             </>
           )}
-        </nav>
-        </div>
+          </nav>
 
-        {/* Spacer - pushes right section to the right */}
-        <div className="flex-1" />
-
-        {/* Quick Filters - Desktop (Compact Pill) */}
-        <div className="hidden lg:flex items-center mr-6 max-w-sm">
-          <div className="flex items-center gap-2 w-full px-4 py-2 rounded-full border border-slate-200 bg-slate-50 hover:bg-white hover:shadow-md hover:border-slate-300 transition-all cursor-pointer">
-            <svg className="w-4 h-4 text-resort-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <div className="flex-1 min-w-0">
-              <LocationCombobox
-                value={quickLocation}
-                onChange={applyQuickFilter}
-                placeholder="Where to?"
-                variant="hero"
-              />
+          {/* Quick Filters - Search Bar */}
+          <div className="flex items-center w-72 xl:w-80">
+            <div className="flex items-center gap-2 w-full px-4 py-2 rounded-full border border-slate-200 bg-slate-50 hover:bg-white hover:shadow-md hover:border-slate-300 transition-all cursor-pointer">
+              <svg className="w-4 h-4 text-resort-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <div className="flex-1 min-w-0">
+                <LocationCombobox
+                  value={quickLocation}
+                  onChange={applyQuickFilter}
+                  placeholder="Where to?"
+                  variant="hero"
+                />
+              </div>
+              {quickLocation && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); applyQuickFilter(null); }}
+                  className="p-0.5 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 flex-shrink-0"
+                  aria-label="Clear"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
             </div>
-            {quickLocation && (
-              <button
-                onClick={(e) => { e.stopPropagation(); applyQuickFilter(null); }}
-                className="p-0.5 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 flex-shrink-0"
-                aria-label="Clear"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
           </div>
         </div>
+
+        {/* Right spacer */}
+        <div className="flex-1" />
 
         {/* Right Section - Auth */}
         <div className="flex items-center gap-2 sm:gap-3">

@@ -66,11 +66,26 @@ export default function ChatList({ roleFilter }: ChatListProps) {
     return () => { mounted = false }
   }, [roleFilter])
 
-  if (loading) return <div className="p-4 text-sm text-gray-500">Loading chats…</div>
-  if (items.length === 0) return <div className="p-4 text-sm text-gray-500">No chats yet.</div>
+  if (loading) return (
+    <div className="p-8 text-center">
+      <div className="animate-spin w-8 h-8 border-3 border-resort-500 border-t-transparent rounded-full mx-auto mb-3" />
+      <p className="text-sm text-gray-500">Loading conversations…</p>
+    </div>
+  )
+  if (items.length === 0) return (
+    <div className="p-8 text-center">
+      <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+      </div>
+      <p className="text-slate-600 font-medium">No conversations yet</p>
+      <p className="text-sm text-slate-400 mt-1">Start chatting with a resort host</p>
+    </div>
+  )
 
   return (
-    <ul className="divide-y">
+    <ul className="divide-y divide-slate-100">
       {items.map((c) => {
         // Build dynamic title
         // Determine title: guest sees resort name; owner sees guest name
@@ -85,33 +100,35 @@ export default function ChatList({ roleFilter }: ChatListProps) {
         }
 
         return (
-          <li key={c.id} className="flex items-center justify-between gap-4 p-3 hover:bg-gray-50 transition-colors">
+          <li key={c.id} className="flex items-center justify-between gap-4 p-4 hover:bg-slate-50 transition-all duration-200 group">
             <div className="min-w-0 flex-1">
-              <div className="font-medium text-gray-900">{title}</div>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-slate-900 group-hover:text-resort-600 transition-colors">{title}</span>
+                {c.unreadCount ? (
+                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-resort-500 px-1.5 text-xs font-bold text-white">
+                    {c.unreadCount}
+                  </span>
+                ) : null}
+              </div>
               {subtitle && (
-                <div className="text-xs text-gray-500 mb-1">{subtitle}</div>
+                <div className="text-xs text-slate-500 mt-0.5">{subtitle}</div>
               )}
               {c.lastMessage ? (
-                <div className="truncate text-sm text-gray-600">
+                <div className="truncate text-sm text-slate-600 mt-1">
                   {c.lastMessage.content}
                 </div>
               ) : (
-                <div className="text-sm text-gray-400">No messages yet</div>
+                <div className="text-sm text-slate-400 mt-1 italic">No messages yet</div>
               )}
             </div>
-            <div className="flex items-center gap-2">
-              {c.unreadCount ? (
-                <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-blue-600 px-2 text-xs font-bold text-white">
-                  {c.unreadCount}
-                </span>
-              ) : null}
+            <div className="flex items-center gap-2 shrink-0">
               {c.booking_id ? (
                 <ChatLink bookingId={c.booking_id || undefined} as={(c.myRole as any) || 'guest'} label="Open" title={title} />
               ) : (
                 <ChatLink resortId={c.resort_id || undefined} as={(c.myRole as any) || 'guest'} label="Open" title={title} />
               )}
               <button
-                className="inline-flex items-center rounded-md border px-3 py-1 text-sm hover:bg-red-50 text-red-700 border-red-200 disabled:opacity-50"
+                className="inline-flex items-center rounded-lg border px-3 py-1.5 text-sm font-medium hover:bg-red-50 text-red-600 border-red-200 disabled:opacity-50 transition-colors"
                 disabled={deletingId === c.id}
                 onClick={async () => {
                   if (!confirm('Delete this chat from your view? Messages remain available for moderation.')) return

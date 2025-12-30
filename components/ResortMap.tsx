@@ -141,6 +141,7 @@ export default function ResortMap({ resorts, userPosition, onResortClick, select
   const [isClient, setIsClient] = useState(false)
   const [mapKey, setMapKey] = useState(0)
   const [mapRef, setMapRef] = useState<any>(null)
+  const [hasFlownToUser, setHasFlownToUser] = useState(false)
   
   useEffect(() => {
     setIsClient(true)
@@ -149,9 +150,24 @@ export default function ResortMap({ resorts, userPosition, onResortClick, select
   // Fly to user position when it becomes available
   const flyToUser = useCallback(() => {
     if (mapRef && userPosition) {
-      mapRef.flyTo([userPosition.latitude, userPosition.longitude], 11, { duration: 1.5 })
+      mapRef.flyTo([userPosition.latitude, userPosition.longitude], 14, { duration: 1.5 })
     }
   }, [mapRef, userPosition])
+
+  // Auto-fly to user position when it first becomes available (only once)
+  useEffect(() => {
+    if (mapRef && userPosition && !hasFlownToUser) {
+      flyToUser()
+      setHasFlownToUser(true)
+    }
+  }, [mapRef, userPosition, hasFlownToUser, flyToUser])
+
+  // Reset hasFlownToUser when userPosition is cleared
+  useEffect(() => {
+    if (!userPosition) {
+      setHasFlownToUser(false)
+    }
+  }, [userPosition])
 
   // Calculate resort positions - prefer exact coordinates, fallback to province
   const resortPositions = useMemo(() => {
@@ -243,9 +259,9 @@ export default function ResortMap({ resorts, userPosition, onResortClick, select
         </div>
       </div>
 
-      {/* Locate Me Button */}
+      {/* Locate Me Button - positioned below zoom controls */}
       {showNearbyButton && (
-        <div className="absolute top-4 left-4 z-[1000] flex flex-col gap-2">
+        <div className="absolute top-24 left-2 z-[1000] flex flex-col gap-2">
           <button
             onClick={() => {
               if (userPosition) {

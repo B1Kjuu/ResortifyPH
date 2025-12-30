@@ -132,13 +132,14 @@ export default function MessageInput({ onSend, disabled, chatId, onTyping, parti
   }
 
   return (
-    <div className="border-t bg-white sticky bottom-0 pb-[env(safe-area-inset-bottom)]">
+    <div className="border-t border-slate-200 bg-gradient-to-t from-slate-50 to-white sticky bottom-0 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
       {uploadError && (
-        <div className="px-3 py-2 text-xs text-red-600 bg-red-50 border-b border-red-200">
+        <div className="px-3 py-2 text-sm text-red-700 bg-red-50 border-b border-red-200 flex items-center gap-2">
+          <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
           {uploadError}
         </div>
       )}
-      <div className="flex items-end gap-2 p-3 sm:p-2">
+      <div className="flex items-end gap-2 p-2.5 sm:p-3">
         <input
           ref={fileInputRef}
           type="file"
@@ -147,67 +148,22 @@ export default function MessageInput({ onSend, disabled, chatId, onTyping, parti
           accept="image/*,.pdf,.doc,.docx,.txt"
         />
         
-        <button
-          className="shrink-0 p-3 sm:p-2 rounded-md hover:bg-gray-100 transition-colors disabled:opacity-50"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={disabled || uploading || sending}
-          title="Attach file"
-          aria-label="Attach file"
-        >
-          <FaPaperclip className="w-5 h-5 text-gray-600" />
-        </button>
-
-        {/* Role-aware payment templates */}
-        {participantRole === 'owner' && (
+        {/* Stacked action buttons - attachment + template */}
+        <div className="shrink-0 flex flex-col gap-1">
           <button
-            className="shrink-0 px-2 py-1.5 rounded-md border border-amber-300 bg-amber-50 text-amber-800 text-xs hover:bg-amber-100 transition-colors disabled:opacity-50"
-            onClick={() => {
-              const template = [
-                'Here are my payment details:',
-                '- Method: GCash / Bank Transfer',
-                '- Account Name: [Your Name]',
-                '- Account Number: [GCash/Bank #]',
-                '- Amount: ₱[amount]',
-                '',
-                'Please send a receipt screenshot here and include your booking dates.'
-              ].join('\n')
-              setValue((prev) => prev?.trim() ? prev + '\n\n' + template : template)
-              handleTyping()
-            }}
-            disabled={disabled || sending || uploading}
-            title="Insert payment details"
-            aria-label="Insert payment details"
+            className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 active:bg-slate-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={disabled || uploading || sending}
+            title="Attach file"
+            aria-label="Attach file"
           >
-            💳 Share payment details
+            <FaPaperclip className="w-4 h-4 text-slate-600" />
           </button>
-        )}
 
-        {participantRole === 'guest' && (
-          <button
-            className="shrink-0 px-2 py-1.5 rounded-md border border-emerald-300 bg-emerald-50 text-emerald-800 text-xs hover:bg-emerald-100 transition-colors disabled:opacity-50"
-            onClick={() => {
-              const template = [
-                'Payment sent via [GCash/Bank].',
-                'Amount: ₱[amount]',
-                'Reference #: [GCash ref / bank txn]',
-                '',
-                'Attached is my receipt screenshot.'
-              ].join('\n')
-              setValue((prev) => prev?.trim() ? prev + '\n\n' + template : template)
-              handleTyping()
-            }}
-            disabled={disabled || sending || uploading}
-            title="Insert receipt note"
-            aria-label="Insert receipt note"
-          >
-            📸 Receipt note
-          </button>
-        )}
-
-        {participantRole === 'admin' && (
-          <div className="flex items-center gap-1">
+          {/* Role-aware payment templates */}
+          {participantRole === 'owner' && (
             <button
-              className="shrink-0 px-2 py-1.5 rounded-md border border-amber-300 bg-amber-50 text-amber-800 text-xs hover:bg-amber-100 transition-colors disabled:opacity-50"
+              className="p-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
               onClick={() => {
                 const template = [
                   'Here are my payment details:',
@@ -225,10 +181,13 @@ export default function MessageInput({ onSend, disabled, chatId, onTyping, parti
               title="Insert payment details"
               aria-label="Insert payment details"
             >
-              💳 Share payment details
+              <span className="text-sm">💳</span>
             </button>
+          )}
+
+          {participantRole === 'guest' && (
             <button
-              className="shrink-0 px-2 py-1.5 rounded-md border border-emerald-300 bg-emerald-50 text-emerald-800 text-xs hover:bg-emerald-100 transition-colors disabled:opacity-50"
+              className="p-2 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
               onClick={() => {
                 const template = [
                   'Payment sent via [GCash/Bank].',
@@ -244,14 +203,59 @@ export default function MessageInput({ onSend, disabled, chatId, onTyping, parti
               title="Insert receipt note"
               aria-label="Insert receipt note"
             >
-              📸 Receipt note
+              <span className="text-sm">📸</span>
             </button>
-          </div>
-        )}
+          )}
+
+          {participantRole === 'admin' && (
+            <>
+              <button
+                className="p-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+                onClick={() => {
+                  const template = [
+                    'Here are my payment details:',
+                    '- Method: GCash / Bank Transfer',
+                    '- Account Name: [Your Name]',
+                    '- Account Number: [GCash/Bank #]',
+                    '- Amount: ₱[amount]',
+                    '',
+                    'Please send a receipt screenshot here and include your booking dates.'
+                  ].join('\n')
+                  setValue((prev) => prev?.trim() ? prev + '\n\n' + template : template)
+                  handleTyping()
+                }}
+                disabled={disabled || sending || uploading}
+                title="Insert payment details"
+                aria-label="Insert payment details"
+              >
+                <span className="text-sm">💳</span>
+              </button>
+              <button
+                className="p-2 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+                onClick={() => {
+                  const template = [
+                    'Payment sent via [GCash/Bank].',
+                    'Amount: ₱[amount]',
+                    'Reference #: [GCash ref / bank txn]',
+                    '',
+                    'Attached is my receipt screenshot.'
+                  ].join('\n')
+                  setValue((prev) => prev?.trim() ? prev + '\n\n' + template : template)
+                  handleTyping()
+                }}
+                disabled={disabled || sending || uploading}
+                title="Insert receipt note"
+                aria-label="Insert receipt note"
+              >
+                <span className="text-sm">📸</span>
+              </button>
+            </>
+          )}
+        </div>
 
         <textarea
-          className="flex-1 resize-none rounded-md border border-gray-300 p-3 sm:p-2 text-base sm:text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-          rows={3}
+          className="flex-1 min-h-[44px] max-h-28 resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm leading-relaxed placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all duration-200"
+          rows={2}
           placeholder={participantRole === 'owner' ? "Type a message to your guest…" : "Type a message to the host…"}
           value={value}
           onChange={(e) => {
@@ -268,12 +272,18 @@ export default function MessageInput({ onSend, disabled, chatId, onTyping, parti
         />
         
         <button
-          className="h-11 sm:h-10 shrink-0 inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 text-base sm:text-sm font-medium text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="h-10 shrink-0 inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={handleSend}
           disabled={disabled || sending || uploading || !value.trim()}
           aria-label="Send message"
         >
-          {uploading ? 'Uploading…' : sending ? 'Sending…' : (<><FaPaperPlane className="w-4 h-4" /> Send</>)}
+          {uploading ? (
+            <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span><span>Uploading</span></>
+          ) : sending ? (
+            <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span><span>Sending</span></>
+          ) : (
+            <><FaPaperPlane className="w-3.5 h-3.5" /><span>Send</span></>
+          )}
         </button>
       </div>
     </div>
