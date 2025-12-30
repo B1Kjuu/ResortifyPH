@@ -97,16 +97,16 @@ export default function NotificationsBell(){
         )}
       </button>
       {open && (
-        <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-xl shadow-xl z-50">
-          <div className="px-4 py-2 border-b border-slate-200 flex items-center justify-between gap-2">
+        <div className="absolute right-0 sm:right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-sm bg-white border border-slate-200 rounded-xl shadow-xl z-50">
+          <div className="px-3 sm:px-4 py-2 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <p className="text-sm font-semibold text-slate-900">Notifications</p>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
               <label className="flex items-center gap-1 text-xs text-slate-600">
                 <input type="checkbox" className="w-4 h-4" checked={soundOn} onChange={(e) => { setSoundOn(e.target.checked); try { localStorage.setItem('notif_sound', e.target.checked ? 'on' : 'off') } catch {} }} />
                 Sound
               </label>
-              <button onClick={async () => { await markAllRead(); const data = await listNotifications(10); setItems(data); setUnread(0); }} className="text-xs text-slate-600 hover:text-slate-900">Mark all read</button>
-              <button onClick={async () => { await deleteAllNotifications(); const data = await listNotifications(10); setItems(data); setUnread(0); }} className="text-xs text-red-600 hover:text-red-700">Clear all</button>
+              <button onClick={async () => { await markAllRead(); const data = await listNotifications(10); setItems(data); setUnread(0); }} className="text-xs text-slate-600 hover:text-slate-900">Mark read</button>
+              <button onClick={async () => { await deleteAllNotifications(); const data = await listNotifications(10); setItems(data); setUnread(0); }} className="text-xs text-red-600 hover:text-red-700">Clear</button>
             </div>
           </div>
           <div className="max-h-80 overflow-y-auto">
@@ -128,13 +128,22 @@ export default function NotificationsBell(){
         </div>
       )}
       {toast && (
-        <div className="fixed top-20 right-4 z-[70] bg-white border border-slate-200 shadow-2xl rounded-xl p-4 w-80">
-          <p className="text-sm font-semibold text-slate-900">{toast.title}</p>
-          {toast.body && (<p className="text-xs text-slate-700 mt-0.5">{toast.body}</p>)}
+        <div className="fixed top-16 sm:top-20 left-4 right-4 sm:left-auto sm:right-4 z-[70] bg-white border border-slate-200 shadow-2xl rounded-xl p-3 sm:p-4 sm:w-80 max-w-[calc(100vw-2rem)] animate-in slide-in-from-top-2 duration-200">
+          <p className="text-sm font-semibold text-slate-900 pr-6 line-clamp-2">{toast.title}</p>
+          {toast.body && (<p className="text-xs text-slate-700 mt-0.5 line-clamp-2">{toast.body}</p>)}
           <div className="mt-2 flex items-center justify-end gap-2">
-            <button onClick={() => setToast(null)} className="text-xs text-slate-600 hover:text-slate-900">Dismiss</button>
-            {toast.link && (<Link href={toast.link} className="text-[11px] text-resort-600 font-semibold">Open</Link>)}
+            <button onClick={() => setToast(null)} className="text-xs text-slate-600 hover:text-slate-900 px-2 py-1">Dismiss</button>
+            {toast.link && (<Link href={toast.link} className="text-xs text-resort-600 font-semibold px-2 py-1 bg-resort-50 rounded-lg">Open</Link>)}
           </div>
+          <button 
+            onClick={() => setToast(null)} 
+            className="absolute top-2 right-2 p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+            aria-label="Dismiss notification"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
       )}
     </div>

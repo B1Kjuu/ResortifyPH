@@ -220,14 +220,9 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
           filter: `chat_id=eq.${chatRow.id}`,
         }, (payload) => {
           const record = payload.new as ChatMessage
-          console.log('📨 New message received:', record.id)
           // Only add if not already in state (prevent duplicates from optimistic updates)
           setMessages((prev) => {
-            if (prev.some(m => m.id === record.id)) {
-              console.log('⚠️ Message already exists, skipping')
-              return prev
-            }
-            console.log('✅ Adding new message to state')
+            if (prev.some(m => m.id === record.id)) return prev
             return [...prev, record]
           })
           // Mark read if incoming from others while viewing
@@ -242,11 +237,7 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
           filter: `chat_id=eq.${chatRow.id}`,
         }, (payload) => {
           const updated = payload.new as any
-          const wasDeleted = !!updated.deleted_at
           setMessages((prev) => prev.map(m => m.id === updated.id ? { ...m, ...updated } : m).filter(m => !m.deleted_at))
-          if (wasDeleted) {
-            console.log('🗑️ Message marked deleted:', updated.id)
-          }
         })
         .on('postgres_changes', {
           event: '*',
@@ -265,13 +256,9 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
           }
         })
         .subscribe((status) => {
-          console.log('🔌 Chat channel subscription status:', status)
           if (status === 'SUBSCRIBED') {
-            console.log('✅ Successfully subscribed to chat channel')
-            // Only hide loading once subscription is active
             if (mounted) setLoading(false)
           } else if (status === 'CHANNEL_ERROR') {
-            console.error('❌ Chat channel subscription error')
             if (mounted) setLoading(false)
           }
         })
@@ -293,9 +280,7 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
             }
           }
         })
-        .subscribe((status) => {
-          console.log('🔌 Presence channel subscription status:', status)
-        })
+        .subscribe()
 
       // Set current user as online
       if (uid) {
@@ -329,8 +314,6 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
         setSendError('Not ready to send. Try reloading.')
         return
       }
-      console.log('📤 Sending message...')
-      const startTime = Date.now()
       const { data, error } = await supabase
         .from('chat_messages')
         .insert({
@@ -344,17 +327,17 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
         } as any)
         .select('*')
         .single()
-      const endTime = Date.now()
-      console.log(`⏱️ Message insert took ${endTime - startTime}ms`)
       if (error) {
-        console.error('❌ Send error:', error)
         setSendError(error.message)
         return
       }
       if (data) {
-        console.log('✅ Message sent successfully, ID:', (data as ChatMessage).id)
         // Optimistically append; realtime will also deliver
-        setMessages((prev) => [...prev, data as ChatMessage])
+        setMessages((prev) => {
+          // Prevent duplicate from realtime if it arrives before optimistic update completes
+          if (prev.some(m => m.id === (data as ChatMessage).id)) return prev
+          return [...prev, data as ChatMessage]
+        })
         // Notify owner via email for guest messages
         try {
           if (participantRole === 'guest') {
@@ -447,9 +430,9 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
   }, [messages])
 
   return (
-    <div className="flex h-full w-full flex-col rounded-xl sm:rounded-2xl border border-slate-200 bg-white shadow-lg sm:shadow-xl overflow-hidden">
+    <div className="flex h-full w-full flex-col rounded-xl sm:rounded-2xl border border-slate-200 bg-white shadow-lg sm:shadow-xl overflow-hidden min-h-0">
       {/* Chat Header - Modern gradient with better spacing */}
-      <div className="flex items-center justify-between border-b border-slate-100 px-3 sm:px-4 py-3 sm:py-4 bg-gradient-to-r from-blue-50 via-slate-50 to-white">
+      <div className="flex items-center justify-between border-b border-slate-100 px-3 sm:px-4 py-3 sm:py-4 bg-gradient-to-r from-blue-50 via-slate-50 to-white shrink-0">
         {/* Back button */}
         <button
           onClick={() => window.history.back()}
@@ -560,26 +543,30 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
       ) : (
         <>
           {pinnedGuidance && (
-            <div className="border-b bg-amber-100 text-amber-900 px-4 py-2 text-xs">
+            <div className="border-b bg-amber-100 text-amber-900 px-4 py-2 text-xs shrink-0">
               <div className="flex items-start gap-2">
                 <span aria-hidden>📌</span>
                 <div className="whitespace-pre-wrap break-words font-medium">{pinnedGuidance.text}</div>
               </div>
             </div>
           )}
-          <MessageList messages={messages} currentUserId={userId} onReact={handleReaction} ownerId={ownerId} guestId={guestId} />
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <MessageList messages={messages} currentUserId={userId} onReact={handleReaction} ownerId={ownerId} guestId={guestId} />
+          </div>
           {typingUsers.length > 0 && (
-            <div className="px-4 py-2 text-xs text-gray-500 italic border-t">
+            <div className="px-4 py-2 text-xs text-gray-500 italic border-t shrink-0">
               {typingUsers.length === 1 ? 'Someone is' : `${typingUsers.length} people are`} typing...
             </div>
           )}
-          <MessageInputEnhanced 
-            onSend={handleSend} 
-            chatId={chat?.id} 
-            bookingId={bookingId}
-            participantRole={participantRole} 
-            onOpenPaymentModal={bookingId ? () => setShowPaymentModal(true) : undefined}
-          />
+          <div className="shrink-0">
+            <MessageInputEnhanced 
+              onSend={handleSend} 
+              chatId={chat?.id} 
+              bookingId={bookingId}
+              participantRole={participantRole} 
+              onOpenPaymentModal={bookingId ? () => setShowPaymentModal(true) : undefined}
+            />
+          </div>
         </>
       )}
 
