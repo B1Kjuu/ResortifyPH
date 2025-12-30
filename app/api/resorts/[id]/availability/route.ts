@@ -48,12 +48,14 @@ export async function GET(
       })
     }
     
-    // Get existing bookings for this date
+    // Get existing bookings that overlap with this date
+    // This includes: single-day bookings on this date AND multi-day bookings spanning this date
     const { data: existingBookings } = await supabase
       .from('bookings')
-      .select('id, resort_time_slot_id, booking_type, status')
+      .select('id, resort_time_slot_id, booking_type, status, date_from, date_to')
       .eq('resort_id', resortId)
-      .eq('date_from', dateStr)
+      .lte('date_from', dateStr)  // Booking starts on or before this date
+      .gte('date_to', dateStr)    // Booking ends on or after this date
       .in('status', ['pending', 'confirmed'])
     
     // Build availability map
@@ -64,13 +66,21 @@ export async function GET(
       existingBookings?.map(b => b.booking_type).filter(Boolean) || []
     )
     
+    // Check if there's a multi-day booking that blocks everything
+    const hasMultiDayBooking = existingBookings?.some(b => b.date_from !== b.date_to) || false
+    
     // Calculate availability for each slot
     const availableSlots = timeSlots.map(slot => {
       let isAvailable = true
       let reason = ''
       
+      // Multi-day booking blocks everything on that date
+      if (hasMultiDayBooking) {
+        isAvailable = false
+        reason = 'A multi-day booking covers this date'
+      }
       // Check if this specific slot is booked
-      if (bookedSlotIds.has(slot.id)) {
+      else if (bookedSlotIds.has(slot.id)) {
         isAvailable = false
         reason = 'This time slot is already booked'
       }
