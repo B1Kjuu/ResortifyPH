@@ -4,7 +4,7 @@ import { getServerSupabaseOrNull } from "lib/supabaseServer"
 
 export async function POST(req: NextRequest) {
   try {
-    const { bookingId, resortId, senderUserId, content, to } = await req.json()
+    const { bookingId, resortId, senderUserId, content, to, skipSelfNotification } = await req.json()
 
     if (!content || (!bookingId && !resortId)) {
       return NextResponse.json({ error: "Missing content or identifiers" }, { status: 400 })
@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
     const sb = getServerSupabaseOrNull()
 
     let ownerEmail: string | null = null
+    let ownerId: string | null = null
     let resortName: string | null = null
     let link: string | null = null
 
@@ -81,8 +82,14 @@ export async function POST(req: NextRequest) {
         .single()
       const resRow = (booking as any)?.resorts
       resortName = resRow?.name ?? null
-      const ownerId = resRow?.owner_id ?? null
+      ownerId = resRow?.owner_id ?? null
       link = `/chat/${bookingId}?as=owner`
+      
+      // Skip notification if sender is the owner (don't notify yourself)
+      if (senderUserId && ownerId && senderUserId === ownerId) {
+        return NextResponse.json({ ok: true, skipped: true, reason: 'sender-is-owner' }, { status: 202 })
+      }
+      
       if (ownerId && sb) {
         const { data: owner } = await sb
           .from('profiles')
@@ -112,8 +119,14 @@ export async function POST(req: NextRequest) {
         .eq('id', resortId)
         .single()
       resortName = resort?.name ?? null
-      const ownerId = resort?.owner_id ?? null
+      ownerId = resort?.owner_id ?? null
       link = `/chat/resort/${resortId}?as=owner`
+      
+      // Skip notification if sender is the owner (don't notify yourself)
+      if (senderUserId && ownerId && senderUserId === ownerId) {
+        return NextResponse.json({ ok: true, skipped: true, reason: 'sender-is-owner' }, { status: 202 })
+      }
+      
       if (ownerId && sb) {
         const { data: owner } = await sb
           .from('profiles')

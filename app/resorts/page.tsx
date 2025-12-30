@@ -13,8 +13,7 @@ import Select from '../../components/Select'
 import CustomSelect from '../../components/CustomSelect'
 import ResortMap from '../../components/ResortMap'
 import { supabase } from '../../lib/supabaseClient'
-import { getProvinceCoordinates } from '../../lib/locations'
-import { getCityToProvinceMap } from '../../lib/psgcClient'
+import { getLocationCoordinates } from '../../lib/locations'
 import { useGeolocation, calculateDistance, formatDistance } from '../../hooks/useGeolocation'
 import { FaUmbrellaBeach, FaMountain, FaLeaf, FaCity, FaTractor, FaSwimmer, FaFire, FaGem, FaUsers, FaHotel, FaCampground, FaSpa } from 'react-icons/fa'
 import { FiCheck, FiSearch } from 'react-icons/fi'
@@ -301,13 +300,6 @@ export default function ResortsPage(){
   }, [dateFrom, dateTo, resorts])
 
   // Calculate distance for all resorts when position is available
-  const [cityProvinceMap, setCityProvinceMap] = useState<Map<string, string> | null>(null)
-  useEffect(() => {
-    let mounted = true
-    getCityToProvinceMap().then((m) => { if (mounted) setCityProvinceMap(m) })
-    return () => { mounted = false }
-  }, [])
-
   const resortsWithDistance = useMemo(() => {
     if (!position) return resorts.map(r => ({ ...r, distance: null, rating: ratingsMap[r.id]?.avg || null, reviews_count: ratingsMap[r.id]?.count || 0 }))
     
@@ -316,17 +308,12 @@ export default function ResortsPage(){
       let lng: number | null = null
       
       if (resort.latitude && resort.longitude) {
+        // Use exact coordinates from database
         lat = resort.latitude
         lng = resort.longitude
       } else {
-        // Try province first
-        let coords = getProvinceCoordinates(resort.location)
-        // If not found, try city→province map
-        if (!coords && cityProvinceMap) {
-          const key = (resort.location || '').trim().normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
-          const province = cityProvinceMap.get(key)
-          if (province) coords = getProvinceCoordinates(province)
-        }
+        // Use getLocationCoordinates which tries city first, then province
+        const coords = getLocationCoordinates(resort.location)
         if (coords) {
           lat = coords.lat
           lng = coords.lng
@@ -338,7 +325,7 @@ export default function ResortsPage(){
       const distance = calculateDistance(position.latitude, position.longitude, lat, lng)
       return { ...resort, distance, rating: ratingsMap[resort.id]?.avg || null, reviews_count: ratingsMap[resort.id]?.count || 0 }
     })
-  }, [resorts, position, ratingsMap, cityProvinceMap])
+  }, [resorts, position, ratingsMap])
 
   const filteredResorts = useMemo(() => {
     const minPrice = priceRange[0]
@@ -602,26 +589,38 @@ export default function ResortsPage(){
             ))}
           </div>
         ) : viewMode === 'map' ? (
-          <div className="h-[70vh] min-h-[500px]"><ResortMap resorts={filteredResorts} userPosition={position} selectedResortId={selectedMapResort} onResortClick={(id) => setSelectedMapResort(id === selectedMapResort ? null : id)} className="h-full" onRequestLocation={requestLocation} geoLoading={geoLoading} /></div>
+          /* Full map view - responsive height */
+          <div className="h-[60vh] sm:h-[70vh] min-h-[400px] rounded-2xl overflow-hidden shadow-lg border border-slate-200">
+            <ResortMap resorts={filteredResorts} userPosition={position} selectedResortId={selectedMapResort} onResortClick={(id) => setSelectedMapResort(id === selectedMapResort ? null : id)} className="h-full" onRequestLocation={requestLocation} geoLoading={geoLoading} />
+          </div>
         ) : (
-          <div className="flex gap-0 -mx-6 sm:-mx-10 lg:-mx-20">
-            <div className="w-full lg:w-1/2 px-6 sm:px-10 lg:px-10 max-h-[calc(100vh-200px)] overflow-y-auto">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-6">
-                {filteredResorts.map((resort) => (
-                  <div key={resort.id} className={`relative transition-all cursor-pointer ${selectedMapResort === resort.id ? 'ring-2 ring-slate-900 rounded-2xl scale-[1.02]' : ''}`} onClick={() => setSelectedMapResort(resort.id)}>
-                    {showNearby && position && resort.distance !== null && (
-                      <div className="absolute top-3 left-3 z-10 px-2 py-1 bg-white/95 backdrop-blur-sm rounded-full shadow-md flex items-center gap-1">
-                        <svg className="w-3 h-3 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"/></svg>
-                        <span className="text-xs font-semibold text-emerald-700">{formatDistance(resort.distance)}</span>
-                      </div>
-                    )}
-                    <ResortCard resort={resort} />
-                  </div>
-                ))}
+          /* Split view - cards left, map right on desktop; stacked on mobile */
+          <div className="flex flex-col lg:flex-row gap-4 lg:gap-0">
+            {/* Cards section */}
+            <div className="w-full lg:w-1/2 lg:pr-4">
+              <div className="lg:max-h-[calc(100vh-220px)] lg:overflow-y-auto lg:pr-2 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
+                <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 sm:gap-4 pb-4">
+                  {filteredResorts.map((resort) => (
+                    <div 
+                      key={resort.id} 
+                      className={`relative transition-all cursor-pointer ${selectedMapResort === resort.id ? 'ring-2 ring-cyan-500 rounded-2xl scale-[1.02] shadow-lg' : 'hover:shadow-md'}`} 
+                      onClick={() => setSelectedMapResort(resort.id)}
+                    >
+                      {showNearby && position && resort.distance !== null && (
+                        <div className="absolute top-3 left-3 z-10 px-2 py-1 bg-white/95 backdrop-blur-sm rounded-full shadow-md flex items-center gap-1">
+                          <svg className="w-3 h-3 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"/></svg>
+                          <span className="text-xs font-semibold text-emerald-700">{formatDistance(resort.distance)}</span>
+                        </div>
+                      )}
+                      <ResortCard resort={resort} />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-            <div className="hidden lg:block w-1/2 sticky top-[180px] h-[calc(100vh-200px)]">
-              <ResortMap resorts={filteredResorts} userPosition={position} selectedResortId={selectedMapResort} onResortClick={(id) => setSelectedMapResort(id === selectedMapResort ? null : id)} className="h-full rounded-none" onRequestLocation={requestLocation} geoLoading={geoLoading} />
+            {/* Map section - sticky on desktop, shown below on mobile */}
+            <div className="w-full lg:w-1/2 h-[50vh] sm:h-[60vh] lg:h-[calc(100vh-220px)] lg:sticky lg:top-[200px] rounded-2xl overflow-hidden shadow-lg border border-slate-200">
+              <ResortMap resorts={filteredResorts} userPosition={position} selectedResortId={selectedMapResort} onResortClick={(id) => setSelectedMapResort(id === selectedMapResort ? null : id)} className="h-full" onRequestLocation={requestLocation} geoLoading={geoLoading} />
             </div>
           </div>
         )}

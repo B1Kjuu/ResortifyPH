@@ -24,7 +24,7 @@ export default function SignUpPage(){
       email: data.email, 
       password: data.password,
       options: {
-        emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/verify-email` : undefined,
+        emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback?type=signup` : undefined,
         data: {
           full_name: data.fullName,
           role: 'guest',  // All new users start as guest

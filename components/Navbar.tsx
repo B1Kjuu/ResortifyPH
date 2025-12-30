@@ -256,48 +256,48 @@ export default function Navbar(){
         <div className="flex-1" />
 
         {/* Center Section: Navigation + Search - Desktop Only */}
-        <div className="hidden lg:flex items-center gap-4">
-          <nav className="flex items-center gap-1 xl:gap-2">
-            <Link href="/resorts" prefetch={false} onClick={(e) => handleExploreClick(e)} className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all">
+        <div className="hidden lg:flex items-center gap-2 xl:gap-4">
+          <nav className="flex items-center gap-0.5 xl:gap-1">
+            <Link href="/resorts" prefetch={false} onClick={(e) => handleExploreClick(e)} className="px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all whitespace-nowrap">
               Explore
             </Link>
           {authChecked && user && !isAdminContext && (
             <Link
               href={userRole === 'owner' ? '/owner/chats' : '/guest/chats'}
-              className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all"
+              className="px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all whitespace-nowrap"
             >
               Chats
             </Link>
           )}
           {authChecked && user && userRole === 'guest' && !isAdminContext && (
-            <Link href="/guest/adventure-hub" className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all">
+            <Link href="/guest/adventure-hub" className="px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all whitespace-nowrap">
               Adventure Hub
             </Link>
           )}
           {authChecked && user && userRole === 'guest' && !isAdminContext && (
-            <Link href="/guest/trips" className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all">
+            <Link href="/guest/trips" className="px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all whitespace-nowrap">
               My Trips
             </Link>
           )}
           {authChecked && user && userRole === 'owner' && !isAdminContext && (
             <>
-              <Link href="/owner/empire" className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all">
+              <Link href="/owner/empire" className="px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all whitespace-nowrap">
                 Empire
               </Link>
-              <Link href="/owner/my-resorts" className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all">
-                My Properties
+              <Link href="/owner/my-resorts" className="px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all whitespace-nowrap">
+                Properties
               </Link>
-              <Link href="/owner/bookings" className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all">
+              <Link href="/owner/bookings" className="px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all whitespace-nowrap">
                 Bookings
               </Link>
             </>
           )}
           {authChecked && isAdmin && (
             <>
-              <Link href="/admin/approvals" className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all">
+              <Link href="/admin/approvals" className="px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all whitespace-nowrap">
                 Approvals
               </Link>
-              <Link href="/admin/command-center" className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all">
+              <Link href="/admin/command-center" className="px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium text-slate-600 hover:text-resort-600 hover:bg-resort-50 rounded-lg transition-all whitespace-nowrap">
                 Admin
               </Link>
             </>
@@ -305,8 +305,8 @@ export default function Navbar(){
           </nav>
 
           {/* Quick Filters - Search Bar */}
-          <div className="flex items-center w-72 xl:w-80">
-            <div className="flex items-center gap-2 w-full px-4 py-2 rounded-full border border-slate-200 bg-slate-50 hover:bg-white hover:shadow-md hover:border-slate-300 transition-all cursor-pointer">
+          <div className="flex items-center w-56 xl:w-72">
+            <div className="flex items-center gap-2 w-full px-3 xl:px-4 py-2 rounded-full border border-slate-200 bg-slate-50 hover:bg-white hover:shadow-md hover:border-slate-300 transition-all cursor-pointer">
               <svg className="w-4 h-4 text-resort-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>

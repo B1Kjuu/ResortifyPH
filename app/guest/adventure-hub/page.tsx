@@ -9,7 +9,7 @@ import ResortCard from '../../../components/ResortCard'
 import SkeletonCard from '../../../components/SkeletonCard'
 import ResortMap from '../../../components/ResortMap'
 import { useGeolocation, calculateDistance } from '../../../hooks/useGeolocation'
-import { getProvinceCoordinates } from '../../../lib/locations'
+import { getLocationCoordinates } from '../../../lib/locations'
 
 export default function AdventureHub(){
   const [profile, setProfile] = useState<any>(null)
@@ -45,11 +45,11 @@ export default function AdventureHub(){
   const nearbyResorts = useMemo(() => {
     if (!position || trendingResorts.length === 0) return []
     const withDist = trendingResorts.map((resort) => {
-      // Prefer exact coordinates, fallback to province center
+      // Prefer exact coordinates, fallback to city/province center
       let lat: number | null = resort.latitude ?? null
       let lng: number | null = resort.longitude ?? null
       if (lat == null || lng == null) {
-        const coords = getProvinceCoordinates(resort.location)
+        const coords = getLocationCoordinates(resort.location)
         if (coords) { lat = coords.lat; lng = coords.lng }
       }
       if (lat == null || lng == null) return { ...resort, distance: null }
@@ -226,7 +226,7 @@ export default function AdventureHub(){
                     value={searchGuests}
                     onChange={(e) => setSearchGuests(e.target.value)}
                     aria-label="Guests count"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white cursor-pointer"
+                    className="w-full px-3 py-2 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-500 bg-white cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%236b7280%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_0.5rem_center] bg-no-repeat pr-8 hover:border-slate-300 transition-all"
                   >
                     <option value="1">1</option>
                     <option value="2">2</option>

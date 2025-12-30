@@ -206,19 +206,48 @@ export default function CommandCenter(){
           )}
         </section>
 
-        {/* Actions */}
-        <div className="grid md:grid-cols-1 gap-6 mb-10">
-          <Link href="/admin/approvals" className="group bg-gradient-to-br from-purple-500 to-indigo-500 text-white rounded-2xl p-8 hover:shadow-2xl hover:-translate-y-1 transition-all border-2 border-purple-400 hover:border-purple-300">
-            <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">🔍</div>
-            <h3 className="text-2xl font-bold mb-3">Review Submissions</h3>
-            <p className="mb-6 opacity-95 text-lg">Approve or reject pending resort listings</p>
-            <span className="inline-block text-sm font-bold group-hover:translate-x-2 transition-transform bg-white/20 px-4 py-2 rounded-lg">Review Now →</span>
+        {/* Admin Actions Grid */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+          <Link href="/admin/approvals" className="group bg-gradient-to-br from-purple-500 to-indigo-500 text-white rounded-2xl p-6 hover:shadow-2xl hover:-translate-y-1 transition-all border-2 border-purple-400 hover:border-purple-300">
+            <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">🔍</div>
+            <h3 className="text-xl font-bold mb-2">Resort Approvals</h3>
+            <p className="mb-4 opacity-95 text-sm">Approve or reject pending listings</p>
+            <span className="inline-block text-xs font-bold group-hover:translate-x-2 transition-transform bg-white/20 px-3 py-1.5 rounded-lg">Review Now →</span>
           </Link>
-          <Link href="/admin/resort-bookings" className="group bg-gradient-to-br from-blue-500 to-cyan-500 text-white rounded-2xl p-8 hover:shadow-2xl hover:-translate-y-1 transition-all border-2 border-blue-400 hover:border-blue-300">
-            <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">📘</div>
-            <h3 className="text-2xl font-bold mb-3">Resort Bookings (View-Only)</h3>
-            <p className="mb-6 opacity-95 text-lg">Select a resort to review bookings</p>
-            <span className="inline-block text-sm font-bold group-hover:translate-x-2 transition-transform bg-white/20 px-4 py-2 rounded-lg">Open →</span>
+
+          <Link href="/admin/users" className="group bg-gradient-to-br from-emerald-500 to-teal-500 text-white rounded-2xl p-6 hover:shadow-2xl hover:-translate-y-1 transition-all border-2 border-emerald-400 hover:border-emerald-300">
+            <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">👥</div>
+            <h3 className="text-xl font-bold mb-2">User Management</h3>
+            <p className="mb-4 opacity-95 text-sm">View, suspend, and manage users</p>
+            <span className="inline-block text-xs font-bold group-hover:translate-x-2 transition-transform bg-white/20 px-3 py-1.5 rounded-lg">Manage Users →</span>
+          </Link>
+
+          <Link href="/admin/content-moderation" className="group bg-gradient-to-br from-amber-500 to-orange-500 text-white rounded-2xl p-6 hover:shadow-2xl hover:-translate-y-1 transition-all border-2 border-amber-400 hover:border-amber-300">
+            <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">💬</div>
+            <h3 className="text-xl font-bold mb-2">Content Moderation</h3>
+            <p className="mb-4 opacity-95 text-sm">Reviews, messages, and user reports</p>
+            <span className="inline-block text-xs font-bold group-hover:translate-x-2 transition-transform bg-white/20 px-3 py-1.5 rounded-lg">Moderate →</span>
+          </Link>
+
+          <Link href="/admin/payment-oversight" className="group bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-2xl p-6 hover:shadow-2xl hover:-translate-y-1 transition-all border-2 border-green-400 hover:border-green-300">
+            <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">💳</div>
+            <h3 className="text-xl font-bold mb-2">Payment Oversight</h3>
+            <p className="mb-4 opacity-95 text-sm">Monitor all payment submissions</p>
+            <span className="inline-block text-xs font-bold group-hover:translate-x-2 transition-transform bg-white/20 px-3 py-1.5 rounded-lg">View Payments →</span>
+          </Link>
+
+          <Link href="/admin/resort-bookings" className="group bg-gradient-to-br from-blue-500 to-cyan-500 text-white rounded-2xl p-6 hover:shadow-2xl hover:-translate-y-1 transition-all border-2 border-blue-400 hover:border-blue-300">
+            <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">📘</div>
+            <h3 className="text-xl font-bold mb-2">Resort Bookings</h3>
+            <p className="mb-4 opacity-95 text-sm">View all bookings (read-only)</p>
+            <span className="inline-block text-xs font-bold group-hover:translate-x-2 transition-transform bg-white/20 px-3 py-1.5 rounded-lg">View →</span>
+          </Link>
+
+          <Link href="/admin/resorts" className="group bg-gradient-to-br from-rose-500 to-pink-500 text-white rounded-2xl p-6 hover:shadow-2xl hover:-translate-y-1 transition-all border-2 border-rose-400 hover:border-rose-300">
+            <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">🏖️</div>
+            <h3 className="text-xl font-bold mb-2">All Resorts</h3>
+            <p className="mb-4 opacity-95 text-sm">Browse and manage all resorts</p>
+            <span className="inline-block text-xs font-bold group-hover:translate-x-2 transition-transform bg-white/20 px-3 py-1.5 rounded-lg">Browse →</span>
           </Link>
         </div>
 

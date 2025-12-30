@@ -1,6 +1,6 @@
 "use client"
 import React, { useState } from "react"
-import { FiMail, FiPhone, FiMapPin, FiClock } from 'react-icons/fi'
+import { FiMail, FiMapPin, FiClock } from 'react-icons/fi'
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({ name: "", email: "", subject: "", message: "" })
@@ -34,16 +34,6 @@ export default function ContactPage() {
                   <div>
                     <h3 className="font-semibold text-slate-900 mb-1">Email</h3>
                     <p className="text-slate-600">support@resortifyph.com</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-resort-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <FiPhone aria-hidden className="text-2xl" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-slate-900 mb-1">Phone</h3>
-                    <p className="text-slate-600">+63 (2) 1234-5678</p>
                   </div>
                 </div>
 

@@ -974,13 +974,13 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                             setStayType(val as any)
                           }
                         }} 
-                        className="appearance-none w-full px-3 py-2 h-10 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-resort-400 bg-white pr-9"
+                        className="appearance-none w-full px-3 py-2.5 h-11 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-resort-500/20 focus:border-resort-500 bg-white pr-9 hover:border-slate-300 transition-all"
                       >
                         <option value="daytour">Daytour (8am - 5pm)</option>
                         <option value="overnight">Overnight (7pm - 6am)</option>
                         <option value="22hrs">22 Hours (extended stay)</option>
                       </select>
-                      <svg className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <svg className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </div>

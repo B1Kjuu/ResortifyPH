@@ -11,18 +11,28 @@ export default function VerifyEmailPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const email = searchParams.get('email') || ''
+  const isVerified = searchParams.get('verified') === 'true'
 
   useEffect(() => {
-    // Check if user came from email link with token
+    // If coming from callback with verified=true, the session is already established
+    if (isVerified) {
+      setVerified(true)
+      toast.success('Email verified successfully!')
+      setTimeout(() => {
+        router.push('/profile?welcome=true')
+      }, 2000)
+      return
+    }
+
+    // Legacy: Check if user came from email link with token in hash (for older flows)
     const hashParams = new URLSearchParams(window.location.hash.substring(1))
     const accessToken = hashParams.get('access_token')
     const type = hashParams.get('type')
 
     if (accessToken && type === 'signup') {
-      // User clicked the verification link
       handleEmailVerification()
     }
-  }, [])
+  }, [isVerified])
 
   async function handleEmailVerification() {
     setLoading(true)
@@ -55,7 +65,7 @@ export default function VerifyEmailPage() {
       type: 'signup',
       email: email,
       options: {
-        emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/verify-email` : undefined,
+        emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback?type=signup` : undefined,
       }
     })
     setLoading(false)

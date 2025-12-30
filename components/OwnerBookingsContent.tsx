@@ -1,11 +1,13 @@
 'use client'
-import React from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import SkeletonTable from './SkeletonTable'
 import ChatLink from './ChatLink'
 import { DayPicker } from 'react-day-picker'
 import DisclaimerBanner from './DisclaimerBanner'
+import PaymentVerificationPanel from './PaymentVerificationPanel'
 import { format } from 'date-fns'
+import { FiCreditCard, FiX } from 'react-icons/fi'
 
 type ManualBookingData = {
   resort_id: string
@@ -70,6 +72,7 @@ export default function OwnerBookingsContent(props: Props){
   const [showOnlyVerified, setShowOnlyVerified] = React.useState(false)
   const [showOnlyCancellations, setShowOnlyCancellations] = React.useState(false)
   const [verificationEdits, setVerificationEdits] = React.useState<Record<string, { method: string; reference: string; notes: string }>>({})
+  const [paymentModalBookingId, setPaymentModalBookingId] = React.useState<string | null>(null)
   
   // Manual booking modal state
   const [showManualBookingModal, setShowManualBookingModal] = React.useState(false)
@@ -131,23 +134,24 @@ export default function OwnerBookingsContent(props: Props){
   const pastVerifiedCount = pastConfirmed.filter(b => !!b.payment_verified_at).length
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-b from-slate-50 to-white px-4 sm:px-6 lg:px-8 py-12">
+    <div className="w-full min-h-screen bg-gradient-to-b from-slate-50 to-white px-3 sm:px-6 lg:px-8 py-6 sm:py-12">
       <div className="max-w-7xl mx-auto">
-        <Link href="/owner/empire" className="text-sm text-resort-500 font-semibold mb-8 inline-flex items-center gap-2 hover:gap-3 transition-all">
+        <Link href="/owner/empire" className="text-sm text-resort-500 font-semibold mb-4 sm:mb-8 inline-flex items-center gap-2 hover:gap-3 transition-all">
           ← Back to Empire
         </Link>
 
-        <div className="mb-6 fade-in-up flex items-center justify-between">
+        <div className="mb-4 sm:mb-6 fade-in-up">
           <div>
-            <h1 className="text-4xl sm:text-5xl font-bold leading-normal pb-1 break-words bg-gradient-to-r from-resort-600 to-blue-600 bg-clip-text text-transparent">Bookings</h1>
-            <p className="text-lg text-slate-600 mt-2">Manage all booking requests for your resorts</p>
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold leading-normal pb-1 break-words bg-gradient-to-r from-resort-600 to-blue-600 bg-clip-text text-transparent">Bookings</h1>
+            <p className="text-sm sm:text-lg text-slate-600 mt-1 sm:mt-2">Manage all booking requests for your resorts</p>
             <div className="mt-3">
               <DisclaimerBanner title="Owner Notice">
                 Confirm only after verifying offline payment in chat (e.g., GCash/Bank). Coordinate details and ask for a receipt screenshot before confirming.
               </DisclaimerBanner>
             </div>
-            {/* Owner Sub-Navbar */}
-            <div className="mt-4 flex flex-wrap items-center gap-2">
+            {/* Owner Sub-Navbar - Scrollable on mobile */}
+            <div className="mt-4 overflow-x-auto scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0">
+              <div className="flex items-center gap-2 min-w-max pb-2 sm:pb-0 sm:flex-wrap">
               {([
                 { key: 'requests', label: `Requests (${pendingBookings.length})` },
                 { key: 'calendar', label: 'Calendar' },
@@ -158,29 +162,33 @@ export default function OwnerBookingsContent(props: Props){
                 <button
                   key={t.key}
                   onClick={() => setTab(t.key)}
-                  className={`px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all ${tab === t.key ? 'bg-resort-600 text-white border-resort-500' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}
+                  className={`flex-shrink-0 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all whitespace-nowrap ${tab === t.key ? 'bg-resort-600 text-white border-resort-500' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}
                   aria-pressed={tab === t.key}
                 >
                   {t.label}
                 </button>
               ))}
-              <label className="ml-auto flex items-center gap-2 px-2 py-1 rounded-xl text-xs text-slate-700">
+              </div>
+            </div>
+            {/* Filter checkboxes - below tabs on mobile */}
+            <div className="mt-3 flex flex-wrap items-center gap-2 sm:gap-4">
+              <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-white border border-slate-200 text-xs text-slate-700">
                 <input
                   type="checkbox"
                   className="w-4 h-4 rounded border-slate-300"
                   checked={showOnlyVerified}
                   onChange={(e) => setShowOnlyVerified(e.target.checked)}
                 />
-                Show only payment verified
+                <span className="hidden sm:inline">Show only</span> Payment verified
               </label>
-              <label className="flex items-center gap-2 px-2 py-1 rounded-xl text-xs text-slate-700">
+              <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-white border border-slate-200 text-xs text-slate-700">
                 <input
                   type="checkbox"
                   className="w-4 h-4 rounded border-slate-300"
                   checked={showOnlyCancellations}
                   onChange={(e) => setShowOnlyCancellations(e.target.checked)}
                 />
-                Show only cancellations
+                <span className="hidden sm:inline">Show only</span> Cancellations
               </label>
             </div>
           </div>
@@ -202,7 +210,7 @@ export default function OwnerBookingsContent(props: Props){
         ) : (
           <>
             {/* Global Bulk Actions */}
-            <div className="mb-6 flex items-center justify-between bg-white border-2 border-slate-200 rounded-2xl p-4">
+            <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white border-2 border-slate-200 rounded-xl sm:rounded-2xl p-3 sm:p-4">
               <div className="text-sm text-slate-600">
                 {selectedBookings.size > 0 ? (
                   <span><strong>{selectedBookings.size}</strong> selected</span>
@@ -219,17 +227,17 @@ export default function OwnerBookingsContent(props: Props){
               </button>
             </div>
             {tab === 'calendar' && (
-            <section className="mb-12 fade-in-up">
-              <div className="flex items-center justify-between mb-6">
+            <section className="mb-8 sm:mb-12 fade-in-up">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
                 <div>
-                  <h2 className="text-3xl font-bold text-slate-900">Bookings Calendar</h2>
-                  <p className="text-sm text-slate-600 mt-1">View confirmed bookings or add existing reservations</p>
+                  <h2 className="text-xl sm:text-3xl font-bold text-slate-900">Bookings Calendar</h2>
+                  <p className="text-xs sm:text-sm text-slate-600 mt-1">View confirmed bookings or add existing reservations</p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                   {allResorts && allResorts.length > 0 && onAddManualBooking ? (
                     <button
                       onClick={() => setShowManualBookingModal(true)}
-                      className="px-4 py-2 bg-gradient-to-r from-resort-500 to-blue-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all border-2 border-resort-400"
+                      className="px-3 sm:px-4 py-2 bg-gradient-to-r from-resort-500 to-blue-500 text-white rounded-xl text-sm font-semibold hover:shadow-lg transition-all border-2 border-resort-400"
                     >
                       + Add Existing Booking
                     </button>
@@ -237,11 +245,11 @@ export default function OwnerBookingsContent(props: Props){
                     <span className="text-xs text-slate-400 italic">Create a resort first to add bookings</span>
                   )}
                   <div className="flex items-center gap-2">
-                    <label className="text-sm text-slate-600">Resort:</label>
+                    <label className="text-xs sm:text-sm text-slate-600">Resort:</label>
                     <select
                       value={selectedResortId}
                       onChange={(e) => setSelectedResortId(e.target.value)}
-                      className="px-3 py-2 border-2 border-slate-200 rounded-xl bg-white text-slate-900"
+                      className="flex-1 px-3 py-2 border-2 border-slate-200 rounded-xl bg-white text-slate-900 text-sm appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%236b7280%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_0.5rem_center] bg-no-repeat pr-8 focus:outline-none focus:ring-2 focus:ring-resort-500/20 focus:border-resort-500 transition-all hover:border-slate-300"
                     >
                       <option value="all">All resorts</option>
                       {resortOptions.map(r => (
@@ -275,7 +283,7 @@ export default function OwnerBookingsContent(props: Props){
                           required
                           value={manualBookingForm.resort_id}
                           onChange={(e) => setManualBookingForm(prev => ({ ...prev, resort_id: e.target.value }))}
-                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white"
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white text-sm appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%236b7280%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_0.75rem_center] bg-no-repeat pr-10 focus:outline-none focus:ring-2 focus:ring-resort-500/20 focus:border-resort-500 transition-all hover:border-slate-300"
                         >
                           <option value="">Select a resort</option>
                           {allResorts.map(r => (
@@ -443,12 +451,12 @@ export default function OwnerBookingsContent(props: Props){
             )}
 
             {tab === 'requests' && (
-            <section className="mb-12 fade-in-up">
-              <div className="flex items-center justify-between mb-6">
+            <section className="mb-8 sm:mb-12 fade-in-up">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 sm:mb-6">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-3xl font-bold text-slate-900">Pending Requests ({pendingToShow.length})</h2>
+                  <h2 className="text-xl sm:text-3xl font-bold text-slate-900">Pending Requests ({pendingToShow.length})</h2>
                   {pendingBookings.length > 0 && (
-                    <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                    <label className="flex items-center gap-2 text-xs sm:text-sm text-slate-600 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={pendingBookings.every(b => selectedBookings.has(b.id))}
@@ -462,36 +470,38 @@ export default function OwnerBookingsContent(props: Props){
               </div>
 
               {pendingToShow.length === 0 ? (
-                <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center">
-                  <p className="text-lg font-bold text-slate-900 mb-2">No pending requests</p>
-                  <p className="text-slate-600">Your pending booking queue is empty</p>
+                <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-6 sm:p-8 text-center">
+                  <p className="text-base sm:text-lg font-bold text-slate-900 mb-2">No pending requests</p>
+                  <p className="text-sm text-slate-600">Your pending booking queue is empty</p>
                 </div>
               ) : (
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
                   {pendingToShow.map(booking => (
-                    <div key={booking.id} className={`bg-white border-2 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all ${booking.payment_verified_at ? 'border-emerald-300' : 'border-yellow-300'}`}>
-                      <div className="flex items-start gap-3 mb-4">
+                    <div key={booking.id} className={`bg-white border-2 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm hover:shadow-lg transition-all ${booking.payment_verified_at ? 'border-emerald-300' : 'border-yellow-300'}`}>
+                      <div className="flex items-start gap-2 sm:gap-3 mb-4">
                         <input
                           type="checkbox"
                           checked={selectedBookings.has(booking.id)}
                           onChange={() => toggleSelect(booking.id)}
                           className="w-5 h-5 mt-1 rounded border-slate-300 cursor-pointer"
                         />
-                        <div className="flex-1">
-                          <div className="flex justify-between items-start mb-4">
-                            <div>
-                              <h3 className="text-lg font-bold text-slate-900">{booking.resort?.name}</h3>
-                              <p className="text-sm text-slate-600 mt-1">👤 {booking.guest?.full_name}</p>
-                              <p className="text-sm text-slate-600">📧 {booking.guest?.email}</p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap justify-between items-start gap-2 mb-4">
+                            <div className="min-w-0">
+                              <h3 className="text-base sm:text-lg font-bold text-slate-900 truncate">{booking.resort?.name}</h3>
+                              <p className="text-xs sm:text-sm text-slate-600 mt-1">👤 {booking.guest?.full_name}</p>
+                              <p className="text-xs sm:text-sm text-slate-600 break-all">📧 {booking.guest?.email}</p>
                             </div>
-                            <span className="text-xs bg-yellow-100 text-yellow-800 px-3 py-1 rounded-lg font-bold border-2 border-yellow-300">⏳ Pending</span>
-                            {booking.payment_verified_at && (
-                              <span className="ml-2 text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-lg border border-emerald-200">✔ Verified</span>
-                            )}
+                            <div className="flex flex-wrap items-center gap-1">
+                              <span className="text-[10px] sm:text-xs bg-yellow-100 text-yellow-800 px-2 sm:px-3 py-1 rounded-lg font-bold border-2 border-yellow-300">⏳ Pending</span>
+                              {booking.payment_verified_at && (
+                                <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-lg border border-emerald-200">✔ Verified</span>
+                              )}
+                            </div>
                           </div>
 
-                          <div className="bg-yellow-50 rounded-xl p-4 mb-4 border border-yellow-100">
-                            <p className="text-sm text-slate-700 mb-2">
+                          <div className="bg-yellow-50 rounded-xl p-3 sm:p-4 mb-4 border border-yellow-100">
+                            <p className="text-xs sm:text-sm text-slate-700 mb-2">
                               📅 <span className="font-bold">{booking.date_from}</span> → <span className="font-bold">{booking.date_to}</span>
                             </p>
                             <p className="text-sm text-slate-700">
@@ -531,23 +541,32 @@ export default function OwnerBookingsContent(props: Props){
                             <ChatLink bookingId={booking.id} as="owner" label="Open Chat" title={booking.guest?.full_name || booking.guest?.email || 'Guest'} />
                           </div>
                           <p className="text-xs text-slate-500 mt-2">Coordinate payment in chat; confirm only after verifying proof.</p>
-                          <label className="mt-2 inline-flex items-center gap-2 text-xs text-slate-600">
-                            <input
-                              type="checkbox"
-                              className="w-4 h-4 rounded border-slate-300"
-                              checked={!!booking.payment_verified_at}
-                              onChange={(e) => togglePaymentVerified(booking.id, e.target.checked)}
-                            />
-                            Mark payment verified
-                            {booking.payment_verified_at && (
-                              <span className="ml-1 text-[10px] text-slate-500">({new Date(booking.payment_verified_at).toLocaleDateString()})</span>
-                            )}
-                          </label>
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <label className="inline-flex items-center gap-2 text-xs text-slate-600">
+                              <input
+                                type="checkbox"
+                                className="w-4 h-4 rounded border-slate-300"
+                                checked={!!booking.payment_verified_at}
+                                onChange={(e) => togglePaymentVerified(booking.id, e.target.checked)}
+                              />
+                              Mark payment verified
+                              {booking.payment_verified_at && (
+                                <span className="ml-1 text-[10px] text-slate-500">({new Date(booking.payment_verified_at).toLocaleDateString()})</span>
+                              )}
+                            </label>
+                            <button
+                              onClick={() => setPaymentModalBookingId(booking.id)}
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-cyan-700 bg-cyan-50 border border-cyan-200 rounded-lg hover:bg-cyan-100 transition-colors"
+                            >
+                              <FiCreditCard className="w-3 h-3" />
+                              View Submissions
+                            </button>
+                          </div>
                           <details className="mt-3">
                             <summary className="text-xs text-slate-700 cursor-pointer select-none">Verification details</summary>
                             <div className="mt-2 grid sm:grid-cols-3 gap-2">
                             <select
-                              className="px-2 py-2 rounded-lg border border-slate-300 text-xs"
+                              className="px-2 py-2 rounded-lg border border-slate-300 text-xs appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%236b7280%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1rem] bg-[right_0.5rem_center] bg-no-repeat pr-7 bg-white focus:outline-none focus:ring-2 focus:ring-resort-500/20 focus:border-resort-500 transition-all hover:border-slate-400"
                               value={verificationEdits[booking.id]?.method ?? booking.payment_method ?? ''}
                               onChange={(e) => setEdit(booking.id, 'method', e.target.value)}
                             >
@@ -594,40 +613,42 @@ export default function OwnerBookingsContent(props: Props){
             )}
 
             {tab === 'confirmed' && (
-            <section className="mb-12 fade-in-up">
-              <div className="flex items-center gap-3 mb-6">
-                <h2 className="text-3xl font-bold text-slate-900">Confirmed Bookings ({upcomingToShow.length})</h2>
+            <section className="mb-8 sm:mb-12 fade-in-up">
+              <div className="flex items-center gap-3 mb-4 sm:mb-6">
+                <h2 className="text-xl sm:text-3xl font-bold text-slate-900">Confirmed Bookings ({upcomingToShow.length})</h2>
               </div>
 
               {upcomingToShow.length === 0 ? (
-                <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center">
-                  <p className="text-lg font-bold text-slate-900 mb-2">No upcoming confirmed bookings</p>
-                  <p className="text-slate-600">Future confirmed stays will appear here</p>
+                <div className="bg-white border-2 border-dashed border-slate-200 rounded-xl sm:rounded-2xl p-6 sm:p-8 text-center">
+                  <p className="text-base sm:text-lg font-bold text-slate-900 mb-2">No upcoming confirmed bookings</p>
+                  <p className="text-sm text-slate-600">Future confirmed stays will appear here</p>
                 </div>
               ) : (
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
                   {upcomingToShow.map(booking => (
-                    <div key={booking.id} className={`bg-gradient-to-br from-green-50 to-emerald-50 border-2 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all ${booking.payment_verified_at ? 'border-emerald-400' : 'border-green-300'}`}>
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h3 className="text-lg font-bold text-slate-900">{booking.resort?.name}</h3>
-                          <p className="text-sm text-slate-600 mt-1">👤 {booking.guest?.full_name}</p>
-                          <p className="text-sm text-slate-600">📧 {booking.guest?.email}</p>
+                    <div key={booking.id} className={`bg-gradient-to-br from-green-50 to-emerald-50 border-2 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm hover:shadow-lg transition-all ${booking.payment_verified_at ? 'border-emerald-400' : 'border-green-300'}`}>
+                      <div className="flex flex-wrap justify-between items-start gap-2 mb-4">
+                        <div className="min-w-0">
+                          <h3 className="text-base sm:text-lg font-bold text-slate-900 truncate">{booking.resort?.name}</h3>
+                          <p className="text-xs sm:text-sm text-slate-600 mt-1">👤 {booking.guest?.full_name}</p>
+                          <p className="text-xs sm:text-sm text-slate-600 break-all">📧 {booking.guest?.email}</p>
                         </div>
-                        <span className="text-xs bg-green-100 text-green-800 px-3 py-1 rounded-lg font-bold border-2 border-green-300">✅ Confirmed</span>
-                        {booking.payment_verified_at && (
-                          <span className="ml-2 text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-lg border border-emerald-200">✔ Verified</span>
-                        )}
-                        {booking.cancellation_status === 'requested' && (
-                          <span className="ml-2 text-[10px] bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-lg border border-yellow-200">⚠ Cancellation requested</span>
-                        )}
+                        <div className="flex flex-wrap items-center gap-1">
+                          <span className="text-[10px] sm:text-xs bg-green-100 text-green-800 px-2 sm:px-3 py-1 rounded-lg font-bold border-2 border-green-300">✅ Confirmed</span>
+                          {booking.payment_verified_at && (
+                            <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-lg border border-emerald-200">✔ Verified</span>
+                          )}
+                          {booking.cancellation_status === 'requested' && (
+                            <span className="text-[10px] bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-lg border border-yellow-200">⚠ Cancellation requested</span>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="bg-white rounded-xl p-4 border border-green-100">
-                        <p className="text-sm text-slate-700 mb-2">
+                      <div className="bg-white rounded-xl p-3 sm:p-4 border border-green-100">
+                        <p className="text-xs sm:text-sm text-slate-700 mb-2">
                           📅 <span className="font-bold">{booking.date_from}</span> → <span className="font-bold">{booking.date_to}</span>
                         </p>
-                        <p className="text-sm text-slate-700">
+                        <p className="text-xs sm:text-sm text-slate-700">
                           👥 <span className="font-bold">{booking.guest_count} {booking.guest_count === 1 ? 'guest' : 'guests'}</span>
                           {typeof booking.children_count === 'number' && (
                             <span className="ml-2">👶 {booking.children_count}</span>
@@ -637,12 +658,12 @@ export default function OwnerBookingsContent(props: Props){
                           )}
                         </p>
                         {booking.cancellation_status === 'requested' && (
-                          <p className="text-sm text-yellow-700 mt-2">Guest requested cancellation{booking.cancellation_reason ? ` — ${booking.cancellation_reason}` : ''}.</p>
+                          <p className="text-xs sm:text-sm text-yellow-700 mt-2">Guest requested cancellation{booking.cancellation_reason ? ` — ${booking.cancellation_reason}` : ''}.</p>
                         )}
-                        <p className="text-sm text-slate-600 mt-2 italic">
+                        <p className="text-xs text-slate-600 mt-2 italic">
                           ✓ Confirmed: {new Date(booking.created_at).toLocaleDateString()}
                         </p>
-                        <div className="mt-3 flex items-center justify-between">
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                           <ChatLink bookingId={booking.id} as="owner" label="Open Chat" title={booking.guest?.full_name || booking.guest?.email || 'Guest'} />
                           <label className="inline-flex items-center gap-2 text-xs text-slate-600">
                             <input
@@ -684,7 +705,7 @@ export default function OwnerBookingsContent(props: Props){
                           <summary className="text-xs text-slate-700 cursor-pointer select-none">Verification details</summary>
                           <div className="mt-2 grid sm:grid-cols-3 gap-2">
                           <select
-                            className="px-2 py-2 rounded-lg border border-slate-300 text-xs"
+                            className="px-2 py-2 rounded-lg border border-slate-300 text-xs appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%236b7280%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1rem] bg-[right_0.5rem_center] bg-no-repeat pr-7 bg-white focus:outline-none focus:ring-2 focus:ring-resort-500/20 focus:border-resort-500 transition-all hover:border-slate-400"
                             value={verificationEdits[booking.id]?.method ?? booking.payment_method ?? ''}
                             onChange={(e) => setEdit(booking.id, 'method', e.target.value)}
                           >
@@ -731,17 +752,17 @@ export default function OwnerBookingsContent(props: Props){
 
             {/* Cancellations Tab */}
             {tab === 'cancellations' && (
-            <section className="mb-12 fade-in-up">
+            <section className="mb-8 sm:mb-12 fade-in-up">
               {(() => {
                 const isRequested = (b: any) => (b.cancellation_status === 'requested') || (!!b.cancellation_requested_at) || (!!b.cancellation_reason && b.cancellation_reason.length > 0)
                 const cancellationList = [...upcomingConfirmed, ...pastConfirmed].filter(isRequested)
                 return (
                   <>
-                    <div className="flex items-center justify-between mb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
                       <div className="flex items-center gap-3">
-                        <h2 className="text-3xl font-bold text-slate-900">Cancellation Requests ({cancellationList.length})</h2>
+                        <h2 className="text-xl sm:text-3xl font-bold text-slate-900">Cancellation Requests ({cancellationList.length})</h2>
                         {cancellationList.length > 0 && (
-                          <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                          <label className="flex items-center gap-2 text-xs sm:text-sm text-slate-600 cursor-pointer">
                             <input
                               type="checkbox"
                               checked={cancellationList.every(b => selectedBookings.has(b.id))}
@@ -756,45 +777,46 @@ export default function OwnerBookingsContent(props: Props){
                         <button
                           onClick={bulkApproveCancellations}
                           disabled={[...selectedBookings].filter(id => cancellationList.some(b => b.id === id)).length === 0}
-                          className={`px-4 py-2 rounded-xl font-semibold border-2 transition-all ${[...selectedBookings].filter(id => cancellationList.some(b => b.id === id)).length === 0 ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 text-white border-red-500'}`}
+                          className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all ${[...selectedBookings].filter(id => cancellationList.some(b => b.id === id)).length === 0 ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 text-white border-red-500'}`}
                         >Approve Selected</button>
                         <button
                           onClick={bulkDeclineCancellations}
                           disabled={[...selectedBookings].filter(id => cancellationList.some(b => b.id === id)).length === 0}
-                          className={`px-4 py-2 rounded-xl font-semibold border-2 transition-all ${[...selectedBookings].filter(id => cancellationList.some(b => b.id === id)).length === 0 ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-slate-100 text-slate-900 border-slate-300 hover:bg-slate-200'}`}
+                          className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all ${[...selectedBookings].filter(id => cancellationList.some(b => b.id === id)).length === 0 ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-slate-100 text-slate-900 border-slate-300 hover:bg-slate-200'}`}
                         >Decline Selected</button>
                       </div>
                     </div>
 
                     {cancellationList.length === 0 ? (
-                      <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center">
-                        <p className="text-lg font-bold text-slate-900 mb-2">No cancellation requests</p>
-                        <p className="text-slate-600">Guests' cancellation requests will appear here</p>
+                      <div className="bg-white border-2 border-dashed border-slate-200 rounded-xl sm:rounded-2xl p-6 sm:p-8 text-center">
+                        <p className="text-base sm:text-lg font-bold text-slate-900 mb-2">No cancellation requests</p>
+                        <p className="text-sm text-slate-600">Guests' cancellation requests will appear here</p>
                       </div>
                     ) : (
-                      <div className="grid md:grid-cols-2 gap-6">
+                      <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
                         {cancellationList.map(booking => (
-                          <div key={booking.id} className="bg-white border-2 rounded-2xl p-6 shadow-sm">
-                            <div className="flex items-start gap-3 mb-4">
+                          <div key={booking.id} className="bg-white border-2 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm">
+                            <div className="flex items-start gap-2 sm:gap-3 mb-4">
                               <input
                                 type="checkbox"
                                 checked={selectedBookings.has(booking.id)}
                                 onChange={() => toggleSelect(booking.id)}
                                 className="w-5 h-5 mt-1 rounded border-slate-300 cursor-pointer"
                               />
-                              <div className="flex-1">
-                                <div className="flex justify-between items-start mb-2">
-                                  <div>
-                                    <h3 className="text-lg font-bold text-slate-900">{booking.resort?.name}</h3>
-                                    <p className="text-sm text-slate-600">👤 {booking.guest?.full_name} — 📧 {booking.guest?.email}</p>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex flex-wrap justify-between items-start gap-2 mb-2">
+                                  <div className="min-w-0">
+                                    <h3 className="text-base sm:text-lg font-bold text-slate-900 truncate">{booking.resort?.name}</h3>
+                                    <p className="text-xs sm:text-sm text-slate-600">👤 {booking.guest?.full_name}</p>
+                                    <p className="text-xs sm:text-sm text-slate-600 break-all">📧 {booking.guest?.email}</p>
                                   </div>
                                   <span className="text-[10px] bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-lg border border-yellow-200">⚠ Cancellation requested</span>
                                 </div>
-                                <p className="text-sm text-slate-700 mb-2">📅 {booking.date_from} → {booking.date_to}</p>
+                                <p className="text-xs sm:text-sm text-slate-700 mb-2">📅 {booking.date_from} → {booking.date_to}</p>
                                 {booking.cancellation_reason && (
-                                  <p className="text-sm text-slate-700">Reason: {booking.cancellation_reason}</p>
+                                  <p className="text-xs sm:text-sm text-slate-700">Reason: {booking.cancellation_reason}</p>
                                 )}
-                                <div className="mt-3 flex items-center gap-2 justify-end">
+                                <div className="mt-3 flex flex-wrap items-center gap-2 justify-end">
                                   <button
                                     onClick={() => approveCancellation(booking.id)}
                                     className="px-3 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg border-2 border-red-500"
@@ -820,10 +842,10 @@ export default function OwnerBookingsContent(props: Props){
 
             {tab === 'history' && rejectedBookings.length > 0 && (
               <section className="fade-in-up">
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 sm:mb-6">
                   <div className="flex items-center gap-3">
-                    <h2 className="text-3xl font-bold text-slate-900">Rejected Bookings ({rejectedBookings.length})</h2>
-                    <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                    <h2 className="text-xl sm:text-3xl font-bold text-slate-900">Rejected Bookings ({rejectedBookings.length})</h2>
+                    <label className="flex items-center gap-2 text-xs sm:text-sm text-slate-600 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={rejectedBookings.every(b => selectedBookings.has(b.id))}
@@ -835,23 +857,23 @@ export default function OwnerBookingsContent(props: Props){
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
                   {rejectedBookings.map(booking => (
-                    <div key={booking.id} className="bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-200 rounded-2xl p-6 shadow-sm">
-                      <div className="flex items-start gap-3 mb-4">
+                    <div key={booking.id} className="bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm">
+                      <div className="flex items-start gap-2 sm:gap-3 mb-4">
                         <input
                           type="checkbox"
                           checked={selectedBookings.has(booking.id)}
                           onChange={() => toggleSelect(booking.id)}
                           className="w-5 h-5 mt-1 rounded border-slate-300 cursor-pointer"
                         />
-                        <div className="flex-1">
-                          <div className="flex justify-between items-start mb-4">
-                            <div>
-                              <h3 className="text-lg font-bold text-slate-900">{booking.resort?.name}</h3>
-                              <p className="text-sm text-slate-600 mt-1">{booking.guest?.full_name}</p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap justify-between items-start gap-2 mb-4">
+                            <div className="min-w-0">
+                              <h3 className="text-base sm:text-lg font-bold text-slate-900 truncate">{booking.resort?.name}</h3>
+                              <p className="text-xs sm:text-sm text-slate-600 mt-1">{booking.guest?.full_name}</p>
                             </div>
-                            <span className="text-xs bg-red-100 text-red-800 px-3 py-1 rounded-lg font-bold border-2 border-red-200">Rejected</span>
+                            <span className="text-[10px] sm:text-xs bg-red-100 text-red-800 px-2 sm:px-3 py-1 rounded-lg font-bold border-2 border-red-200">Rejected</span>
                           </div>
 
                           <p className="text-sm text-slate-700 mb-4">
@@ -873,11 +895,11 @@ export default function OwnerBookingsContent(props: Props){
 
             {/* Past Bookings (completed stays) */}
             {tab === 'history' && pastToShow.length > 0 && (
-              <section className="fade-in-up mt-12">
-                <div className="flex items-center justify-between mb-6">
+              <section className="fade-in-up mt-8 sm:mt-12">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 sm:mb-6">
                   <div className="flex items-center gap-3">
-                    <h2 className="text-3xl font-bold text-slate-900">Past Bookings ({pastToShow.length})</h2>
-                    <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                    <h2 className="text-xl sm:text-3xl font-bold text-slate-900">Past Bookings ({pastToShow.length})</h2>
+                    <label className="flex items-center gap-2 text-xs sm:text-sm text-slate-600 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={pastToShow.every(b => selectedBookings.has(b.id))}
@@ -889,25 +911,29 @@ export default function OwnerBookingsContent(props: Props){
                   </div>
                   <div className="text-xs text-slate-600">Use bulk delete at top to remove selected</div>
                 </div>
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
                   {pastToShow.map(booking => (
-                    <div key={booking.id} className={`bg-gradient-to-br from-slate-50 to-slate-100 border-2 rounded-2xl p-6 shadow-sm ${booking.payment_verified_at ? 'border-emerald-300' : 'border-slate-200'}`}>
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="flex items-start gap-3">
+                    <div key={booking.id} className={`bg-gradient-to-br from-slate-50 to-slate-100 border-2 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm ${booking.payment_verified_at ? 'border-emerald-300' : 'border-slate-200'}`}>
+                      <div className="flex flex-wrap justify-between items-start gap-2 mb-4">
+                        <div className="flex items-start gap-2 sm:gap-3 min-w-0">
                           <input
                             type="checkbox"
                             checked={selectedBookings.has(booking.id)}
                             onChange={() => toggleSelect(booking.id)}
-                            className="w-5 h-5 mt-1 rounded border-slate-300 cursor-pointer"
+                            className="w-5 h-5 mt-1 rounded border-slate-300 cursor-pointer flex-shrink-0"
                           />
-                          <h3 className="text-lg font-bold text-slate-900">{booking.resort?.name}</h3>
-                          <p className="text-sm text-slate-600 mt-1">👤 {booking.guest?.full_name}</p>
-                          <p className="text-sm text-slate-600">📧 {booking.guest?.email}</p>
+                          <div className="min-w-0">
+                            <h3 className="text-base sm:text-lg font-bold text-slate-900 truncate">{booking.resort?.name}</h3>
+                            <p className="text-xs sm:text-sm text-slate-600 mt-1">👤 {booking.guest?.full_name}</p>
+                            <p className="text-xs sm:text-sm text-slate-600 break-all">📧 {booking.guest?.email}</p>
+                          </div>
                         </div>
-                        <span className="text-xs bg-slate-200 text-slate-800 px-3 py-1 rounded-lg font-bold border-2 border-slate-300">Completed</span>
-                        {booking.payment_verified_at && (
-                          <span className="ml-2 text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-lg border border-emerald-200">✔ Verified</span>
-                        )}
+                        <div className="flex flex-wrap items-center gap-1">
+                          <span className="text-[10px] sm:text-xs bg-slate-200 text-slate-800 px-2 sm:px-3 py-1 rounded-lg font-bold border-2 border-slate-300">Completed</span>
+                          {booking.payment_verified_at && (
+                            <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-lg border border-emerald-200">✔ Verified</span>
+                          )}
+                        </div>
                       </div>
                       <div className="bg-white rounded-xl p-4 border border-slate-200">
                         <p className="text-sm text-slate-700 mb-2">📅 <span className="font-bold">{booking.date_from}</span> → <span className="font-bold">{booking.date_to}</span></p>
@@ -936,6 +962,35 @@ export default function OwnerBookingsContent(props: Props){
           </>
         )}
       </div>
+
+      {/* Payment Submissions Modal */}
+      {paymentModalBookingId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="relative w-full max-w-lg max-h-[80vh] overflow-y-auto bg-white rounded-2xl shadow-2xl">
+            <div className="sticky top-0 z-10 flex items-center justify-between p-4 bg-white border-b border-slate-200">
+              <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                <FiCreditCard className="w-5 h-5 text-cyan-600" />
+                Payment Submissions
+              </h2>
+              <button
+                onClick={() => setPaymentModalBookingId(null)}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <FiX className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4">
+              <PaymentVerificationPanel 
+                bookingId={paymentModalBookingId} 
+                isOwner={true} 
+                onVerify={() => {
+                  // Optionally refresh bookings after verification
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

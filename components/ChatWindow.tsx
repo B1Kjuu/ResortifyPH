@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import supabase from '../lib/supabaseClient'
-import MessageInput from './MessageInput'
+import MessageInputEnhanced from './MessageInputEnhanced'
 import MessageList from './MessageList'
 import ReportButton from './ReportButton'
+import PaymentSubmissionModal from './PaymentSubmissionModal'
 import type { Chat, ChatMessage } from '../types/chat'
 
 type Props = {
@@ -26,6 +27,8 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
   const [dynamicTitle, setDynamicTitle] = useState<string>('')
   const [ownerId, setOwnerId] = useState<string | undefined>()
   const [guestId, setGuestId] = useState<string | undefined>()
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [bookingAmount, setBookingAmount] = useState<number | undefined>()
 
   useEffect(() => {
     let mounted = true
@@ -130,12 +133,18 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
       if (bookingId && chatRow.booking_id) {
         const { data: booking } = await supabase
           .from('bookings')
-          .select('resort_id, guest_id, resorts(name, owner_id)')
+          .select('resort_id, guest_id, total_amount, resorts(name, owner_id, price)')
           .eq('id', bookingId)
           .single()
         const resortData = booking?.resorts as any
         setGuestId(booking?.guest_id)
         setOwnerId(resortData?.owner_id)
+        // Set booking amount for payment modal
+        if (booking?.total_amount) {
+          setBookingAmount(booking.total_amount)
+        } else if (resortData?.price) {
+          setBookingAmount(resortData.price)
+        }
         
         if (participantRole === 'guest' && resortData && typeof resortData === 'object' && 'name' in resortData) {
           // Guest sees resort name
@@ -564,8 +573,37 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
               {typingUsers.length === 1 ? 'Someone is' : `${typingUsers.length} people are`} typing...
             </div>
           )}
-          <MessageInput onSend={handleSend} chatId={chat?.id} participantRole={participantRole} />
+          <MessageInputEnhanced 
+            onSend={handleSend} 
+            chatId={chat?.id} 
+            bookingId={bookingId}
+            participantRole={participantRole} 
+            onOpenPaymentModal={bookingId ? () => setShowPaymentModal(true) : undefined}
+          />
         </>
+      )}
+
+      {/* Payment Submission Modal for Guests */}
+      {bookingId && (
+        <PaymentSubmissionModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          bookingId={bookingId}
+          chatId={chat?.id}
+          expectedAmount={bookingAmount}
+          onSuccess={(submission) => {
+            // Send a message about the payment submission
+            handleSend(
+              `💰 Payment submitted!\n• Amount: ₱${submission.amount.toLocaleString()}\n• Method: ${submission.payment_method}\n${submission.reference_number ? `• Ref #: ${submission.reference_number}` : ''}\n\nAwaiting host verification.`,
+              submission.receipt_url ? {
+                url: submission.receipt_url,
+                type: 'image/jpeg',
+                name: 'payment-receipt.jpg',
+                size: 0
+              } : undefined
+            )
+          }}
+        />
       )}
     </div>
   )

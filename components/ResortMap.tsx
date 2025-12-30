@@ -1,9 +1,26 @@
 'use client'
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
 import dynamic from 'next/dynamic'
-import { getProvinceCoordinates } from '../lib/locations'
+import { getLocationCoordinates } from '../lib/locations'
 import 'leaflet/dist/leaflet.css'
 import { FiMapPin, FiNavigation, FiCrosshair } from 'react-icons/fi'
+
+// Check if Google Maps API key is available
+const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
+const useGoogleMaps = Boolean(GOOGLE_MAPS_API_KEY)
+
+// Dynamically import GoogleMapView only when API key is available
+const GoogleMapView = dynamic(() => import('./GoogleMapView'), { 
+  ssr: false,
+  loading: () => (
+    <div className="h-full bg-slate-100 rounded-xl flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin w-6 h-6 border-2 border-resort-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+        <p className="text-sm text-slate-600">Loading map...</p>
+      </div>
+    </div>
+  ),
+})
 
 // Dynamic import to avoid SSR issues with Leaflet
 const MapContainer = dynamic(
@@ -169,7 +186,7 @@ export default function ResortMap({ resorts, userPosition, onResortClick, select
     }
   }, [userPosition])
 
-  // Calculate resort positions - prefer exact coordinates, fallback to province
+  // Calculate resort positions - prefer exact coordinates, fallback to city/province
   const resortPositions = useMemo(() => {
     return resorts
       .map((resort) => {
@@ -182,8 +199,8 @@ export default function ResortMap({ resorts, userPosition, onResortClick, select
             hasExactLocation: true,
           }
         }
-        // Fallback to province center coordinates
-        const coords = getProvinceCoordinates(resort.location)
+        // Fallback to city/province coordinates
+        const coords = getLocationCoordinates(resort.location)
         if (!coords) return null
         return {
           ...resort,
@@ -228,6 +245,29 @@ export default function ResortMap({ resorts, userPosition, onResortClick, select
       zoom: 6,
     }
   }, [resortPositions, userPosition])
+
+  // If Google Maps API key is available, use GoogleMapView instead
+  if (useGoogleMaps && isClient) {
+    // Pass resortPositions which includes fallback coordinates for resorts without exact location
+    const resortsWithCoords = resortPositions.map(r => ({
+      ...r,
+      latitude: r.lat,
+      longitude: r.lng,
+    }))
+    
+    return (
+      <GoogleMapView
+        resorts={resortsWithCoords}
+        userPosition={userPosition}
+        onResortClick={onResortClick}
+        selectedResortId={selectedResortId}
+        className={className}
+        onRequestLocation={onRequestLocation}
+        showNearbyButton={showNearbyButton}
+        geoLoading={geoLoading}
+      />
+    )
+  }
 
   if (!isClient) {
     return (

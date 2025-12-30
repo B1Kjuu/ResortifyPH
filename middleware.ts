@@ -72,12 +72,16 @@ export default function middleware(req: NextRequest) {
     `https://images.unsplash.com`,
     `https://lh3.googleusercontent.com`,
     `https://*.tile.openstreetmap.org`,
+    `https://maps.googleapis.com`,
+    `https://maps.gstatic.com`,
+    `https://*.ggpht.com`,
   ].join(' ')
 
   const nominatim = 'https://nominatim.openstreetmap.org'
+  const googleMaps = 'https://maps.googleapis.com https://maps.gstatic.com'
   const csp = isProd
-    ? `default-src 'self'; img-src ${imgSources}; script-src 'self' 'nonce-${nonce}' 'strict-dynamic'; style-src 'self' 'unsafe-inline'; connect-src 'self' ${supabaseHost} ${supabaseWss} ${nominatim}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
-    : `default-src 'self'; img-src ${imgSources}; script-src 'self' 'nonce-${nonce}' 'unsafe-eval' 'strict-dynamic'; style-src 'self' 'unsafe-inline'; connect-src 'self' ${supabaseHost} ${supabaseWss} ${nominatim} ws:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
+    ? `default-src 'self'; img-src ${imgSources}; script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://maps.googleapis.com; style-src 'self' 'unsafe-inline'; connect-src 'self' ${supabaseHost} ${supabaseWss} ${nominatim} ${googleMaps}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
+    : `default-src 'self'; img-src ${imgSources}; script-src 'self' 'nonce-${nonce}' 'unsafe-eval' 'strict-dynamic' https://maps.googleapis.com; style-src 'self' 'unsafe-inline'; connect-src 'self' ${supabaseHost} ${supabaseWss} ${nominatim} ${googleMaps} ws:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
 
   // Normalize double-encoded bracket segments in Next static chunk paths
   // e.g. %255BbookingId%255D -> %5BbookingId%5D

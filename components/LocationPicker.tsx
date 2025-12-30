@@ -3,6 +3,7 @@ import React, { useEffect, useState, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import 'leaflet/dist/leaflet.css'
 import { FiSearch, FiLoader, FiMapPin, FiInfo, FiCheck } from 'react-icons/fi'
+import { isGoogleMapsEnabled, reverseGeocode as googleReverseGeocode, geocodeAddress } from '../lib/googleMaps'
 
 // Dynamic imports for Leaflet components
 const MapContainer = dynamic(
@@ -192,9 +193,19 @@ export default function LocationPicker({
     return address.replace(/[^\p{Script=Latin}0-9.,\-()'"\s]/gu, '').replace(/\s+/g, ' ').trim()
   }
 
-  // Reverse geocode to get address from coordinates using Nominatim
+  // Reverse geocode to get address from coordinates - uses Google if available, otherwise Nominatim
   const reverseGeocode = async (lat: number, lng: number) => {
     try {
+      // Try Google Maps API first if available
+      if (isGoogleMapsEnabled()) {
+        const result = await googleReverseGeocode(lat, lng)
+        if (result?.formattedAddress) {
+          onAddressChange(result.formattedAddress)
+          return
+        }
+      }
+      
+      // Fallback to Nominatim (OpenStreetMap)
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
         { headers: { 'User-Agent': 'ResortifyPH' } }
@@ -232,11 +243,28 @@ export default function LocationPicker({
     )
   }, [onLocationChange])
 
-  // Search for address using Nominatim (OpenStreetMap)
+  // Search for address - uses Google if available, otherwise Nominatim (OpenStreetMap)
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
     setIsSearching(true);
     try {
+      // Try Google Geocoding API first if available
+      if (isGoogleMapsEnabled()) {
+        const result = await geocodeAddress(searchQuery + ', Philippines')
+        if (result) {
+          // Convert to search results format
+          setSearchResults([{
+            lat: result.lat.toString(),
+            lon: result.lng.toString(),
+            display_name: result.formattedAddress,
+            type: 'Google Maps',
+          }])
+          setIsSearching(false)
+          return
+        }
+      }
+      
+      // Fallback to Nominatim
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&countrycodes=ph&limit=5`,
         { headers: { 'User-Agent': 'ResortifyPH' } }

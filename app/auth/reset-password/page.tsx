@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '../../../lib/supabaseClient'
 import { toast } from 'sonner'
 import Link from 'next/link'
@@ -11,19 +11,27 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false)
   const [validToken, setValidToken] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
-    // Check if user came from password reset email
+    // Check if coming from callback with verified=true (PKCE flow)
+    const isVerified = searchParams.get('verified') === 'true'
+    if (isVerified) {
+      setValidToken(true)
+      return
+    }
+
+    // Legacy: Check if user came from password reset email with token in hash
     const hashParams = new URLSearchParams(window.location.hash.substring(1))
     const accessToken = hashParams.get('access_token')
     const type = hashParams.get('type')
 
     if (accessToken && type === 'recovery') {
       setValidToken(true)
-    } else {
+    } else if (!isVerified) {
       toast.error('Invalid or expired reset link')
     }
-  }, [])
+  }, [searchParams])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

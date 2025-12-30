@@ -563,22 +563,23 @@ export default function ProfilePage(){
             )}
 
             {activeTab === 'travel' && (
-            <div className="space-y-6">
+            <div className="space-y-5 sm:space-y-6">
               <div>
-                <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+                <label className="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-700 mb-2">
                   <FaSuitcase aria-hidden />
                   <span>Past Bookings</span>
                 </label>
                 {bookings.length === 0 ? (
-                  <div className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-600">No bookings yet.</div>
+                  <div className="w-full px-4 sm:px-5 py-3 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 text-slate-500 text-sm text-center">No bookings yet.</div>
                 ) : (
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
                     {bookings.map((b) => (
-                      <div key={b.id} className="p-4 border-2 border-slate-200 rounded-xl bg-white">
-                        <div className="font-semibold text-resort-900">{b.resort?.name || 'Resort'}</div>
-                        <div className="text-sm text-slate-600">{b.resort?.location || ''}</div>
-                        <div className="mt-2 text-sm">
-                          {new Date(b.date_from).toLocaleDateString()} → {new Date(b.date_to).toLocaleDateString()} • {b.status}
+                      <div key={b.id} className="p-3 sm:p-4 border-2 border-slate-200 rounded-xl bg-white hover:border-resort-200 transition">
+                        <div className="font-semibold text-resort-900 text-sm sm:text-base truncate">{b.resort?.name || 'Resort'}</div>
+                        <div className="text-xs sm:text-sm text-slate-600 truncate">{b.resort?.location || ''}</div>
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+                          <span className="text-slate-700">{new Date(b.date_from).toLocaleDateString()} → {new Date(b.date_to).toLocaleDateString()}</span>
+                          <span className={`px-2 py-0.5 rounded-lg text-[10px] sm:text-xs font-semibold border ${b.status === 'confirmed' ? 'bg-green-50 text-green-700 border-green-200' : b.status === 'pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>{b.status}</span>
                         </div>
                       </div>
                     ))}
@@ -586,30 +587,30 @@ export default function ProfilePage(){
                 )}
               </div>
               <div>
-                <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+                <label className="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-700 mb-2">
                   <FaHeart aria-hidden />
                   <span>Favorites</span>
                 </label>
                 {favoritesLoading ? (
-                  <div className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-600">Loading favorites…</div>
+                  <div className="w-full px-4 sm:px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-600 text-sm">Loading favorites…</div>
                 ) : favorites.length === 0 ? (
-                  <div className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-600">No favorites yet. Tap the heart on a resort to add it.</div>
+                  <div className="w-full px-4 sm:px-5 py-3 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 text-slate-500 text-sm text-center">No favorites yet. Tap the heart on a resort to add it.</div>
                 ) : (
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
                     {favorites.map((r: any) => (
-                      <Link key={r.id} href={`/resorts/${r.id}`} className="flex items-center gap-3 p-4 border-2 border-slate-200 rounded-xl bg-white hover:border-resort-300 transition">
-                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
+                      <Link key={r.id} href={`/resorts/${r.id}`} className="flex items-center gap-3 p-3 sm:p-4 border-2 border-slate-200 rounded-xl bg-white hover:border-resort-300 transition">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
                           {Array.isArray(r.images) && r.images.length > 0 ? (
                             <img src={r.images[0]} alt={r.name} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-slate-400"><FaUmbrellaBeach aria-hidden /></div>
                           )}
                         </div>
-                        <div className="min-w-0">
-                          <div className="font-semibold text-resort-900 truncate">{r.name}</div>
-                          <div className="text-sm text-slate-600 truncate">{r.location || '—'}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-resort-900 text-sm sm:text-base truncate">{r.name}</div>
+                          <div className="text-xs sm:text-sm text-slate-600 truncate">{r.location || '—'}</div>
                           {r.price != null && (
-                            <div className="text-xs text-slate-500">From ₱{r.price}</div>
+                            <div className="text-xs text-resort-500 font-semibold">From ₱{r.price}</div>
                           )}
                         </div>
                       </Link>
@@ -628,13 +629,13 @@ export default function ProfilePage(){
             )}
 
             {/* Action Buttons */}
-            <div className="flex gap-3 mt-8">
+            <div className="flex flex-col sm:flex-row gap-3 mt-6 sm:mt-8">
               {editing ? (
                 <>
                   <button 
                     onClick={handleSave}
                     disabled={saving}
-                    className="flex-1 px-6 py-3 bg-resort-500 text-white rounded-lg font-semibold hover:bg-resort-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 px-5 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-resort-500 to-resort-600 text-white rounded-xl font-semibold hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                   >
                     {saving ? 'Saving...' : 'Save Changes'}
                   </button>
@@ -648,7 +649,7 @@ export default function ProfilePage(){
                       setMessage(null)
                     }}
                     disabled={saving}
-                    className="flex-1 px-6 py-3 bg-slate-200 text-slate-700 rounded-lg font-semibold hover:bg-slate-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 px-5 sm:px-6 py-2.5 sm:py-3 bg-slate-100 text-slate-700 rounded-xl font-semibold hover:bg-slate-200 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base border-2 border-slate-200"
                   >
                     Cancel
                   </button>
@@ -656,9 +657,9 @@ export default function ProfilePage(){
               ) : (
                 <button 
                   onClick={() => setEditing(true)}
-                  className="w-full px-6 py-3 bg-resort-500 text-white rounded-lg font-semibold hover:bg-resort-600 transition"
+                  className="w-full px-5 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-resort-500 to-resort-600 text-white rounded-xl font-semibold hover:shadow-lg transition text-sm sm:text-base"
                 >
-                  Edit Profile
+                  <FiEdit3 className="inline mr-2" aria-hidden /> Edit Profile
                 </button>
               )}
             </div>
@@ -666,27 +667,27 @@ export default function ProfilePage(){
         </div>
 
         {/* Quick Links */}
-        <div className="mt-8 grid md:grid-cols-3 gap-4">
-          <Link href="/resorts" className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition text-center">
-            <div className="text-3xl mb-2"><FaUmbrellaBeach aria-hidden /></div>
-            <h3 className="font-semibold text-resort-900">Browse Resorts</h3>
+        <div className="mt-6 sm:mt-8 grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+          <Link href="/resorts" className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-lg shadow-sm hover:shadow-lg transition text-center border-2 border-transparent hover:border-resort-200">
+            <div className="text-2xl sm:text-3xl mb-1 sm:mb-2 text-resort-500"><FaUmbrellaBeach aria-hidden /></div>
+            <h3 className="font-semibold text-resort-900 text-sm sm:text-base">Browse Resorts</h3>
           </Link>
           {profile.role === 'guest' && (
-            <Link href="/guest/trips" className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition text-center">
-              <div className="text-3xl mb-2"><FaTicketAlt aria-hidden /></div>
-              <h3 className="font-semibold text-resort-900">My Trips</h3>
+            <Link href="/guest/trips" className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-lg shadow-sm hover:shadow-lg transition text-center border-2 border-transparent hover:border-resort-200">
+              <div className="text-2xl sm:text-3xl mb-1 sm:mb-2 text-resort-500"><FaTicketAlt aria-hidden /></div>
+              <h3 className="font-semibold text-resort-900 text-sm sm:text-base">My Trips</h3>
             </Link>
           )}
           {profile.role === 'owner' && (
-            <Link href="/owner/properties" className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition text-center">
-              <div className="text-3xl mb-2"><FaHotel aria-hidden /></div>
-              <h3 className="font-semibold text-resort-900">My Properties</h3>
+            <Link href="/owner/properties" className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-lg shadow-sm hover:shadow-lg transition text-center border-2 border-transparent hover:border-resort-200">
+              <div className="text-2xl sm:text-3xl mb-1 sm:mb-2 text-resort-500"><FaHotel aria-hidden /></div>
+              <h3 className="font-semibold text-resort-900 text-sm sm:text-base">My Properties</h3>
             </Link>
           )}
           {profile.is_admin && (
-            <Link href="/admin/approvals" className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition text-center">
-              <div className="text-3xl mb-2"><FiCheckCircle aria-hidden /></div>
-              <h3 className="font-semibold text-resort-900">Approvals</h3>
+            <Link href="/admin/approvals" className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-lg shadow-sm hover:shadow-lg transition text-center border-2 border-transparent hover:border-resort-200">
+              <div className="text-2xl sm:text-3xl mb-1 sm:mb-2 text-resort-500"><FiCheckCircle aria-hidden /></div>
+              <h3 className="font-semibold text-resort-900 text-sm sm:text-base">Approvals</h3>
             </Link>
           )}
         </div>
