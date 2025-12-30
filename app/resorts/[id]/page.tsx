@@ -55,7 +55,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
   const [childrenCount, setChildrenCount] = useState(0)
   const [petsCount, setPetsCount] = useState(0)
   const [booking, setBooking] = useState(false)
-  const [bookingType, setBookingType] = useState<BookingType | null>(null)
+  const [bookingType, setBookingType] = useState<BookingType>('daytour')
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null)
   const [selectedSingleDate, setSelectedSingleDate] = useState<Date | undefined>(undefined)
   const [stayType, setStayType] = useState<'day_12h' | 'overnight_22h'>('overnight_22h') // legacy fallback
@@ -427,7 +427,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       p_resort_region_code: resort.region_code ?? provinceInfo?.regionCode ?? null,
       p_resort_region_name: resort.region_name ?? provinceInfo?.regionName ?? null,
       // New booking type fields
-      p_booking_type: bookingType || stayType,
+      p_booking_type: bookingType,
       p_time_slot_id: finalSlotId,
       p_check_in_time: timeSlotDetails?.startTime ?? null,
       p_check_out_time: timeSlotDetails?.endTime ?? null,
@@ -961,7 +961,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                     {/* Legacy styled select for stay type/time */}
                     <div className="relative">
                       <select 
-                        value={bookingType || stayType} 
+                        value={bookingType} 
                         onChange={(e) => {
                           const val = e.target.value
                           if (val === 'daytour' || val === 'overnight' || val === '22hrs') {

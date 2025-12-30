@@ -97,7 +97,7 @@ export default function NotificationsBell(){
         )}
       </button>
       {open && (
-        <div className="absolute right-0 sm:right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-sm bg-white border border-slate-200 rounded-xl shadow-xl z-50">
+        <div className="fixed sm:absolute inset-x-4 sm:inset-x-auto sm:right-0 top-16 sm:top-auto sm:mt-2 w-auto sm:w-80 bg-white border border-slate-200 rounded-xl shadow-xl z-50">
           <div className="px-3 sm:px-4 py-2 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <p className="text-sm font-semibold text-slate-900">Notifications</p>
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
@@ -109,7 +109,7 @@ export default function NotificationsBell(){
               <button onClick={async () => { await deleteAllNotifications(); const data = await listNotifications(10); setItems(data); setUnread(0); }} className="text-xs text-red-600 hover:text-red-700">Clear</button>
             </div>
           </div>
-          <div className="max-h-80 overflow-y-auto">
+          <div className="max-h-[60vh] sm:max-h-80 overflow-y-auto">
             {items.length === 0 ? (
               <div className="px-4 py-6 text-center text-slate-600 text-sm">No notifications</div>
             ) : items.map((n: any) => (

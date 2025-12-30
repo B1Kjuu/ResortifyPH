@@ -69,38 +69,72 @@ export async function GET(
     // Check if there's a multi-day booking that blocks everything
     const hasMultiDayBooking = existingBookings?.some(b => b.date_from !== b.date_to) || false
     
+    // Time-based restrictions: Check if we're past the cutoff time for today's bookings
+    const now = new Date()
+    const requestedDate = new Date(dateStr + 'T00:00:00')
+    const isToday = now.toISOString().slice(0, 10) === dateStr
+    const currentHour = now.getHours()
+    const currentMinute = now.getMinutes()
+    
+    // Cutoff times (in 24hr format):
+    // - Daytour: Cannot book after 12:00 PM (noon) on the same day
+    // - Overnight: Cannot book after 4:00 PM on the same day  
+    // - 22hrs: Cannot book after 10:00 AM on the same day
+    const DAYTOUR_CUTOFF_HOUR = 12
+    const OVERNIGHT_CUTOFF_HOUR = 16
+    const TWENTYTWO_CUTOFF_HOUR = 10
+    
     // Calculate availability for each slot
     const availableSlots = timeSlots.map(slot => {
       let isAvailable = true
       let reason = ''
       
+      // Time-based cutoff for same-day bookings
+      if (isToday) {
+        if ((slot.slot_type === 'daytour' || slot.slot_type === 'day_12h') && currentHour >= DAYTOUR_CUTOFF_HOUR) {
+          isAvailable = false
+          reason = `Daytour bookings close at ${DAYTOUR_CUTOFF_HOUR}:00 PM. It's past the cutoff time.`
+        } else if ((slot.slot_type === 'overnight' || slot.slot_type === 'overnight_22h') && currentHour >= OVERNIGHT_CUTOFF_HOUR) {
+          isAvailable = false
+          reason = `Overnight bookings close at ${OVERNIGHT_CUTOFF_HOUR}:00. It's past the cutoff time.`
+        } else if (slot.slot_type === '22hrs' && currentHour >= TWENTYTWO_CUTOFF_HOUR) {
+          isAvailable = false
+          reason = `22-hour bookings close at ${TWENTYTWO_CUTOFF_HOUR}:00 AM. It's past the cutoff time.`
+        }
+      }
+      // Past dates are not bookable
+      else if (requestedDate < new Date(now.toISOString().slice(0, 10) + 'T00:00:00')) {
+        isAvailable = false
+        reason = 'Cannot book past dates'
+      }
+      
       // Multi-day booking blocks everything on that date
-      if (hasMultiDayBooking) {
+      if (isAvailable && hasMultiDayBooking) {
         isAvailable = false
         reason = 'A multi-day booking covers this date'
       }
       // Check if this specific slot is booked
-      else if (bookedSlotIds.has(slot.id)) {
+      else if (isAvailable && bookedSlotIds.has(slot.id)) {
         isAvailable = false
         reason = 'This time slot is already booked'
       }
       // Check if same type is booked
-      else if (bookedTypes.has(slot.slot_type)) {
+      else if (isAvailable && bookedTypes.has(slot.slot_type)) {
         isAvailable = false
         reason = `A ${slot.slot_type} booking already exists for this date`
       }
       // 22hrs blocks everything
-      else if (bookedTypes.has('22hrs')) {
+      else if (isAvailable && bookedTypes.has('22hrs')) {
         isAvailable = false
         reason = 'A 22-hour booking blocks this date'
       }
       // 22hrs is blocked by anything
-      else if (slot.slot_type === '22hrs' && bookedTypes.size > 0) {
+      else if (isAvailable && slot.slot_type === '22hrs' && bookedTypes.size > 0) {
         isAvailable = false
         reason = 'Cannot book 22 hours when other bookings exist'
       }
       // Check split day permission
-      else if (!resort.allow_split_day) {
+      else if (isAvailable && !resort.allow_split_day) {
         if (slot.slot_type === 'daytour' && bookedTypes.has('overnight')) {
           isAvailable = false
           reason = 'Split day bookings not allowed'

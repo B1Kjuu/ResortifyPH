@@ -11,7 +11,7 @@ export default function ResortChatPage({ params, searchParams }: Props) {
   return (
     <div className="h-[calc(100dvh-64px)] sm:h-[calc(100dvh-80px)] flex flex-col overflow-hidden">
       <div className="mx-auto w-full max-w-4xl flex-1 flex flex-col p-2 sm:p-4 lg:p-6 min-h-0 overflow-hidden">
-        <div className="mb-2 sm:mb-3 shrink-0">
+        <div className="hidden sm:block mb-2 sm:mb-3 shrink-0">
           <DisclaimerBanner />
         </div>
         <div className="flex-1 min-h-0 overflow-hidden">
