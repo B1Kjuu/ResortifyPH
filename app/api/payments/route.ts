@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Create Supabase client lazily to avoid build-time errors
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 // GET: List payment submissions for a booking (owner only)
 export async function GET(req: NextRequest) {
+  const supabase = getSupabase()
   const { searchParams } = new URL(req.url)
   const bookingId = searchParams.get('bookingId')
   
@@ -37,6 +41,7 @@ export async function GET(req: NextRequest) {
 
 // POST: Create a payment submission
 export async function POST(req: NextRequest) {
+  const supabase = getSupabase()
   try {
     const body = await req.json()
     const { booking_id, amount, payment_method, reference_number, receipt_url, notes, user_id } = body
@@ -77,6 +82,7 @@ export async function POST(req: NextRequest) {
 
 // PATCH: Verify or reject a payment submission (owner only)
 export async function PATCH(req: NextRequest) {
+  const supabase = getSupabase()
   try {
     const body = await req.json()
     const { submission_id, action, rejection_reason, user_id } = body
