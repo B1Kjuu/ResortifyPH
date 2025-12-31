@@ -284,9 +284,9 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
   // Compute slot-aware booked dates based on selected booking type
   // - Daytour bookings only block other daytour bookings on the same date
-  // - Overnight bookings only block other overnight bookings on the same date
+  // - Overnight bookings only block other overnight bookings (can span 2 days)
   // - 22hrs bookings block the entire day
-  // - Long stay bookings (multi-day) block all dates in range for all types
+  // - Long stay bookings (3+ days) block all dates in range for all types
   const slotAwareBookedDates = useMemo(() => {
     if (!rawBookings.length) return []
     
@@ -295,10 +295,23 @@ export default function ResortDetail({ params }: { params: { id: string } }){
     rawBookings.forEach(booking => {
       const start = new Date(booking.date_from)
       const end = new Date(booking.date_to)
-      const isMultiDay = format(start, 'yyyy-MM-dd') !== format(end, 'yyyy-MM-dd')
+      const startStr = format(start, 'yyyy-MM-dd')
+      const endStr = format(end, 'yyyy-MM-dd')
       
-      // For multi-day bookings, block all dates regardless of booking type
-      if (isMultiDay) {
+      // Calculate days difference
+      const daysDiff = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+      
+      // Determine if this is an overnight span (2 consecutive days)
+      const isOvernightSpan = (
+        (booking.booking_type === 'overnight' || booking.booking_type === 'overnight_22h') 
+        && daysDiff === 1
+      )
+      
+      // True multi-day: 3+ days, or 2 days that isn't an overnight span
+      const isTrueMultiDay = daysDiff >= 2 || (daysDiff === 1 && !isOvernightSpan)
+      
+      // For true multi-day bookings, block all dates regardless of booking type
+      if (isTrueMultiDay) {
         const current = new Date(start)
         while (current <= end) {
           blockedDates.push(format(current, 'yyyy-MM-dd'))
@@ -308,26 +321,38 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       }
       
       // For single-day bookings, check if it conflicts with selected booking type
-      const dateStr = format(start, 'yyyy-MM-dd')
       const existingType = booking.booking_type
       
-      // 22hrs blocks everything
+      // 22hrs blocks everything on that day
       if (existingType === '22hrs') {
-        blockedDates.push(dateStr)
+        blockedDates.push(startStr)
         return
       }
       
+      // Handle overnight spans (2 days)
+      if (isOvernightSpan) {
+        // Overnight uses evening of start date and morning of end date
+        if (bookingType === 'overnight') {
+          // Block both dates for other overnight bookings
+          blockedDates.push(startStr)
+          blockedDates.push(endStr)
+        }
+        // Daytour doesn't conflict with overnight
+        return
+      }
+      
+      // Single-day slot booking
       // If user is booking the same type, block
       if (bookingType && existingType === bookingType) {
-        blockedDates.push(dateStr)
+        blockedDates.push(startStr)
         return
       }
       
       // For legacy types, treat day_12h as daytour and overnight_22h as overnight
       if (existingType === 'day_12h' && bookingType === 'daytour') {
-        blockedDates.push(dateStr)
+        blockedDates.push(startStr)
       } else if (existingType === 'overnight_22h' && bookingType === 'overnight') {
-        blockedDates.push(dateStr)
+        blockedDates.push(startStr)
       }
     })
     

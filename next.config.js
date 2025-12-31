@@ -18,6 +18,10 @@ try {
 } catch {}
 
 const nextConfig = {
+  // Enable compression
+  compress: true,
+  
+  // Optimize images
   images: {
     remotePatterns: [
       // Fallback to the previously used host (kept for safety)
@@ -34,7 +38,18 @@ const nextConfig = {
       }] : []),
       // Optional: enable common avatar providers if needed later
       // { protocol: 'https', hostname: 'lh3.googleusercontent.com', pathname: '/**' }
-    ]
+    ],
+    // Optimize image loading
+    minimumCacheTTL: 60 * 60 * 24, // 24 hours
+    formats: ['image/avif', 'image/webp'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256],
+  },
+  
+  // Enable experimental features for performance
+  experimental: {
+    // Optimize package imports to reduce bundle size
+    optimizePackageImports: ['react-icons', 'date-fns', 'lodash'],
   },
   async rewrites() {
     // Workaround for some proxies/CDNs double-encoding dynamic segment brackets in Next chunk paths
@@ -60,6 +75,21 @@ const nextConfig = {
   async headers() {
     const isDev = process.env.NODE_ENV !== 'production'
     return [
+      // Cache static assets aggressively
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }
+        ]
+      },
+      // Cache images
+      {
+        source: '/assets/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=86400, stale-while-revalidate=604800' }
+        ]
+      },
+      // Security headers for all routes
       {
         source: '/(.*)',
         headers: [

@@ -100,6 +100,14 @@ export default function middleware(req: NextRequest) {
 
   const res = NextResponse.next({ request: { headers } })
   res.headers.set('Content-Security-Policy', csp)
+  
+  // Add performance headers for caching static assets
+  if (pathname.startsWith('/_next/static/')) {
+    res.headers.set('Cache-Control', 'public, max-age=31536000, immutable')
+  } else if (pathname.match(/\.(ico|png|jpg|jpeg|svg|gif|webp|woff|woff2)$/)) {
+    res.headers.set('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800')
+  }
+  
   return res
 }
 

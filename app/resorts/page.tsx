@@ -189,38 +189,25 @@ export default function ResortsPage(){
 
     async function loadResorts(){
       try {
-        const { data, error } = await supabase
-          .from('resorts')
-          .select('*')
-          .eq('status', 'approved')
-          .order('created_at', { ascending: false })
+        // Use optimized API endpoint with caching
+        const response = await fetch('/api/resorts?limit=100')
         
         if (!mounted) return
-
-        if (error) {
-          console.error('Resorts fetch error:', error)
+        
+        if (!response.ok) {
+          console.error('Resorts fetch error:', response.statusText)
           setResorts([])
           setLoading(false)
           return
         }
 
+        const { resorts: data, ratings } = await response.json()
+
         if (mounted) {
-          setResorts(data || []);
-          // Fetch aggregated ratings for all resorts (simple client-side aggregation)
-          const { data: reviewsData } = await supabase
-            .from('reviews')
-            .select('resort_id, rating');
-          const ratings = (reviewsData || []).reduce((acc: any, row: any) => {
-            const key = row.resort_id
-            const cur = acc[key] || { avg: 0, count: 0 }
-            cur.avg = ((cur.avg * cur.count) + (row.rating || 0)) / (cur.count + 1)
-            cur.count = cur.count + 1
-            acc[key] = cur
-            return acc
-          }, {} as any)
-          setRatingsMap(ratings as Record<string, { avg: number, count: number }>)
+          setResorts(data || [])
+          setRatingsMap(ratings || {})
           if (data && data.length > 0) {
-            const prices = data.map(r => r.price || 0).filter((p) => Number.isFinite(p))
+            const prices = data.map((r: any) => r.price || 0).filter((p: number) => Number.isFinite(p))
             const minPrice = Math.min(...prices)
             const maxPrice = Math.max(...prices)
             setPriceBounds([minPrice, maxPrice])

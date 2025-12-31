@@ -172,7 +172,7 @@ export async function GET(
     const isHoliday = holidays.includes(dateStr)
     const dayType = isWeekend || isHoliday ? 'weekend' : 'weekday'
     
-    return NextResponse.json({
+    const response = NextResponse.json({
       resortId,
       date: dateStr,
       dayType,
@@ -181,6 +181,11 @@ export async function GET(
       downpaymentPercentage: resort.downpayment_percentage ?? 50,
       availableSlots,
     })
+    
+    // Cache availability for 30 seconds (changes with bookings)
+    response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60')
+    
+    return response
   } catch (err) {
     console.error('Error checking availability:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
