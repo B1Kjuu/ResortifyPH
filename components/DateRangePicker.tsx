@@ -19,6 +19,8 @@ interface DateRangePickerProps {
   bookingType?: 'daytour' | 'overnight' | '22hrs' | null
   checkInTime?: string // HH:mm format
   checkOutTime?: string // HH:mm format
+  // Time cutoff props - when time exceeds cutoff, today is disabled
+  cutoffTime?: string // HH:mm format - if current time > cutoff, today is disabled
 }
 
 export default function DateRangePicker({ 
@@ -33,6 +35,7 @@ export default function DateRangePicker({
   bookingType,
   checkInTime,
   checkOutTime,
+  cutoffTime,
 }: DateRangePickerProps) {
   const [monthCount, setMonthCount] = useState(1)
   const wrapperRef = useRef<HTMLDivElement | null>(null)
@@ -47,6 +50,28 @@ export default function DateRangePicker({
       return `${hr12}:${String(m).padStart(2, '0')} ${ampm}`
     } catch {
       return time
+    }
+  }
+
+  // Check if today is past the cutoff time for this booking type
+  const isTodayPastCutoff = (): boolean => {
+    if (!cutoffTime && !checkInTime) return false
+    
+    const now = new Date()
+    const cutoff = cutoffTime || checkInTime
+    if (!cutoff) return false
+    
+    try {
+      const [cutoffHour, cutoffMin] = cutoff.split(':').map(Number)
+      const currentHour = now.getHours()
+      const currentMin = now.getMinutes()
+      
+      // If current time is past the cutoff, today should be disabled
+      if (currentHour > cutoffHour) return true
+      if (currentHour === cutoffHour && currentMin >= cutoffMin) return true
+      return false
+    } catch {
+      return false
     }
   }
 
@@ -78,9 +103,27 @@ export default function DateRangePicker({
     return dd >= today
   })
   
+  // Calculate the minimum selectable date based on cutoff time
+  const getMinDate = (): Date => {
+    const now = new Date()
+    const todayStart = new Date(now)
+    todayStart.setHours(0, 0, 0, 0)
+    
+    // If past cutoff time, start from tomorrow
+    if (isTodayPastCutoff()) {
+      const tomorrow = new Date(todayStart)
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      return tomorrow
+    }
+    
+    return todayStart
+  }
+  
+  const minDate = getMinDate()
+  
   // Disable past dates and booked dates
   const disabledDays = [
-    { before: new Date() },
+    { before: minDate },
     ...disabledDates
   ]
 

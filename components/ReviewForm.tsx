@@ -1,7 +1,9 @@
 'use client'
 import React, { useState } from 'react'
+import Image from 'next/image'
 import { z } from 'zod'
 import { supabase } from '../lib/supabaseClient'
+import { FiCamera, FiX } from 'react-icons/fi'
 
 const schema = z.object({
   rating: z.number().min(1).max(5),
@@ -9,12 +11,75 @@ const schema = z.object({
   content: z.string().min(10, 'Please share a bit more (10+ chars)').max(2000),
 })
 
+const MAX_PHOTOS = 4
+
 export default function ReviewForm({ resortId, bookingId, onSubmitted }: { resortId: string, bookingId: string, onSubmitted: () => void }){
   const [rating, setRating] = useState(5)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+  const [images, setImages] = useState<string[]>([])
+  const [uploading, setUploading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+    
+    const remainingSlots = MAX_PHOTOS - images.length
+    if (remainingSlots <= 0) {
+      setError(`Maximum ${MAX_PHOTOS} photos allowed`)
+      return
+    }
+    
+    const filesToUpload = Array.from(files).slice(0, remainingSlots)
+    setUploading(true)
+    setError(null)
+    
+    try {
+      const uploadedUrls: string[] = []
+      
+      for (const file of filesToUpload) {
+        // Validate file type and size
+        if (!file.type.startsWith('image/')) {
+          setError('Only image files are allowed')
+          continue
+        }
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+          setError('Each image must be under 5MB')
+          continue
+        }
+        
+        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${file.name.split('.').pop()}`
+        const filePath = `reviews/${resortId}/${fileName}`
+        
+        const { error: uploadError } = await supabase.storage
+          .from('resorts')
+          .upload(filePath, file)
+        
+        if (uploadError) {
+          console.error('Upload error:', uploadError)
+          continue
+        }
+        
+        const { data: urlData } = supabase.storage.from('resorts').getPublicUrl(filePath)
+        if (urlData?.publicUrl) {
+          uploadedUrls.push(urlData.publicUrl)
+        }
+      }
+      
+      setImages(prev => [...prev, ...uploadedUrls])
+    } catch (err) {
+      console.error('Upload failed:', err)
+      setError('Failed to upload images')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  function removeImage(index: number) {
+    setImages(prev => prev.filter((_, i) => i !== index))
+  }
 
   async function submit(){
     setError(null)
@@ -25,6 +90,7 @@ export default function ReviewForm({ resortId, bookingId, onSubmitted }: { resor
     }
     setSubmitting(true)
     try {
+      // First try the RPC
       const { data, error } = await supabase.rpc('create_review_safe', {
         p_resort_id: resortId,
         p_booking_id: bookingId,
@@ -32,6 +98,7 @@ export default function ReviewForm({ resortId, bookingId, onSubmitted }: { resor
         p_title: title || null,
         p_content: content,
       })
+      
       if (error) {
         // Provide user-friendly error messages
         const msg = error.message || ''
@@ -47,7 +114,15 @@ export default function ReviewForm({ resortId, bookingId, onSubmitted }: { resor
           setError(msg || 'Failed to submit review. Please try again.')
         }
       } else {
-        setRating(5); setTitle(''); setContent('')
+        // If we have images, update the review with them
+        if (images.length > 0 && data) {
+          await supabase
+            .from('reviews')
+            .update({ images })
+            .eq('id', data)
+        }
+        
+        setRating(5); setTitle(''); setContent(''); setImages([])
         onSubmitted()
       }
     } catch (e: any) {
@@ -101,10 +176,65 @@ export default function ReviewForm({ resortId, bookingId, onSubmitted }: { resor
             placeholder="Share what you loved and any tips for future guests"
           />
         </div>
+        
+        {/* Photo Upload */}
+        <div>
+          <label className="block text-sm font-semibold text-slate-700 mb-2">
+            Add Photos (optional, up to {MAX_PHOTOS})
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {/* Preview uploaded images */}
+            {images.map((img, idx) => (
+              <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-slate-200">
+                <Image 
+                  src={img} 
+                  alt={`Upload ${idx + 1}`} 
+                  fill 
+                  className="object-cover"
+                  sizes="80px"
+                  unoptimized
+                />
+                <button
+                  type="button"
+                  onClick={() => removeImage(idx)}
+                  className="absolute top-1 right-1 p-1 bg-black/50 hover:bg-black/70 rounded-full text-white"
+                >
+                  <FiX className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+            
+            {/* Upload button */}
+            {images.length < MAX_PHOTOS && (
+              <label className={`w-20 h-20 flex flex-col items-center justify-center border-2 border-dashed rounded-lg cursor-pointer transition ${
+                uploading ? 'border-resort-300 bg-resort-50' : 'border-slate-300 hover:border-resort-400 hover:bg-resort-50'
+              }`}>
+                {uploading ? (
+                  <div className="animate-spin w-5 h-5 border-2 border-resort-500 border-t-transparent rounded-full" />
+                ) : (
+                  <>
+                    <FiCamera className="w-5 h-5 text-slate-400" />
+                    <span className="text-xs text-slate-500 mt-1">Add</span>
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageUpload}
+                  disabled={uploading}
+                  className="hidden"
+                />
+              </label>
+            )}
+          </div>
+          <p className="text-xs text-slate-500 mt-1">Max 5MB per image. JPG, PNG, or WebP.</p>
+        </div>
+        
         <div className="flex justify-end">
           <button
             onClick={submit}
-            disabled={submitting}
+            disabled={submitting || uploading}
             className="px-5 py-2.5 bg-resort-600 text-white rounded-xl font-semibold shadow hover:bg-resort-700 disabled:opacity-50"
           >
             {submitting ? 'Submitting...' : 'Submit Review'}

@@ -1,20 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 export async function GET(req: NextRequest) {
   const { searchParams, origin } = req.nextUrl
   const code = searchParams.get('code')
   const type = searchParams.get('type') // recovery, signup, etc.
   const next = searchParams.get('next') || '/'
+  const error = searchParams.get('error')
+  const errorCode = searchParams.get('error_code')
+  const errorDescription = searchParams.get('error_description')
+
+  // Handle error parameters from Supabase (expired/invalid links)
+  if (error || errorCode) {
+    if (type === 'recovery' || errorDescription?.includes('recovery')) {
+      return NextResponse.redirect(`${origin}/auth/reset-password?error=expired`)
+    }
+    if (type === 'signup' || type === 'email' || errorDescription?.includes('signup')) {
+      return NextResponse.redirect(`${origin}/auth/verify-email?error=expired`)
+    }
+    
+    return NextResponse.redirect(`${origin}/auth/signin?error=auth_callback_error`)
+  }
 
   if (code) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    const supabase = createClient(supabaseUrl, supabaseAnonKey)
-
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    const cookieStore = cookies()
     
-    if (!error) {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+          set(name: string, value: string, options: any) {
+            try {
+              cookieStore.set({ name, value, ...options })
+            } catch (error) {
+              // Handle cookie errors in edge cases
+            }
+          },
+          remove(name: string, options: any) {
+            try {
+              cookieStore.set({ name, value: '', ...options })
+            } catch (error) {
+              // Handle cookie errors in edge cases
+            }
+          },
+        },
+      }
+    )
+
+    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+    
+    if (!exchangeError) {
       // Redirect based on type
       if (type === 'recovery') {
         return NextResponse.redirect(`${origin}/auth/reset-password?verified=true`)
@@ -24,6 +64,17 @@ export async function GET(req: NextRequest) {
       }
       // Default redirect
       return NextResponse.redirect(`${origin}${next}`)
+    }
+    
+    // Handle exchange errors (expired token, invalid code, etc.)
+    const errorMsg = exchangeError.message?.toLowerCase() || ''
+    if (errorMsg.includes('expired') || errorMsg.includes('invalid')) {
+      if (type === 'recovery') {
+        return NextResponse.redirect(`${origin}/auth/reset-password?error=expired`)
+      }
+      if (type === 'signup' || type === 'email') {
+        return NextResponse.redirect(`${origin}/auth/verify-email?error=expired`)
+      }
     }
   }
 

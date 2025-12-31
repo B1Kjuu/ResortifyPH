@@ -10,27 +10,83 @@ export default function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [validToken, setValidToken] = useState(false)
+  const [checking, setChecking] = useState(true)
+  const [showExpiredMessage, setShowExpiredMessage] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
 
   useEffect(() => {
-    // Check if coming from callback with verified=true (PKCE flow)
-    const isVerified = searchParams.get('verified') === 'true'
-    if (isVerified) {
-      setValidToken(true)
-      return
+    async function checkAuth() {
+      // Check for error parameter (expired link)
+      const errorParam = searchParams.get('error')
+      if (errorParam === 'expired') {
+        setShowExpiredMessage(true)
+        setValidToken(false)
+        setChecking(false)
+        return
+      }
+      
+      // Check if coming from callback with verified=true (PKCE flow)
+      const isVerified = searchParams.get('verified') === 'true'
+      if (isVerified) {
+        // Double-check we have a session from the callback
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          setValidToken(true)
+          setChecking(false)
+          return
+        }
+      }
+
+      // Legacy: Check if user came from password reset email with token in hash
+      const hashParams = new URLSearchParams(window.location.hash.substring(1))
+      const accessToken = hashParams.get('access_token')
+      const type = hashParams.get('type')
+      const errorCode = hashParams.get('error_code')
+      const refreshToken = hashParams.get('refresh_token')
+
+      // Handle expired link from hash
+      if (errorCode === 'otp_expired') {
+        setShowExpiredMessage(true)
+        setValidToken(false)
+        setChecking(false)
+        return
+      }
+
+      if (accessToken && type === 'recovery') {
+        // Set the session from the hash tokens
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken || '',
+        })
+        if (!error) {
+          setValidToken(true)
+          // Clear the hash from URL for security
+          window.history.replaceState({}, '', window.location.pathname)
+        } else {
+          toast.error('Invalid or expired reset link')
+        }
+        setChecking(false)
+        return
+      }
+
+      // Also check if we already have a valid session (user might have refreshed)
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        setValidToken(true)
+        setChecking(false)
+        return
+      }
+
+      // No valid token found
+      if (!isVerified) {
+        // Don't show error toast immediately, might still be loading
+        setShowExpiredMessage(true)
+      }
+      setChecking(false)
     }
 
-    // Legacy: Check if user came from password reset email with token in hash
-    const hashParams = new URLSearchParams(window.location.hash.substring(1))
-    const accessToken = hashParams.get('access_token')
-    const type = hashParams.get('type')
-
-    if (accessToken && type === 'recovery') {
-      setValidToken(true)
-    } else if (!isVerified) {
-      toast.error('Invalid or expired reset link')
-    }
+    checkAuth()
   }, [searchParams])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -66,6 +122,18 @@ export default function ResetPasswordPage() {
     setTimeout(() => {
       router.push('/auth/signin')
     }, 1500)
+  }
+
+  // Show loading state while checking
+  if (checking) {
+    return (
+      <div className="min-h-[80vh] bg-gradient-to-br from-resort-50 to-resort-100 flex items-center justify-center px-4">
+        <div className="w-full max-w-md bg-white shadow-lg rounded-xl p-8 text-center">
+          <div className="w-12 h-12 border-4 border-resort-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-600">Verifying reset link...</p>
+        </div>
+      </div>
+    )
   }
 
   if (!validToken) {

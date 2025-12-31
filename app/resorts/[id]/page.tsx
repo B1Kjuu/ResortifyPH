@@ -164,10 +164,10 @@ export default function ResortDetail({ params }: { params: { id: string } }){
             .maybeSingle()
           setLatestBookingId(latestBooking?.id || null)
 
-          // Fetch reviews for this resort
+          // Fetch reviews for this resort (including images)
           const { data: reviewsData } = await supabase
             .from('reviews')
-            .select('id, rating, title, content, created_at, guest_id, booking_id')
+            .select('id, rating, title, content, created_at, guest_id, booking_id, images')
             .eq('resort_id', params.id)
             .order('created_at', { ascending: false })
 
@@ -667,8 +667,8 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
   return (
     <>
-    <div className="w-full min-h-screen bg-gradient-to-b from-resort-50 to-white px-4 sm:px-6 lg:px-10 py-6 sm:py-10">
-      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
+    <div className="w-full min-h-screen bg-gradient-to-b from-resort-50 to-white px-4 sm:px-6 lg:px-10 py-6 sm:py-10 overflow-x-hidden">
+      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 overflow-x-hidden">
         <Link href="/resorts" className="text-xs sm:text-sm text-resort-500 font-semibold inline-flex items-center gap-1 hover:text-resort-600">
           <FiArrowLeft aria-hidden className="inline-block" /> Back to Resorts
         </Link>
@@ -855,7 +855,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                     <a href="#review-form" className="px-3 py-1.5 bg-green-600 text-white rounded-md text-sm font-semibold hover:bg-green-700">Write a review</a>
                   </div>
                 )}
-                <ReviewsList reviews={reviews} />
+                <ReviewsList reviews={reviews} currentUserId={user?.id} />
                 {user && eligibleReviewBookingId ? (
                   <div id="review-form">
                     <ReviewForm
@@ -944,6 +944,54 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                     <p className="font-semibold text-resort-900">{owner.full_name}</p>
                     <p className="text-sm text-slate-600">Contact shared after booking</p>
                   </div>
+                </div>
+              )}
+
+              {/* Location Map */}
+              {resort.latitude && resort.longitude && (
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold text-resort-900 flex items-center gap-2">
+                    <FiMapPin className="text-resort-500" />
+                    Location
+                  </h3>
+                  <div className="rounded-xl overflow-hidden border border-slate-200 h-[250px] sm:h-[300px]">
+                    {process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? (
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
+                        loading="lazy"
+                        allowFullScreen
+                        referrerPolicy="no-referrer-when-downgrade"
+                        src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${resort.latitude},${resort.longitude}&zoom=15`}
+                      />
+                    ) : (
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
+                        loading="lazy"
+                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${resort.longitude - 0.01},${resort.latitude - 0.01},${resort.longitude + 0.01},${resort.latitude + 0.01}&layer=mapnik&marker=${resort.latitude},${resort.longitude}`}
+                      />
+                    )}
+                  </div>
+                  {resort.address && (
+                    <p className="text-sm text-slate-600 flex items-start gap-2">
+                      <FiMapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-slate-400" />
+                      {resort.address}
+                    </p>
+                  )}
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${resort.latitude},${resort.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm text-resort-600 hover:text-resort-700 font-medium"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    Open in Google Maps
+                  </a>
                 </div>
               )}
             </div>
@@ -1083,6 +1131,15 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                       onSelectSingleDate={setSelectedSingleDate}
                       selectedSingleDate={selectedSingleDate}
                       bookingType={bookingType}
+                      checkInTime={resort?.check_in_time}
+                      checkOutTime={resort?.check_out_time}
+                      cutoffTime={
+                        // Use host's check-in time as cutoff, or default based on booking type
+                        bookingType === 'daytour' ? (resort?.check_in_time || '12:00') :
+                        bookingType === 'overnight' ? (resort?.check_in_time || '16:00') :
+                        bookingType === '22hrs' ? (resort?.check_in_time || '10:00') :
+                        undefined
+                      }
                     />
                   )}
                 </div>
@@ -1125,20 +1182,30 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                     <p className="text-[10px] sm:text-xs text-slate-500">Under 13</p>
                   </div>
                   <div className="space-y-1">
-                    <label className="block text-xs sm:text-sm font-semibold text-slate-700">Pets</label>
+                    <label className={`block text-xs sm:text-sm font-semibold ${resort?.amenities?.includes('Pet Friendly') ? 'text-slate-700' : 'text-slate-400 line-through'}`}>Pets</label>
                     <input
                       type="text"
                       inputMode="numeric"
                       pattern="[0-9]*"
                       placeholder="0"
                       value={petsCount === 0 ? '' : petsCount}
-                      onChange={(e) => setPetsCount(e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value) || 0))}
+                      onChange={(e) => {
+                        if (!resort?.amenities?.includes('Pet Friendly')) return
+                        setPetsCount(e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value) || 0))
+                      }}
                       onBlur={(e) => {
                         if (e.target.value === '') setPetsCount(0)
                       }}
-                      className="w-full px-2 sm:px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-500 text-center text-lg font-medium placeholder:text-slate-400"
+                      disabled={!resort?.amenities?.includes('Pet Friendly')}
+                      className={`w-full px-2 sm:px-3 py-2.5 border rounded-lg focus:outline-none text-center text-lg font-medium placeholder:text-slate-400 ${
+                        resort?.amenities?.includes('Pet Friendly') 
+                          ? 'border-slate-300 focus:ring-2 focus:ring-resort-500' 
+                          : 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed line-through'
+                      }`}
                     />
-                    <p className="text-[10px] sm:text-xs text-slate-500">If allowed</p>
+                    <p className={`text-[10px] sm:text-xs ${resort?.amenities?.includes('Pet Friendly') ? 'text-slate-500' : 'text-red-400'}`}>
+                      {resort?.amenities?.includes('Pet Friendly') ? 'Pets welcome' : 'Not pet-friendly'}
+                    </p>
                   </div>
                 </div>
               </div>

@@ -8,51 +8,90 @@ import Link from 'next/link'
 export default function VerifyEmailPage() {
   const [loading, setLoading] = useState(false)
   const [verified, setVerified] = useState(false)
+  const [expired, setExpired] = useState(false)
+  const [checking, setChecking] = useState(true)
   const searchParams = useSearchParams()
   const router = useRouter()
   const email = searchParams.get('email') || ''
   const isVerified = searchParams.get('verified') === 'true'
+  const errorParam = searchParams.get('error')
 
   useEffect(() => {
-    // If coming from callback with verified=true, the session is already established
-    if (isVerified) {
-      setVerified(true)
-      toast.success('Email verified successfully!')
-      setTimeout(() => {
-        router.push('/profile?welcome=true')
-      }, 2000)
-      return
+    async function checkVerification() {
+      // Check for expired link error
+      if (errorParam === 'expired') {
+        setExpired(true)
+        toast.error('Verification link has expired. Please request a new one.')
+        setChecking(false)
+        return
+      }
+      
+      // If coming from callback with verified=true, the session is already established
+      if (isVerified) {
+        // Double-check we have a session
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          setVerified(true)
+          toast.success('Email verified successfully!')
+          setTimeout(() => {
+            router.push('/profile?welcome=true')
+          }, 2000)
+          setChecking(false)
+          return
+        }
+      }
+
+      // Legacy: Check if user came from email link with token in hash (for older flows)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1))
+      const accessToken = hashParams.get('access_token')
+      const refreshToken = hashParams.get('refresh_token')
+      const type = hashParams.get('type')
+      const errorCode = hashParams.get('error_code')
+      
+      // Handle expired link from hash
+      if (errorCode === 'otp_expired') {
+        setExpired(true)
+        toast.error('Verification link has expired. Please request a new one.')
+        setChecking(false)
+        return
+      }
+
+      if (accessToken && type === 'signup') {
+        // Set the session from hash tokens
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken || '',
+        })
+        
+        if (!error) {
+          setVerified(true)
+          toast.success('Email verified successfully!')
+          // Clear hash for security
+          window.history.replaceState({}, '', window.location.pathname)
+          setTimeout(() => {
+            router.push('/profile?welcome=true')
+          }, 2000)
+        } else {
+          setExpired(true)
+          toast.error('Verification failed. Please request a new link.')
+        }
+        setChecking(false)
+        return
+      }
+
+      // Check if already verified with existing session
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user?.email_confirmed_at) {
+        setVerified(true)
+        setChecking(false)
+        return
+      }
+
+      setChecking(false)
     }
 
-    // Legacy: Check if user came from email link with token in hash (for older flows)
-    const hashParams = new URLSearchParams(window.location.hash.substring(1))
-    const accessToken = hashParams.get('access_token')
-    const type = hashParams.get('type')
-
-    if (accessToken && type === 'signup') {
-      handleEmailVerification()
-    }
-  }, [isVerified])
-
-  async function handleEmailVerification() {
-    setLoading(true)
-    const { data: { session }, error } = await supabase.auth.getSession()
-    
-    if (error) {
-      toast.error('Verification failed. Please try again.')
-      setLoading(false)
-      return
-    }
-
-    if (session) {
-      setVerified(true)
-      toast.success('Email verified successfully!')
-      setTimeout(() => {
-        router.push('/profile?welcome=true')
-      }, 2000)
-    }
-    setLoading(false)
-  }
+    checkVerification()
+  }, [isVerified, errorParam, router])
 
   async function resendVerification() {
     if (!email) {
@@ -75,6 +114,18 @@ export default function VerifyEmailPage() {
     } else {
       toast.success('Verification email resent!')
     }
+  }
+
+  // Show loading state while checking verification
+  if (checking) {
+    return (
+      <div className="min-h-[80vh] bg-gradient-to-br from-resort-50 to-resort-100 flex items-center justify-center px-4">
+        <div className="w-full max-w-md bg-white shadow-lg rounded-xl p-8 text-center">
+          <div className="w-12 h-12 border-4 border-resort-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-600">Verifying your email...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
