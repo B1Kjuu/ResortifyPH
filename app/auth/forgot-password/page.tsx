@@ -20,8 +20,9 @@ export default function ForgotPasswordPage() {
     setLoading(true)
     
     // Use resetPasswordForEmail to send a magic link for password reset
+    // Redirect to callback route which will handle the code exchange and redirect to reset-password
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
+      redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
     })
     
     setLoading(false)

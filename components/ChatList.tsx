@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import { toast } from 'sonner'
 import ChatLink from './ChatLink'
 
 type ChatListProps = {
@@ -156,9 +157,10 @@ export default function ChatList({ roleFilter }: ChatListProps) {
                       }))
                       setItems(roleFilter ? mapped.filter(i => i.myRole === roleFilter) : mapped)
                     }
+                  toast.success('Chat deleted successfully')
                   } catch (e) {
                     console.error('Failed to delete chat:', e)
-                    alert('Failed to delete chat')
+                    toast.error('Failed to delete chat')
                   } finally {
                     setDeletingId(null)
                   }

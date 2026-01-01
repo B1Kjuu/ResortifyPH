@@ -119,7 +119,7 @@ export default function ResortsPage(){
   const [priceBounds, setPriceBounds] = useState([0, 0] as [number, number])
   const [guestCount, setGuestCount] = useState(searchParams.get('guests') || 'all')
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>(searchParams.get('amenities')?.split(',').filter(Boolean) || [])
-  const [sortBy, setSortBy] = useState<'newest' | 'price-asc' | 'price-desc'>((searchParams.get('sort') as any) || 'newest')
+  const [sortBy, setSortBy] = useState<'newest' | 'price-asc' | 'price-desc' | 'nearest'>((searchParams.get('sort') as any) || 'newest')
   const [stayTypeFilter, setStayTypeFilter] = useState<'all' | 'daytour' | 'overnight'>(searchParams.get('stayType') as any || 'all')
   const [dateFrom, setDateFrom] = useState<Date | null>(searchParams.get('dateFrom') ? new Date(searchParams.get('dateFrom')!) : null)
   const [dateTo, setDateTo] = useState<Date | null>(searchParams.get('dateTo') ? new Date(searchParams.get('dateTo')!) : null)
@@ -341,8 +341,8 @@ export default function ResortsPage(){
       return matchesSearch && matchesLocation && matchesType && matchesPrice && matchesGuests && matchesAmenities && matchesAvailability
     })
 
-    // Sort by distance if "Near Me" is active
-    if (showNearby && position) {
+    // Sort by distance if "Near Me" is active or sortBy is 'nearest'
+    if ((showNearby && position) || (sortBy === 'nearest' && position)) {
       return [...result].sort((a, b) => {
         if (a.distance === null) return 1
         if (b.distance === null) return -1
@@ -355,6 +355,10 @@ export default function ResortsPage(){
     }
     if (sortBy === 'price-desc') {
       return [...result].sort((a, b) => (b.price || 0) - (a.price || 0))
+    }
+    if (sortBy === 'nearest' && !position) {
+      // If nearest is selected but no position yet, keep default order
+      return [...result].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     }
     return [...result].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   }, [resortsWithDistance, searchTerm, selectedLocation, selectedType, priceRange, priceBounds, guestCount, selectedAmenities, sortBy, availableResortIds, showNearby, position])
@@ -511,11 +515,17 @@ export default function ResortsPage(){
               {/* Sort */}
               <CustomSelect
                 value={sortBy}
-                onChange={(val) => setSortBy(val as any)}
+                onChange={(val) => {
+                  setSortBy(val as any)
+                  if (val === 'nearest' && !position) {
+                    requestLocation()
+                  }
+                }}
                 options={[
                   { value: 'newest', label: 'Newest' },
                   { value: 'price-asc', label: 'Price ↑' },
                   { value: 'price-desc', label: 'Price ↓' },
+                  { value: 'nearest', label: 'Nearest' },
                 ]}
                 ariaLabel="Sort resorts"
                 className="flex-1 sm:flex-initial min-w-[100px]"

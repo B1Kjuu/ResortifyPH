@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import 'leaflet/dist/leaflet.css'
 import { FiSearch, FiLoader, FiMapPin, FiInfo, FiCheck } from 'react-icons/fi'
@@ -328,9 +328,11 @@ export default function LocationPicker({
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [isSearching, setIsSearching] = useState(false)
+  const [hasSearched, setHasSearched] = useState(false)
   const position: [number, number] | null = latitude && longitude ? [latitude, longitude] : null
   // Ref for map instance
   const mapRef = React.useRef<any>(null);
+  const searchDebounceRef = useRef<NodeJS.Timeout | null>(null)
   // (Removed: zoom/pan logic now handled in InteractiveMap)
 
   // Utility: Clean address to remove non-Latin characters
@@ -390,13 +392,15 @@ export default function LocationPicker({
   }, [onLocationChange])
 
   // Search for address - uses Google if available, otherwise Nominatim (OpenStreetMap)
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
+  const handleSearch = async (query?: string) => {
+    const searchTerm = query ?? searchQuery
+    if (!searchTerm.trim()) return;
     setIsSearching(true);
+    setHasSearched(true);
     try {
       // Try Google Geocoding API first if available
       if (isGoogleMapsEnabled()) {
-        const result = await geocodeAddress(searchQuery + ', Philippines')
+        const result = await geocodeAddress(searchTerm + ', Philippines')
         if (result) {
           // Convert to search results format
           setSearchResults([{
@@ -412,7 +416,7 @@ export default function LocationPicker({
       
       // Fallback to Nominatim
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&countrycodes=ph&limit=5`,
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&countrycodes=ph&limit=5`,
         { headers: { 'User-Agent': 'ResortifyPH' } }
       );
       const data = await response.json();
@@ -428,6 +432,29 @@ export default function LocationPicker({
       setIsSearching(false);
     }
   }
+  
+  // Auto-search with debounce when query changes
+  useEffect(() => {
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current)
+    }
+    
+    if (searchQuery.trim().length < 2) {
+      setSearchResults([])
+      setHasSearched(false)
+      return
+    }
+    
+    searchDebounceRef.current = setTimeout(() => {
+      handleSearch(searchQuery)
+    }, 400)
+    
+    return () => {
+      if (searchDebounceRef.current) {
+        clearTimeout(searchDebounceRef.current)
+      }
+    }
+  }, [searchQuery])
 
   // Handle search result selection
   const handleSelectResult = (result: any) => {
@@ -487,7 +514,7 @@ export default function LocationPicker({
               ))}
             </div>
           )}
-          {searchResults.length === 0 && searchQuery.trim() && !isSearching && (
+          {searchResults.length === 0 && searchQuery.trim().length >= 2 && hasSearched && !isSearching && (
             <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden">
               <div className="px-4 py-3 text-slate-500 text-sm">No results found</div>
             </div>

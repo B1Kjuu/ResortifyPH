@@ -10,6 +10,7 @@ import PricingConfigurator from '../../../../components/PricingConfigurator'
 import { getProvinceInfo } from '../../../../lib/locations'
 import { supabase } from '../../../../lib/supabaseClient'
 import { useRouter, useParams } from 'next/navigation'
+import { toast } from 'sonner'
 import { FiMapPin, FiDollarSign, FiUsers, FiCamera, FiCheck, FiClock, FiSave, FiTrash2, FiEdit } from 'react-icons/fi'
 import { FaStar } from 'react-icons/fa'
 import { FaUmbrellaBeach, FaMountain, FaLeaf, FaCity, FaTractor } from 'react-icons/fa'
@@ -184,12 +185,12 @@ export default function EditResort(){
       .eq('owner_id', userId)
     
     if (error) { 
-      alert('Error: ' + error.message)
+      toast.error('Error: ' + error.message)
       setSubmitting(false)
       return 
     }
     
-    alert('Resort updated successfully!')
+    toast.success('Resort updated successfully!')
     router.push('/owner/my-resorts')
   }
 
@@ -206,12 +207,12 @@ export default function EditResort(){
       .eq('owner_id', userId)
 
     if (error) {
-      alert('Error deleting resort: ' + error.message)
+      toast.error('Error deleting resort: ' + error.message)
       setSubmitting(false)
       return
     }
 
-    alert('Resort deleted successfully')
+    toast.success('Resort deleted successfully')
     router.push('/owner/my-resorts')
   }
 

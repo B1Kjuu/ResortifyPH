@@ -948,31 +948,53 @@ export default function ResortDetail({ params }: { params: { id: string } }){
               )}
 
               {/* Location Map */}
-              {resort.latitude && resort.longitude && (
+              {(resort.latitude && resort.longitude) || resort.address || resort.location ? (
                 <div className="space-y-2">
                   <h3 className="text-lg font-semibold text-resort-900 flex items-center gap-2">
                     <FiMapPin className="text-resort-500" />
                     Location
                   </h3>
                   <div className="rounded-xl overflow-hidden border border-slate-200 h-[250px] sm:h-[300px]">
-                    {process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? (
-                      <iframe
-                        width="100%"
-                        height="100%"
-                        style={{ border: 0 }}
-                        loading="lazy"
-                        allowFullScreen
-                        referrerPolicy="no-referrer-when-downgrade"
-                        src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${resort.latitude},${resort.longitude}&zoom=15`}
-                      />
+                    {resort.latitude && resort.longitude ? (
+                      // Use exact coordinates if available
+                      process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? (
+                        <iframe
+                          width="100%"
+                          height="100%"
+                          style={{ border: 0 }}
+                          loading="lazy"
+                          allowFullScreen
+                          referrerPolicy="no-referrer-when-downgrade"
+                          src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${resort.latitude},${resort.longitude}&zoom=15`}
+                        />
+                      ) : (
+                        <iframe
+                          width="100%"
+                          height="100%"
+                          style={{ border: 0 }}
+                          loading="lazy"
+                          src={`https://www.openstreetmap.org/export/embed.html?bbox=${resort.longitude - 0.01},${resort.latitude - 0.01},${resort.longitude + 0.01},${resort.latitude + 0.01}&layer=mapnik&marker=${resort.latitude},${resort.longitude}`}
+                        />
+                      )
                     ) : (
-                      <iframe
-                        width="100%"
-                        height="100%"
-                        style={{ border: 0 }}
-                        loading="lazy"
-                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${resort.longitude - 0.01},${resort.latitude - 0.01},${resort.longitude + 0.01},${resort.latitude + 0.01}&layer=mapnik&marker=${resort.latitude},${resort.longitude}`}
-                      />
+                      // Fallback to address/location search
+                      process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? (
+                        <iframe
+                          width="100%"
+                          height="100%"
+                          style={{ border: 0 }}
+                          loading="lazy"
+                          allowFullScreen
+                          referrerPolicy="no-referrer-when-downgrade"
+                          src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent((resort.address || '') + ' ' + (resort.location || '') + ', Philippines')}&zoom=13`}
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+                          <p className="text-slate-500 text-sm text-center px-4">
+                            Map location: {resort.address || resort.location}
+                          </p>
+                        </div>
+                      )
                     )}
                   </div>
                   {resort.address && (
@@ -981,19 +1003,33 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                       {resort.address}
                     </p>
                   )}
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${resort.latitude},${resort.longitude}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-sm text-resort-600 hover:text-resort-700 font-medium"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                    Open in Google Maps
-                  </a>
+                  {resort.latitude && resort.longitude ? (
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${resort.latitude},${resort.longitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-sm text-resort-600 hover:text-resort-700 font-medium"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                      Open in Google Maps
+                    </a>
+                  ) : (
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((resort.address || '') + ' ' + (resort.location || '') + ', Philippines')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-sm text-resort-600 hover:text-resort-700 font-medium"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                      Open in Google Maps
+                    </a>
+                  )}
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
 
@@ -1292,7 +1328,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
     </div>
     {/* Mobile sticky action bar */}
     {resort?.status === 'approved' && (
-              <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/85 backdrop-blur border-t border-slate-200 fade-in-up">
+              <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/85 backdrop-blur border-t border-slate-200 fade-in-up pb-[env(safe-area-inset-bottom)]">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="text-sm">
@@ -1338,10 +1374,10 @@ export default function ResortDetail({ params }: { params: { id: string } }){
           {/* Previous button */}
           <button
             onClick={() => setActiveImage((prev) => (prev === 0 ? galleryImages.length - 1 : prev - 1))}
-            className="absolute left-4 p-3 bg-white/10 hover:bg-white/20 rounded-full transition text-white z-10"
+            className="absolute left-2 sm:left-4 p-2 sm:p-3 bg-white/10 hover:bg-white/20 active:bg-white/30 rounded-full transition text-white z-10 touch-manipulation"
             aria-label="Previous image"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
@@ -1361,10 +1397,10 @@ export default function ResortDetail({ params }: { params: { id: string } }){
           {/* Next button */}
           <button
             onClick={() => setActiveImage((prev) => (prev === galleryImages.length - 1 ? 0 : prev + 1))}
-            className="absolute right-4 p-3 bg-white/10 hover:bg-white/20 rounded-full transition text-white z-10"
+            className="absolute right-2 sm:right-4 p-2 sm:p-3 bg-white/10 hover:bg-white/20 active:bg-white/30 rounded-full transition text-white z-10 touch-manipulation"
             aria-label="Next image"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
