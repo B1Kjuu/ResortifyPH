@@ -4,6 +4,7 @@ import Link from 'next/link'
 import ImageUploader from '../../../../components/ImageUploader'
 import LocationCombobox from '../../../../components/LocationCombobox'
 import Select from '../../../../components/Select'
+import TimePicker from '../../../../components/TimePicker'
 import DisclaimerBanner from '../../../../components/DisclaimerBanner'
 import PricingConfigurator from '../../../../components/PricingConfigurator'
 import { getProvinceInfo } from '../../../../lib/locations'
@@ -440,24 +441,20 @@ export default function EditResort(){
           />
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Check-in Time</label>
-            <input 
-              type="time"
-              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors" 
-              value={checkInTime} 
-              onChange={e => setCheckInTime(e.target.value)}
+            <TimePicker
+              value={checkInTime}
+              onChange={setCheckInTime}
             />
           </div>
 
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Check-out Time</label>
-            <input 
-              type="time"
-              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors" 
-              value={checkOutTime} 
-              onChange={e => setCheckOutTime(e.target.value)}
+            <TimePicker
+              value={checkOutTime}
+              onChange={setCheckOutTime}
             />
           </div>
         </div>

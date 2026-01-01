@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Select from '../../../components/Select'
+import TimePicker from '../../../components/TimePicker'
 import { useRouter } from 'next/navigation'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -708,15 +709,33 @@ export default function CreateResort() {
             {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description.message}</p>}
           </div>
 
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">Check-in Time</label>
-              <input type="time" className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors" {...register('check_in_time')} />
+              <Controller
+                name="check_in_time"
+                control={control}
+                render={({ field }) => (
+                  <TimePicker
+                    value={field.value || '14:00'}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
             </div>
 
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">Check-out Time</label>
-              <input type="time" className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors" {...register('check_out_time')} />
+              <Controller
+                name="check_out_time"
+                control={control}
+                render={({ field }) => (
+                  <TimePicker
+                    value={field.value || '12:00'}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
             </div>
           </div>
 

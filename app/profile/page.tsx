@@ -177,6 +177,10 @@ export default function ProfilePage(){
                 onChange={async (e) => {
                   const file = e.target.files?.[0]
                   if (!file) return
+                  
+                  // Reset input for re-selection
+                  e.target.value = ''
+                  
                   try {
                     if (!file.type.startsWith('image/')) {
                       toast.error('Please upload an image file')
@@ -186,22 +190,41 @@ export default function ProfilePage(){
                       toast.error('Image must be under 2MB')
                       return
                     }
+                    
+                    toast.loading('Uploading photo...')
+                    
                     const safeName = file.name.toLowerCase().replace(/[^a-z0-9\.\-]+/g, '-')
                     const filePath = `${profile.id}/${Date.now()}_${safeName}`
-                    const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file, { contentType: file.type })
-                    if (uploadError) throw uploadError
+                    
+                    const { error: uploadError, data: uploadData } = await supabase.storage
+                      .from('avatars')
+                      .upload(filePath, file, { 
+                        contentType: file.type,
+                        upsert: true 
+                      })
+                    
+                    if (uploadError) {
+                      console.error('Upload error details:', uploadError)
+                      throw new Error(uploadError.message || 'Upload failed')
+                    }
+                    
                     const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(filePath)
                     const publicUrl = publicData.publicUrl
+                    
                     const { error: updateError } = await supabase
                       .from('profiles')
                       .update({ avatar_url: publicUrl })
                       .eq('id', profile.id)
+                    
                     if (updateError) throw updateError
+                    
                     setProfile({ ...profile, avatar_url: publicUrl })
+                    toast.dismiss()
                     toast.success('Profile photo updated!')
                   } catch (err: any) {
                     console.error('Avatar upload error:', err)
-                    toast.error(`Failed to upload: ${err?.message || 'Unknown error'}`)
+                    toast.dismiss()
+                    toast.error(`Failed to upload: ${err?.message || 'Please try again'}`)
                   }
                 }}
               />
