@@ -15,6 +15,15 @@ import {
 } from '../lib/bookingTypes'
 import type { ResortPricingConfig } from '../lib/validations'
 
+// Custom time slot type
+interface CustomTimeSlot {
+  id: string
+  label: string
+  startTime: string
+  endTime: string
+  bookingType: BookingType
+}
+
 interface PricingConfiguratorProps {
   value: ResortPricingConfig | null
   onChange: (config: ResortPricingConfig) => void
@@ -24,6 +33,7 @@ interface PricingConfiguratorProps {
 const DEFAULT_CONFIG: ResortPricingConfig = {
   enabledBookingTypes: ['daytour', 'overnight', '22hrs'],
   enabledTimeSlots: ['daytour_8am_5pm', 'overnight_7pm_6am', '22hrs_8am_6am'],
+  customTimeSlots: [],
   guestTiers: [
     { id: 'tier_1', label: 'Up to 20 guests', minGuests: 1, maxGuests: 20 },
     { id: 'tier_2', label: '21-30 guests', minGuests: 21, maxGuests: 30 },
@@ -34,6 +44,9 @@ const DEFAULT_CONFIG: ResortPricingConfig = {
 
 export default function PricingConfigurator({ value, onChange, capacity }: PricingConfiguratorProps) {
   const config = value || DEFAULT_CONFIG
+  const [showCustomSlotForm, setShowCustomSlotForm] = useState<BookingType | null>(null)
+  const [customStartTime, setCustomStartTime] = useState('08:00')
+  const [customEndTime, setCustomEndTime] = useState('17:00')
   
   const updateConfig = (updates: Partial<ResortPricingConfig>) => {
     onChange({ ...config, ...updates })
@@ -52,9 +65,15 @@ export default function PricingConfigurator({ value, onChange, capacity }: Prici
       return slot && newTypes.includes(slot.bookingType)
     })
     
+    // Also remove custom slots for disabled types
+    const validCustomSlots = (config.customTimeSlots || []).filter(
+      slot => newTypes.includes(slot.bookingType)
+    )
+    
     updateConfig({ 
       enabledBookingTypes: newTypes,
       enabledTimeSlots: validSlots,
+      customTimeSlots: validCustomSlots,
     })
   }
 
@@ -66,6 +85,44 @@ export default function PricingConfigurator({ value, onChange, capacity }: Prici
       : [...current, slotId]
     
     updateConfig({ enabledTimeSlots: newSlots })
+  }
+
+  // Add custom time slot
+  const addCustomTimeSlot = (bookingType: BookingType) => {
+    const customSlots = config.customTimeSlots || []
+    const startHour = parseInt(customStartTime.split(':')[0])
+    const endHour = parseInt(customEndTime.split(':')[0])
+    const startPeriod = startHour >= 12 ? 'PM' : 'AM'
+    const endPeriod = endHour >= 12 ? 'PM' : 'AM'
+    const displayStart = `${startHour > 12 ? startHour - 12 : startHour || 12}:${customStartTime.split(':')[1]} ${startPeriod}`
+    const displayEnd = `${endHour > 12 ? endHour - 12 : endHour || 12}:${customEndTime.split(':')[1]} ${endPeriod}`
+    
+    const newSlot: CustomTimeSlot = {
+      id: `custom_${bookingType}_${Date.now()}`,
+      label: `${displayStart} - ${displayEnd}`,
+      startTime: customStartTime,
+      endTime: customEndTime,
+      bookingType,
+    }
+    
+    updateConfig({
+      customTimeSlots: [...customSlots, newSlot],
+      enabledTimeSlots: [...config.enabledTimeSlots, newSlot.id],
+    })
+    
+    setShowCustomSlotForm(null)
+    setCustomStartTime('08:00')
+    setCustomEndTime('17:00')
+  }
+
+  // Remove custom time slot
+  const removeCustomTimeSlot = (slotId: string) => {
+    const customSlots = (config.customTimeSlots || []).filter(s => s.id !== slotId)
+    const enabledSlots = config.enabledTimeSlots.filter(s => s !== slotId)
+    updateConfig({
+      customTimeSlots: customSlots,
+      enabledTimeSlots: enabledSlots,
+    })
   }
 
   // Update guest tier
@@ -175,16 +232,69 @@ export default function PricingConfigurator({ value, onChange, capacity }: Prici
             <FiClock className="w-5 h-5 text-purple-600" />
             <h3 className="text-lg font-bold text-slate-900">Time Slots</h3>
           </div>
-          <p className="text-sm text-slate-600 mb-4">Choose available time slots for each booking type:</p>
+          <p className="text-sm text-slate-600 mb-4">Choose available time slots for each booking type, or add your own custom slots:</p>
           
           {config.enabledBookingTypes.map(bookingType => {
             const slots = getTimeSlotsForType(bookingType)
             const typeInfo = BOOKING_TYPES.find(t => t.id === bookingType)
+            const customSlots = (config.customTimeSlots || []).filter(s => s.bookingType === bookingType)
             
             return (
-              <div key={bookingType} className="mb-4 last:mb-0">
-                <p className="font-semibold text-slate-700 mb-2">{typeInfo?.label}:</p>
+              <div key={bookingType} className="mb-6 last:mb-0">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="font-semibold text-slate-700">{typeInfo?.label}:</p>
+                  <button
+                    type="button"
+                    onClick={() => setShowCustomSlotForm(showCustomSlotForm === bookingType ? null : bookingType)}
+                    className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+                  >
+                    <FiPlus className="w-3 h-3" /> Add Custom
+                  </button>
+                </div>
+                
+                {/* Custom slot form */}
+                {showCustomSlotForm === bookingType && (
+                  <div className="mb-3 p-3 bg-white border-2 border-purple-300 rounded-lg">
+                    <p className="text-sm font-medium text-slate-700 mb-2">Create custom time slot:</p>
+                    <div className="flex flex-wrap items-end gap-3">
+                      <div>
+                        <label className="block text-xs text-slate-600 mb-1">Start Time</label>
+                        <input
+                          type="time"
+                          value={customStartTime}
+                          onChange={(e) => setCustomStartTime(e.target.value)}
+                          className="px-2 py-1.5 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-purple-400"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-600 mb-1">End Time</label>
+                        <input
+                          type="time"
+                          value={customEndTime}
+                          onChange={(e) => setCustomEndTime(e.target.value)}
+                          className="px-2 py-1.5 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-purple-400"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => addCustomTimeSlot(bookingType)}
+                        className="px-3 py-1.5 bg-purple-600 text-white rounded text-sm font-medium hover:bg-purple-700"
+                      >
+                        Add
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomSlotForm(null)}
+                        className="px-3 py-1.5 bg-slate-200 text-slate-700 rounded text-sm font-medium hover:bg-slate-300"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="flex flex-wrap gap-2">
+                  {/* Preset slots */}
                   {slots.map(slot => (
                     <label
                       key={slot.id}
@@ -200,8 +310,36 @@ export default function PricingConfigurator({ value, onChange, capacity }: Prici
                         onChange={() => toggleTimeSlot(slot.id)}
                         className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
                       />
-                      <span>{slot.label.replace(`${typeInfo?.label}: `, '')}</span>
+                      <span>{slot.startTime} - {slot.endTime}</span>
                     </label>
+                  ))}
+                  
+                  {/* Custom slots */}
+                  {customSlots.map(slot => (
+                    <div
+                      key={slot.id}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all ${
+                        config.enabledTimeSlots.includes(slot.id)
+                          ? 'bg-green-100 border-green-400 text-green-900'
+                          : 'bg-white border-slate-200 text-slate-600'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={config.enabledTimeSlots.includes(slot.id)}
+                        onChange={() => toggleTimeSlot(slot.id)}
+                        className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                      />
+                      <span>{slot.label}</span>
+                      <span className="text-xs bg-green-200 text-green-800 px-1.5 py-0.5 rounded">Custom</span>
+                      <button
+                        type="button"
+                        onClick={() => removeCustomTimeSlot(slot.id)}
+                        className="p-1 text-red-500 hover:bg-red-100 rounded transition"
+                      >
+                        <FiTrash2 className="w-3 h-3" />
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>

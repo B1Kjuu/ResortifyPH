@@ -53,10 +53,20 @@ const bookingPricingSchema = z.object({
   price: z.number().min(0),
 })
 
+// Custom time slot schema
+const customTimeSlotSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  startTime: z.string(),
+  endTime: z.string(),
+  bookingType: bookingTypeEnum,
+})
+
 // Resort pricing configuration schema
 export const resortPricingConfigSchema = z.object({
   enabledBookingTypes: z.array(bookingTypeEnum).min(1, 'At least one booking type must be enabled'),
   enabledTimeSlots: z.array(z.string()).min(1, 'At least one time slot must be enabled'),
+  customTimeSlots: z.array(customTimeSlotSchema).optional().default([]),
   guestTiers: z.array(guestTierSchema).min(1, 'At least one guest tier is required'),
   pricing: z.array(bookingPricingSchema),
   downpaymentPercentage: z.number().min(0).max(100).default(50),

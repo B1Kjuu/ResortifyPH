@@ -79,9 +79,10 @@ export default function middleware(req: NextRequest) {
 
   const nominatim = 'https://nominatim.openstreetmap.org'
   const googleMaps = 'https://maps.googleapis.com https://maps.gstatic.com'
+  const googleFonts = 'https://fonts.googleapis.com https://fonts.gstatic.com'
   const csp = isProd
-    ? `default-src 'self'; img-src ${imgSources}; script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://maps.googleapis.com; style-src 'self' 'unsafe-inline'; connect-src 'self' ${supabaseHost} ${supabaseWss} ${nominatim} ${googleMaps}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
-    : `default-src 'self'; img-src ${imgSources}; script-src 'self' 'nonce-${nonce}' 'unsafe-eval' 'strict-dynamic' https://maps.googleapis.com; style-src 'self' 'unsafe-inline'; connect-src 'self' ${supabaseHost} ${supabaseWss} ${nominatim} ${googleMaps} ws:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
+    ? `default-src 'self'; img-src ${imgSources}; script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://maps.googleapis.com; style-src 'self' 'unsafe-inline' ${googleFonts}; font-src 'self' ${googleFonts} data:; connect-src 'self' ${supabaseHost} ${supabaseWss} ${nominatim} ${googleMaps}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
+    : `default-src 'self'; img-src ${imgSources}; script-src 'self' 'nonce-${nonce}' 'unsafe-eval' 'strict-dynamic' https://maps.googleapis.com; style-src 'self' 'unsafe-inline' ${googleFonts}; font-src 'self' ${googleFonts} data:; connect-src 'self' ${supabaseHost} ${supabaseWss} ${nominatim} ${googleMaps} ws:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
 
   // Normalize double-encoded bracket segments in Next static chunk paths
   // e.g. %255BbookingId%255D -> %5BbookingId%5D

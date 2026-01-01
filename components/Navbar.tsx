@@ -190,17 +190,39 @@ export default function Navbar(){
     setShowMobileFilters(false)
   }
 
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false)
+  const [dontShowAgain, setDontShowAgain] = useState(false)
+
   async function handleLogout(){
+    // Check if user wants to skip confirmation
+    const skipConfirm = typeof window !== 'undefined' && localStorage.getItem('skipSignOutConfirm') === 'true'
+    
+    if (!skipConfirm && !showSignOutConfirm) {
+      setShowSignOutConfirm(true)
+      return
+    }
+    
     try {
+      // Save preference if checked
+      if (dontShowAgain && typeof window !== 'undefined') {
+        localStorage.setItem('skipSignOutConfirm', 'true')
+      }
+      
       await supabase.auth.signOut()
       setUser(null)
       setIsAdmin(false)
       setUserRole('')
       setProfileEmail(null)
+      setShowSignOutConfirm(false)
       window.location.href = '/'
     } catch (err) {
       console.error('Logout error:', err)
     }
+  }
+
+  function cancelSignOut() {
+    setShowSignOutConfirm(false)
+    setDontShowAgain(false)
   }
 
   async function handleExploreClick(e?: React.MouseEvent) {
@@ -573,6 +595,52 @@ export default function Navbar(){
                 View resorts
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Sign Out Confirmation Modal */}
+    {showSignOutConfirm && (
+      <div className="fixed inset-0 z-[70] flex items-center justify-center">
+        <div
+          className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+          onClick={cancelSignOut}
+        />
+        <div className="relative bg-white rounded-2xl shadow-2xl p-6 mx-4 max-w-sm w-full">
+          <div className="text-center mb-4">
+            <div className="w-16 h-16 mx-auto mb-3 bg-amber-100 rounded-full flex items-center justify-center">
+              <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-slate-900">Sign Out?</h3>
+            <p className="text-sm text-slate-600 mt-1">Are you sure you want to sign out of your account?</p>
+          </div>
+          
+          <label className="flex items-center gap-2 mb-4 p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition">
+            <input
+              type="checkbox"
+              checked={dontShowAgain}
+              onChange={(e) => setDontShowAgain(e.target.checked)}
+              className="w-4 h-4 text-resort-500 rounded focus:ring-resort-400"
+            />
+            <span className="text-sm text-slate-600">Don't ask me again</span>
+          </label>
+          
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={cancelSignOut}
+              className="px-4 py-2.5 text-sm font-semibold text-slate-700 border border-slate-200 rounded-xl hover:bg-slate-50 transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2.5 text-sm font-semibold text-white bg-red-500 rounded-xl hover:bg-red-600 transition"
+            >
+              Sign Out
+            </button>
           </div>
         </div>
       </div>
