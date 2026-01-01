@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
+// Security cookie to mark password reset sessions
+const PASSWORD_RESET_COOKIE = 'resortify_password_reset_pending'
+
 export async function GET(req: NextRequest) {
   const { searchParams, origin } = req.nextUrl
   const code = searchParams.get('code')
@@ -57,7 +60,16 @@ export async function GET(req: NextRequest) {
     if (!exchangeError) {
       // Redirect based on type
       if (type === 'recovery') {
-        return NextResponse.redirect(`${origin}/auth/reset-password?verified=true`)
+        // Set a security cookie to mark this as a password reset session
+        const response = NextResponse.redirect(`${origin}/auth/reset-password?verified=true`)
+        response.cookies.set(PASSWORD_RESET_COOKIE, 'true', {
+          httpOnly: false, // Needs to be accessible from client-side
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 60 * 15, // 15 minutes max to complete reset
+          path: '/',
+        })
+        return response
       }
       if (type === 'signup' || type === 'email') {
         return NextResponse.redirect(`${origin}/auth/verify-email?verified=true`)

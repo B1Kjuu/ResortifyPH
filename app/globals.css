@@ -26,22 +26,32 @@ body {
 
 /* Responsive container with better breakpoints */
 .container {
+  width: 100%;
   max-width: 1280px;
   margin-left: auto;
   margin-right: auto;
-  padding: 0 1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  box-sizing: border-box;
 }
 
 @media (min-width: 640px) {
   .container {
-    padding: 0 1.5rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
   }
 }
 
 @media (min-width: 1024px) {
   .container {
-    padding: 0 2rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
   }
+}
+
+/* Ensure proper box-sizing globally */
+*, *::before, *::after {
+  box-sizing: border-box;
 }
 
 /* Hide scrollbar for horizontal scroll containers */
@@ -77,8 +87,13 @@ html {
   background: #94a3b8;
 }
 
-/* Smooth transitions */
-* {
+/* Smooth transitions - only for interactive elements, not layout */
+button,
+a,
+input,
+select,
+textarea,
+[role="button"] {
   @apply transition-colors duration-200;
 }
 

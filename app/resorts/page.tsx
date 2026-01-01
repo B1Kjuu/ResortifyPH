@@ -15,7 +15,7 @@ import ResortMap from '../../components/ResortMap'
 import { supabase } from '../../lib/supabaseClient'
 import { getLocationCoordinates } from '../../lib/locations'
 import { useGeolocation, calculateDistance, formatDistance } from '../../hooks/useGeolocation'
-import { FaUmbrellaBeach, FaMountain, FaLeaf, FaCity, FaTractor, FaSwimmer, FaFire, FaGem, FaUsers, FaHotel, FaCampground, FaSpa } from 'react-icons/fa'
+import { FaUmbrellaBeach, FaMountain, FaLeaf, FaCity, FaTractor, FaSwimmer, FaFire, FaGem, FaUsers, FaHotel, FaCampground, FaSpa, FaMapMarkerAlt } from 'react-icons/fa'
 import { FiCheck, FiSearch } from 'react-icons/fi'
 
 
@@ -74,6 +74,7 @@ export default function ResortsPage(){
   
   // Airbnb-style categories
   const categories = [
+    { id: 'nearby', icon: <FaMapMarkerAlt className="w-5 h-5" />, label: 'Nearby' },
     { id: 'beach', icon: <FaUmbrellaBeach className="w-5 h-5" />, label: 'Beachfront' },
     { id: 'mountain', icon: <FaMountain className="w-5 h-5" />, label: 'Mountains' },
     { id: 'nature', icon: <FaLeaf className="w-5 h-5" />, label: 'Nature' },
@@ -415,16 +416,45 @@ export default function ResortsPage(){
         <div className="border-t border-slate-100">
           <div className="px-4 sm:px-6 lg:px-8 xl:px-12 max-w-[1800px] mx-auto">
             <div className="flex items-center gap-1 sm:gap-2 py-2 sm:py-3 overflow-x-auto scrollbar-hide">
-              <button onClick={() => { setSelectedCategory(null); setSelectedType('all') }} className={`flex-shrink-0 flex flex-col items-center gap-0.5 sm:gap-1 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl transition-all ${!selectedCategory ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}>
+              <button onClick={() => { setSelectedCategory(null); setSelectedType('all'); setShowNearby(false); setSortBy('newest') }} className={`flex-shrink-0 flex flex-col items-center gap-0.5 sm:gap-1 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl transition-all ${!selectedCategory ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}>
                 <FaUmbrellaBeach className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span className="text-[10px] sm:text-xs font-medium whitespace-nowrap">All</span>
               </button>
               {categories.map((cat) => (
                 <button key={cat.id} onClick={() => {
                   setSelectedCategory(cat.id)
-                  if (['beach','mountain','nature','city','countryside','staycation','private','villa','glamping','farmstay','spa'].includes(cat.id)) setSelectedType(cat.id); else setSelectedType('all')
-                }} className={`flex-shrink-0 flex flex-col items-center gap-0.5 sm:gap-1 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl transition-all ${selectedCategory === cat.id ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`} aria-label={cat.id === 'pool' ? 'Amazing swim spots' : undefined}>
-                  <span className="text-base sm:text-xl">{cat.icon}</span>
+                  // Handle "nearby" category specially - activate geolocation and sort by nearest
+                  if (cat.id === 'nearby') {
+                    setShowNearby(true)
+                    setSortBy('nearest')
+                    requestLocation()
+                    setSelectedType('all')
+                  } else if (['beach','mountain','nature','city','countryside','staycation','private','villa','glamping','farmstay','spa'].includes(cat.id)) {
+                    setSelectedType(cat.id)
+                    setShowNearby(false)
+                  } else {
+                    setSelectedType('all')
+                    setShowNearby(false)
+                  }
+                }} className={`flex-shrink-0 flex flex-col items-center gap-0.5 sm:gap-1 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl transition-all ${
+                  selectedCategory === cat.id 
+                    ? cat.id === 'nearby' 
+                      ? 'border-b-2 border-emerald-600 text-emerald-700 bg-emerald-50' 
+                      : 'border-b-2 border-slate-900 text-slate-900' 
+                    : cat.id === 'nearby' 
+                      ? 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50' 
+                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                }`} aria-label={cat.id === 'pool' ? 'Amazing swim spots' : cat.id === 'nearby' ? 'Find resorts near your location' : undefined}>
+                  <span className="text-base sm:text-xl relative">
+                    {cat.id === 'nearby' && geoLoading ? (
+                      <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                    ) : cat.id === 'nearby' && showNearby && position ? (
+                      <span className="relative">
+                        {cat.icon}
+                        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                      </span>
+                    ) : cat.icon}
+                  </span>
                   <span className="text-[10px] sm:text-xs font-medium whitespace-nowrap">{cat.label}</span>
                 </button>
               ))}

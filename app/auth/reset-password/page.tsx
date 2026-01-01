@@ -1,9 +1,27 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '../../../lib/supabaseClient'
 import { toast } from 'sonner'
 import Link from 'next/link'
+
+// Security: Mark session as being in password reset mode
+const PASSWORD_RESET_KEY = 'resortify_password_reset_pending'
+
+// Helper to get cookie value
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null
+  const value = `; ${document.cookie}`
+  const parts = value.split(`; ${name}=`)
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null
+  return null
+}
+
+// Helper to delete cookie
+function deleteCookie(name: string) {
+  if (typeof document === 'undefined') return
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
+}
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('')
@@ -14,6 +32,63 @@ export default function ResetPasswordPage() {
   const [showExpiredMessage, setShowExpiredMessage] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
+
+  // Security: Sign out if user tries to navigate away without resetting password
+  const handleSecuritySignOut = useCallback(async () => {
+    // Clear the pending flags (both sessionStorage and cookie)
+    try {
+      sessionStorage.removeItem(PASSWORD_RESET_KEY)
+      deleteCookie(PASSWORD_RESET_KEY)
+    } catch {}
+    // Sign out the user to prevent unauthorized access
+    await supabase.auth.signOut()
+  }, [])
+
+  // Security: Prevent navigation away from this page
+  useEffect(() => {
+    if (!validToken) return
+
+    // Set flag indicating password reset is in progress (sessionStorage as backup)
+    try {
+      sessionStorage.setItem(PASSWORD_RESET_KEY, 'true')
+    } catch {}
+
+    // Handle browser back/forward navigation
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = 'You must complete the password reset before leaving. Your session will be signed out for security.'
+      return e.returnValue
+    }
+
+    // Handle route changes within the app
+    const handleRouteChange = () => {
+      // Sign out if navigating away
+      handleSecuritySignOut()
+    }
+
+    // Add event listeners
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    
+    // Override link clicks to prevent navigation
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      const link = target.closest('a')
+      if (link && !link.href.includes('/auth/reset-password') && !link.href.includes('/auth/forgot-password')) {
+        e.preventDefault()
+        e.stopPropagation()
+        toast.error('Please complete your password reset first', {
+          description: 'You must set a new password before accessing other pages.'
+        })
+      }
+    }
+    
+    document.addEventListener('click', handleClick, true)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      document.removeEventListener('click', handleClick, true)
+    }
+  }, [validToken, handleSecuritySignOut])
 
   useEffect(() => {
     async function checkAuth() {
@@ -73,7 +148,22 @@ export default function ResetPasswordPage() {
       // Also check if we already have a valid session (user might have refreshed)
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
-        setValidToken(true)
+        // Check if this is a legitimate password reset session (check both sessionStorage and cookie)
+        try {
+          const isPendingSession = sessionStorage.getItem(PASSWORD_RESET_KEY) === 'true'
+          const isPendingCookie = getCookie(PASSWORD_RESET_KEY) === 'true'
+          if (isPendingSession || isPendingCookie || isVerified) {
+            setValidToken(true)
+            setChecking(false)
+            return
+          }
+        } catch {}
+        
+        // User has a session but it's not from password reset flow
+        // They might have navigated here directly while logged in
+        // Don't allow password change without proper reset flow
+        setShowExpiredMessage(true)
+        setValidToken(false)
         setChecking(false)
         return
       }
@@ -118,7 +208,16 @@ export default function ResetPasswordPage() {
       return
     }
 
-    toast.success('Password updated successfully!')
+    // Clear the pending flags since password was successfully reset (both sessionStorage and cookie)
+    try {
+      sessionStorage.removeItem(PASSWORD_RESET_KEY)
+      deleteCookie(PASSWORD_RESET_KEY)
+    } catch {}
+
+    // Sign out the session to force re-login with new password
+    await supabase.auth.signOut()
+
+    toast.success('Password updated successfully! Please sign in with your new password.')
     setTimeout(() => {
       router.push('/auth/signin')
     }, 1500)

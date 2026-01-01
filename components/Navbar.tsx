@@ -8,6 +8,24 @@ import LocationCombobox from './LocationCombobox'
 import NotificationsBell from './NotificationsBell'
 import { toast } from 'sonner'
 
+// Security: Check if password reset is pending
+const PASSWORD_RESET_KEY = 'resortify_password_reset_pending'
+
+// Helper to get cookie value
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null
+  const value = `; ${document.cookie}`
+  const parts = value.split(`; ${name}=`)
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null
+  return null
+}
+
+// Helper to delete cookie
+function deleteCookie(name: string) {
+  if (typeof document === 'undefined') return
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
+}
+
 export default function Navbar(){
   const [user, setUser] = useState<any>(null)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -18,11 +36,34 @@ export default function Navbar(){
   const [quickLocation, setQuickLocation] = useState('')
   const [showMobileFilters, setShowMobileFilters] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const [passwordResetPending, setPasswordResetPending] = useState(false)
   const authCompletedRef = useRef(false)
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const isAdminContext = isAdmin && pathname?.startsWith('/admin')
+
+  // Security: Check if user is in password reset flow
+  useEffect(() => {
+    try {
+      const sessionPending = sessionStorage.getItem(PASSWORD_RESET_KEY) === 'true'
+      const cookiePending = getCookie(PASSWORD_RESET_KEY) === 'true'
+      const isPending = sessionPending || cookiePending
+      setPasswordResetPending(isPending)
+      
+      // If password reset is pending but user navigated away from reset page, sign them out
+      if (isPending && !pathname?.includes('/auth/reset-password') && !pathname?.includes('/auth/forgot-password')) {
+        sessionStorage.removeItem(PASSWORD_RESET_KEY)
+        deleteCookie(PASSWORD_RESET_KEY)
+        supabase.auth.signOut().then(() => {
+          toast.error('Session ended for security', {
+            description: 'Please complete the password reset process.'
+          })
+          router.push('/auth/forgot-password')
+        })
+      }
+    } catch {}
+  }, [pathname, router])
 
   useEffect(() => {
     let mounted = true

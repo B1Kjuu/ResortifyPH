@@ -667,9 +667,29 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
   return (
     <>
-    <div className="w-full min-h-screen bg-gradient-to-b from-resort-50 to-white py-6 sm:py-10">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 space-y-4 sm:space-y-6">
-        <Link href="/resorts" className="text-xs sm:text-sm text-resort-500 font-semibold inline-flex items-center gap-1 hover:text-resort-600">
+    <div className="w-full min-h-screen bg-gradient-to-b from-resort-50 to-white pb-20 lg:pb-6">
+      {/* Mobile Header - Fixed on mobile */}
+      <div className="lg:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-100 px-4 py-3 flex items-center gap-3">
+        <Link href="/resorts" className="p-2 -ml-2 rounded-full hover:bg-slate-100 transition">
+          <FiArrowLeft className="w-5 h-5 text-slate-700" />
+        </Link>
+        <div className="flex-1 min-w-0">
+          <h1 className="font-semibold text-slate-900 truncate text-sm">{resort?.name || 'Resort'}</h1>
+          <p className="text-xs text-slate-500 truncate">{resort?.location}</p>
+        </div>
+        {reviews && reviews.length > 0 && (
+          <div className="flex items-center gap-1 px-2 py-1 bg-slate-100 rounded-full">
+            <FaStar className="w-3 h-3 text-yellow-500" />
+            <span className="text-xs font-semibold text-slate-700">
+              {Math.round((reviews.reduce((a,r)=>a+(r.rating||0),0)/reviews.length)*10)/10}
+            </span>
+          </div>
+        )}
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 pt-4 lg:pt-10 space-y-4 sm:space-y-6">
+        {/* Desktop back link */}
+        <Link href="/resorts" className="hidden lg:inline-flex text-xs sm:text-sm text-resort-500 font-semibold items-center gap-1 hover:text-resort-600">
           <FiArrowLeft aria-hidden className="inline-block" /> Back to Resorts
         </Link>
 
@@ -682,7 +702,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
               <button
                 type="button"
                 onClick={() => galleryImages.length > 0 && setShowLightbox(true)}
-                className="relative w-full h-[240px] sm:h-[320px] lg:h-[420px] rounded-lg sm:rounded-xl overflow-hidden bg-gradient-to-br from-resort-200 to-resort-300 cursor-pointer group"
+                className="relative w-full h-[220px] sm:h-[320px] lg:h-[420px] rounded-lg sm:rounded-xl overflow-hidden bg-gradient-to-br from-resort-200 to-resort-300 cursor-pointer group"
               >
                 {galleryImages.length > 0 ? (
                   <>
@@ -777,12 +797,17 @@ export default function ResortDetail({ params }: { params: { id: string } }){
             {/* Overview */}
             <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-card border border-slate-100 space-y-4 sm:space-y-5">
               <div className="space-y-2">
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-resort-900">{resort.name}</h1>
+                {/* Hide title on mobile since it's in the sticky header */}
+                <h1 className="hidden lg:block text-xl sm:text-2xl lg:text-3xl font-bold text-resort-900">{resort.name}</h1>
+                {/* Mobile-only compact title section */}
+                <div className="lg:hidden">
+                  <h1 className="text-lg font-bold text-resort-900 leading-tight">{resort.name}</h1>
+                </div>
                 {/* Average Rating Badge */}
                 {reviews && reviews.length > 0 && (
                   <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1">
-                      <FaStar aria-hidden className="text-yellow-500" />
+                    <div className="flex items-center gap-1 px-2 py-0.5 bg-yellow-50 rounded-full">
+                      <FaStar aria-hidden className="text-yellow-500 w-3.5 h-3.5" />
                       <span className="text-sm font-semibold text-slate-900">
                         {Math.round((reviews.reduce((a,r)=>a+(r.rating||0),0)/reviews.length)*10)/10}
                       </span>
@@ -790,13 +815,39 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                     <span className="text-xs text-slate-600">{reviews.length} review{reviews.length !== 1 ? 's' : ''}</span>
                   </div>
                 )}
-                <div className="flex items-center gap-2 text-sm sm:text-base text-slate-600">
-                  <FiMapPin aria-hidden />
-                  <span>{resort.location}</span>
+                <div className="flex items-center gap-2 text-sm text-slate-600">
+                  <FiMapPin aria-hidden className="w-4 h-4 flex-shrink-0" />
+                  <span className="truncate">{resort.location}</span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              {/* Mobile: Horizontal scroll quick stats */}
+              <div className="lg:hidden flex gap-2 overflow-x-auto scrollbar-hide -mx-2 px-2 pb-1">
+                <div className="flex-shrink-0 flex items-center gap-2 bg-resort-50 px-3 py-2 rounded-xl">
+                  <FiDollarSign aria-hidden className="text-resort-600 w-4 h-4" />
+                  <div>
+                    <p className="text-xs text-slate-600">Per night</p>
+                    <p className="text-sm font-bold text-resort-900">₱{resort.price?.toLocaleString()}</p>
+                  </div>
+                </div>
+                <div className="flex-shrink-0 flex items-center gap-2 bg-resort-50 px-3 py-2 rounded-xl">
+                  <FiUsers aria-hidden className="text-resort-600 w-4 h-4" />
+                  <div>
+                    <p className="text-xs text-slate-600">Capacity</p>
+                    <p className="text-sm font-bold text-resort-900">{resort.capacity}</p>
+                  </div>
+                </div>
+                <div className="flex-shrink-0 flex items-center gap-2 bg-resort-50 px-3 py-2 rounded-xl">
+                  <FiTag aria-hidden className="text-resort-600 w-4 h-4" />
+                  <div>
+                    <p className="text-xs text-slate-600">Type</p>
+                    <p className="text-sm font-bold text-resort-900">{resort.type || '—'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Desktop: Grid stats */}
+              <div className="hidden lg:grid grid-cols-3 gap-2 sm:gap-3">
                 <div className="flex flex-col items-center gap-1 bg-resort-50 p-2.5 sm:p-4 rounded-xl text-center">
                   <FiDollarSign aria-hidden className="text-lg sm:text-xl text-resort-600" />
                   <div>
@@ -820,7 +871,27 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                 </div>
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-3 items-stretch">
+              {/* Mobile: Compact Check-in/Contact section */}
+              <div className="lg:hidden space-y-3">
+                <div className="flex gap-2">
+                  <div className="flex-1 bg-slate-50 rounded-xl p-3">
+                    <p className="text-xs font-semibold text-slate-700 mb-1">Check-in / Check-out</p>
+                    <p className="text-xs text-slate-600">{formatTime12h(resort.check_in_time || '14:00')} - {formatTime12h(resort.check_out_time || '12:00')}</p>
+                  </div>
+                  {latestBookingId ? (
+                    <div className="flex-shrink-0">
+                      <ChatLink bookingId={latestBookingId} as="guest" label="Chat" title={resort.name} variant="primary" />
+                    </div>
+                  ) : (
+                    <div className="flex-shrink-0">
+                      <ChatLink resortId={params.id} as="guest" label="Chat" title={resort.name} variant="primary" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Desktop: Full Check-in/Contact grid */}
+              <div className="hidden lg:grid sm:grid-cols-2 gap-3 items-stretch">
                 <div className="bg-slate-50 rounded-xl p-4 space-y-2">
                   <p className="text-sm font-semibold text-slate-700">Check-in / Check-out</p>
                   <p className="text-sm text-slate-600">Check-in: {formatTime12h(resort.check_in_time || '14:00')}</p>
@@ -1105,7 +1176,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                  <label className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
                     <FiCalendar className="w-4 h-4" />
                     {useTimeSlotCalendar ? 'Select Date & Time Slot' : (bookingType === 'daytour' ? 'Select Date' : 'Select Dates')}
                   </label>
@@ -1326,27 +1397,29 @@ export default function ResortDetail({ params }: { params: { id: string } }){
         </div>
       </div>
     </div>
-    {/* Mobile sticky action bar */}
+    {/* Mobile sticky action bar - Improved design */}
     {resort?.status === 'approved' && (
-              <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/85 backdrop-blur border-t border-slate-200 fade-in-up pb-[env(safe-area-inset-bottom)]">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="text-sm">
-              <p className="font-bold text-resort-900">₱{baseRate?.toLocaleString()}</p>
-                      <p className="text-xs text-slate-600">{bookingType === 'daytour' ? 'per day' : 'per night'}</p>
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] pb-[env(safe-area-inset-bottom)]">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+          {/* Price info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-lg font-bold text-resort-900">₱{baseRate?.toLocaleString()}</span>
+              <span className="text-xs text-slate-500">{bookingType === 'daytour' ? '/day' : '/night'}</span>
             </div>
-            {nights > 0 && (
-              <div className="text-xs text-slate-700">
-                <span className="font-semibold">{nights}</span> {bookingType === 'daytour' ? 'day' : `night${nights > 1 ? 's' : ''}`}
-              </div>
+            {nights > 0 && totalCost > 0 && (
+              <p className="text-xs text-slate-600">
+                Total: <span className="font-semibold text-resort-700">₱{totalCost.toLocaleString()}</span>
+                {nights > 1 && ` (${nights} nights)`}
+              </p>
             )}
           </div>
-          <div className="flex-1" />
+          {/* Book button */}
           <button
             onClick={scrollToBookingCard}
-            className="px-5 py-2.5 bg-resort-600 text-white rounded-xl font-semibold shadow hover:bg-resort-700"
+            className="flex-shrink-0 px-6 py-3 bg-gradient-to-r from-resort-500 to-resort-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:from-resort-600 hover:to-resort-700 active:scale-[0.98] transition-all"
           >
-            Request to Book
+            Book Now
           </button>
         </div>
       </div>
