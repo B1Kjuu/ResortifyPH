@@ -5,13 +5,15 @@ import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import DisclaimerBanner from '../../../components/DisclaimerBanner'
 import { RESORT_TYPES, getResortTypeLabel } from '../../../lib/resortTypes'
-import { FiMapPin, FiClock, FiCheck, FiX, FiUsers, FiEdit, FiEye } from 'react-icons/fi'
+import { FiMapPin, FiClock, FiCheck, FiX, FiUsers, FiEdit, FiEye, FiTrash2 } from 'react-icons/fi'
 import { FaHotel } from 'react-icons/fa'
+import { toast } from 'sonner'
 
 export default function MyResorts(){
   const [resorts, setResorts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [typeFilter, setTypeFilter] = useState<string>('all')
+  const [deleting, setDeleting] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -44,6 +46,37 @@ export default function MyResorts(){
     }
     load()
   }, [typeFilter])
+
+  async function handleDelete(resortId: string, resortName: string) {
+    if (!confirm(`Are you sure you want to delete "${resortName}"? This action cannot be undone.`)) {
+      return
+    }
+    
+    setDeleting(resortId)
+    
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user) {
+      toast.error('Please sign in again')
+      setDeleting(null)
+      return
+    }
+    
+    const { error } = await supabase
+      .from('resorts')
+      .delete()
+      .eq('id', resortId)
+      .eq('owner_id', session.user.id)
+    
+    if (error) {
+      toast.error('Failed to delete resort: ' + error.message)
+      setDeleting(null)
+      return
+    }
+    
+    toast.success('Resort deleted successfully')
+    setResorts(prev => prev.filter(r => r.id !== resortId))
+    setDeleting(null)
+  }
 
   if (loading) return <div className="w-full px-4 sm:px-6 lg:px-8 py-10 text-center text-slate-600">Loading...</div>
 
@@ -131,6 +164,15 @@ export default function MyResorts(){
                   <Link href={`/resorts/${resort.id}`} className="flex-1 px-4 py-3 text-sm font-bold bg-gradient-to-r from-resort-500 to-blue-500 text-white rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all border-2 border-resort-400 text-center inline-flex items-center justify-center gap-2">
                     <FiEye className="w-4 h-4" /> View
                   </Link>
+                  <button
+                    onClick={() => handleDelete(resort.id, resort.name)}
+                    disabled={deleting === resort.id}
+                    className="px-4 py-3 text-sm font-bold border-2 border-red-300 text-red-600 rounded-xl hover:bg-red-50 hover:border-red-400 transition inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Delete resort"
+                  >
+                    <FiTrash2 className="w-4 h-4" />
+                    {deleting === resort.id ? '...' : ''}
+                  </button>
                 </div>
               </div>
             ))}

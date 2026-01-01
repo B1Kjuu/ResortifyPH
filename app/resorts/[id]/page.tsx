@@ -667,8 +667,8 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
   return (
     <>
-    <div className="w-full min-h-screen bg-gradient-to-b from-resort-50 to-white px-4 sm:px-6 lg:px-10 py-6 sm:py-10 overflow-x-hidden">
-      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 overflow-x-hidden">
+    <div className="w-full min-h-screen bg-gradient-to-b from-resort-50 to-white px-4 sm:px-6 lg:px-10 py-6 sm:py-10">
+      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
         <Link href="/resorts" className="text-xs sm:text-sm text-resort-500 font-semibold inline-flex items-center gap-1 hover:text-resort-600">
           <FiArrowLeft aria-hidden className="inline-block" /> Back to Resorts
         </Link>

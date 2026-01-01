@@ -7,12 +7,15 @@ import { useRouter } from 'next/navigation'
 import SkeletonTable from '../../../components/SkeletonTable'
 import DateRangePicker from '../../../components/DateRangePicker'
 import { eachDayOfInterval } from 'date-fns'
+import { toast } from 'sonner'
 
 export default function TripsPage(){
   const [bookings, setBookings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const [tab, setTab] = useState<'upcoming' | 'current' | 'history'>('upcoming')
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkDeleting, setBulkDeleting] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -203,7 +206,50 @@ export default function TripsPage(){
                 {/* Past */}
                 {tab === 'history' && (
                 <section className="fade-in-up">
-                  <h2 className="text-xl font-bold text-slate-900 mb-3">Past & Rejected</h2>
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-xl font-bold text-slate-900">Past & Rejected</h2>
+                    {pastOrRejected.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            if (selectedIds.size === pastOrRejected.length) {
+                              setSelectedIds(new Set())
+                            } else {
+                              setSelectedIds(new Set(pastOrRejected.map(b => b.id)))
+                            }
+                          }}
+                          className="px-3 py-1.5 text-sm font-medium border-2 border-slate-300 rounded-lg hover:bg-slate-50 transition"
+                        >
+                          {selectedIds.size === pastOrRejected.length ? 'Deselect All' : 'Select All'}
+                        </button>
+                        {selectedIds.size > 0 && (
+                          <button
+                            onClick={async () => {
+                              if (!confirm(`Delete ${selectedIds.size} booking(s)? This cannot be undone.`)) return
+                              setBulkDeleting(true)
+                              const ids = Array.from(selectedIds)
+                              const { error } = await supabase
+                                .from('bookings')
+                                .delete()
+                                .in('id', ids)
+                              if (error) {
+                                toast.error('Failed to delete: ' + error.message)
+                              } else {
+                                toast.success(`Deleted ${ids.length} booking(s)`)
+                                setBookings(prev => prev.filter(b => !selectedIds.has(b.id)))
+                                setSelectedIds(new Set())
+                              }
+                              setBulkDeleting(false)
+                            }}
+                            disabled={bulkDeleting}
+                            className="px-3 py-1.5 text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 transition disabled:opacity-50"
+                          >
+                            {bulkDeleting ? 'Deleting...' : `Delete (${selectedIds.size})`}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   {pastOrRejected.length === 0 ? (
                     <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center">
                       <p className="text-slate-600">No past trips yet</p>
@@ -211,11 +257,27 @@ export default function TripsPage(){
                   ) : (
                     <div className="grid md:grid-cols-2 gap-6">
                       {pastOrRejected.map(booking => (
-                        <div key={booking.id} className="bg-white border-2 border-slate-200 rounded-2xl p-6 shadow-sm">
+                        <div key={booking.id} className={`bg-white border-2 rounded-2xl p-6 shadow-sm transition-all ${selectedIds.has(booking.id) ? 'border-resort-500 ring-2 ring-resort-200' : 'border-slate-200'}`}>
                           <div className="flex justify-between items-start mb-3">
-                            <div>
-                              <h3 className="text-lg font-semibold text-resort-900">{booking.resorts?.name || `Resort ${booking.resort_id.slice(0,8)}`}</h3>
-                              <p className="text-sm text-slate-600">{booking.date_from} → {booking.date_to}</p>
+                            <div className="flex items-start gap-3">
+                              <input
+                                type="checkbox"
+                                checked={selectedIds.has(booking.id)}
+                                onChange={(e) => {
+                                  const newSet = new Set(selectedIds)
+                                  if (e.target.checked) {
+                                    newSet.add(booking.id)
+                                  } else {
+                                    newSet.delete(booking.id)
+                                  }
+                                  setSelectedIds(newSet)
+                                }}
+                                className="mt-1 w-5 h-5 rounded border-slate-300 text-resort-500 focus:ring-resort-500"
+                              />
+                              <div>
+                                <h3 className="text-lg font-semibold text-resort-900">{booking.resorts?.name || `Resort ${booking.resort_id.slice(0,8)}`}</h3>
+                                <p className="text-sm text-slate-600">{booking.date_from} → {booking.date_to}</p>
+                              </div>
                             </div>
                             <span className="text-xs px-2 py-1 rounded font-semibold bg-slate-200 text-slate-800">{new Date(booking.date_to) < now ? 'Completed' : 'Rejected'}</span>
                           </div>

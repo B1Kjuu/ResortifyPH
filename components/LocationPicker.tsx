@@ -99,7 +99,145 @@ function DraggableMarker({ position, onDragEnd }: { position: [number, number]; 
   )
 }
 
-// Interactive map with click-to-place functionality
+// Google Maps interactive picker component
+function GoogleMapPicker({
+  position,
+  onLocationSelect,
+}: {
+  position: [number, number] | null
+  onLocationSelect: (lat: number, lng: number) => void
+}) {
+  const mapRef = React.useRef<HTMLDivElement>(null)
+  const mapInstanceRef = React.useRef<any>(null)
+  const markerRef = React.useRef<any>(null)
+  const [isLoaded, setIsLoaded] = useState(false)
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => { setIsClient(true) }, [])
+
+  // Load Google Maps script
+  useEffect(() => {
+    if (!isClient) return
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+    if (!apiKey) return
+
+    if (window.google?.maps) {
+      setIsLoaded(true)
+      return
+    }
+
+    const callbackName = 'initLocationPickerMap'
+    ;(window as any)[callbackName] = () => {
+      setIsLoaded(true)
+    }
+
+    const existingScript = document.querySelector(`script[src*="maps.googleapis.com"]`)
+    if (existingScript) {
+      // Script already loading, wait for it
+      const checkLoaded = setInterval(() => {
+        if (window.google?.maps) {
+          setIsLoaded(true)
+          clearInterval(checkLoaded)
+        }
+      }, 100)
+      return () => clearInterval(checkLoaded)
+    }
+
+    const script = document.createElement('script')
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geometry&callback=${callbackName}`
+    script.async = true
+    script.defer = true
+    document.head.appendChild(script)
+
+    return () => {
+      delete (window as any)[callbackName]
+    }
+  }, [isClient])
+
+  // Initialize map
+  useEffect(() => {
+    if (!isLoaded || !mapRef.current || !window.google?.maps) return
+    
+    const defaultCenter = { lat: 12.8797, lng: 121.7740 }
+    const center = position 
+      ? { lat: position[0], lng: position[1] } 
+      : defaultCenter
+
+    if (!mapInstanceRef.current) {
+      mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
+        center,
+        zoom: position ? 17 : 6,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+        styles: [
+          { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+        ],
+      })
+
+      // Add click listener
+      mapInstanceRef.current.addListener('click', (e: any) => {
+        const lat = e.latLng.lat()
+        const lng = e.latLng.lng()
+        onLocationSelect(lat, lng)
+      })
+    }
+  }, [isLoaded, position, onLocationSelect])
+
+  // Update marker when position changes
+  useEffect(() => {
+    if (!isLoaded || !mapInstanceRef.current || !window.google?.maps) return
+
+    if (markerRef.current) {
+      markerRef.current.setMap(null)
+    }
+
+    if (position) {
+      markerRef.current = new window.google.maps.Marker({
+        position: { lat: position[0], lng: position[1] },
+        map: mapInstanceRef.current,
+        draggable: true,
+        icon: {
+          path: window.google.maps.SymbolPath.CIRCLE,
+          scale: 12,
+          fillColor: '#0891b2',
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 3,
+        },
+      })
+
+      markerRef.current.addListener('dragend', () => {
+        const pos = markerRef.current.getPosition()
+        onLocationSelect(pos.lat(), pos.lng())
+      })
+
+      mapInstanceRef.current.panTo({ lat: position[0], lng: position[1] })
+      mapInstanceRef.current.setZoom(17)
+    }
+  }, [isLoaded, position, onLocationSelect])
+
+  if (!isClient) {
+    return (
+      <div className="h-[300px] bg-slate-100 rounded-xl flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-6 h-6 border-2 border-resort-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+          <p className="text-sm text-slate-600">Loading map...</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div 
+      ref={mapRef} 
+      className="h-[300px] w-full rounded-xl overflow-hidden"
+      style={{ minHeight: '300px' }}
+    />
+  )
+}
+
+// Interactive map with click-to-place functionality (OpenStreetMap fallback)
 function InteractiveMap({
   position,
   onLocationSelect,
@@ -110,7 +248,15 @@ function InteractiveMap({
   mapRef: React.RefObject<any>
 }) {
   const [isClient, setIsClient] = useState(false)
+  const useGoogleMaps = isGoogleMapsEnabled()
+  
   useEffect(() => { setIsClient(true) }, [])
+
+  // If Google Maps is enabled, use the Google Maps picker
+  if (useGoogleMaps) {
+    return <GoogleMapPicker position={position} onLocationSelect={onLocationSelect} />
+  }
+
   // Default center: Philippines
   const defaultCenter: [number, number] = [12.8797, 121.7740]
   const center = position || defaultCenter

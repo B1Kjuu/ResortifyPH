@@ -468,16 +468,23 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
             <button
               className="text-xs rounded-lg border border-red-200 px-2.5 py-1.5 text-red-600 hover:bg-red-50 hover:border-red-300 active:bg-red-100 transition-all duration-200 font-medium"
               onClick={async () => {
+                if (!confirm('Delete this chat from your view? You can rejoin later if the conversation continues.')) {
+                  return
+                }
                 try {
                   const { data: userRes } = await supabase.auth.getUser()
                   const uid2 = userRes.user?.id
                   if (!uid2 || !chat?.id) return
-                  await supabase
+                  const { error } = await supabase
                     .from('chat_participants')
                     .update({ deleted_at: new Date().toISOString() })
                     .match({ chat_id: chat.id, user_id: uid2 })
-                  // Optional: navigate back if embedded in a page
-                  // window.history.back()
+                  if (error) {
+                    alert('Failed to delete chat: ' + error.message)
+                    return
+                  }
+                  // Navigate back after successful deletion
+                  window.history.back()
                 } catch (e) {
                   console.error('Delete chat failed:', e)
                   alert('Failed to delete chat')

@@ -418,12 +418,12 @@ export default function AdventureHub(){
         )}
 
         {/* Map Preview */}
-        <div className="mb-4">
+        <div className="mb-4 relative z-0">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-xl font-bold text-slate-900">Map Preview</h2>
             <Link href="/resorts?view=map" className="text-sm font-medium text-resort-600 hover:text-resort-700">Open full map →</Link>
           </div>
-          <div className="h-[260px] sm:h-[320px] fade-in-up">
+          <div className="h-[260px] sm:h-[320px] fade-in-up rounded-xl overflow-hidden relative z-0">
             <ResortMap
               resorts={trendingResorts}
               userPosition={geoSupported && position ? position : null}
@@ -433,7 +433,7 @@ export default function AdventureHub(){
         </div>
 
         {/* Profile & Quick Actions */}
-        <div className="grid md:grid-cols-3 gap-6 fade-in-up">
+        <div className="grid md:grid-cols-3 gap-6 fade-in-up relative z-10">
           {/* Profile Card */}
           <Link href="/profile" className="group bg-gradient-to-br from-resort-500 to-blue-500 text-white rounded-2xl p-8 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-2 border-resort-400">
             <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">👤</div>

@@ -1,7 +1,36 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { DEFAULT_TIME_SLOT_TEMPLATES, DEFAULT_GUEST_TIER_TEMPLATES } from '@/lib/bookingTypes'
+
+function createSupabaseServerClient() {
+  const cookieStore = cookies()
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value
+        },
+        set(name: string, value: string, options: Record<string, unknown>) {
+          try {
+            cookieStore.set({ name, value, ...options })
+          } catch {
+            // Handle cookie errors in edge cases
+          }
+        },
+        remove(name: string, options: Record<string, unknown>) {
+          try {
+            cookieStore.set({ name, value: '', ...options })
+          } catch {
+            // Handle cookie errors in edge cases
+          }
+        },
+      },
+    }
+  )
+}
 
 // POST /api/resorts/[id]/pricing/seed-defaults - Seed default time slots and guest tiers
 export async function POST(
@@ -11,16 +40,7 @@ export async function POST(
   try {
     const resortId = params.id
     
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    const cookieStore = cookies()
-    const accessToken = cookieStore.get('sb-access-token')?.value
-    
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-      },
-    })
+    const supabase = createSupabaseServerClient()
     
     // Verify authorization
     const { data: { session } } = await supabase.auth.getSession()

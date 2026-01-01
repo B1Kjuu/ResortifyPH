@@ -491,15 +491,14 @@ export default function EditResort(){
         <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-6">
           <div className="flex items-center gap-2 mb-3">
             <FiCamera className="w-5 h-5" />
-            <label className="text-sm font-bold text-slate-700">Resort Images</label>
+            <label className="text-sm font-bold text-slate-700">Resort Images (max 10)</label>
           </div>
-          <ImageUploader onUpload={(urls) => setImages(urls)} />
-          {images.length > 0 && (
-            <div className="mt-3 px-4 py-2 bg-green-100 border border-green-300 rounded-lg flex items-center gap-2">
-              <FiCheck className="text-green-600 w-4 h-4" />
-              <p className="text-sm text-green-700 font-semibold">{images.length} image(s) uploaded</p>
-            </div>
-          )}
+          <ImageUploader 
+            existingUrls={images}
+            onUpload={(urls) => setImages(prev => [...prev, ...urls])} 
+            onRemove={(url) => setImages(prev => prev.filter(u => u !== url))}
+            maxFiles={10}
+          />
         </div>
 
         <div className="flex gap-4 pt-6 border-t-2 border-slate-100">

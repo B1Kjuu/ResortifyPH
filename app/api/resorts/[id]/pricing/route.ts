@@ -1,6 +1,36 @@
 import { NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+
+function createSupabaseServerClient() {
+  const cookieStore = cookies()
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value
+        },
+        set(name: string, value: string, options: Record<string, unknown>) {
+          try {
+            cookieStore.set({ name, value, ...options })
+          } catch {
+            // Handle cookie errors in edge cases
+          }
+        },
+        remove(name: string, options: Record<string, unknown>) {
+          try {
+            cookieStore.set({ name, value: '', ...options })
+          } catch {
+            // Handle cookie errors in edge cases
+          }
+        },
+      },
+    }
+  )
+}
 
 // GET /api/resorts/[id]/pricing - Get pricing configuration for a resort
 export async function GET(
@@ -70,16 +100,7 @@ export async function POST(
     const resortId = params.id
     const body = await request.json()
     
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    const cookieStore = cookies()
-    const accessToken = cookieStore.get('sb-access-token')?.value
-    
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-      },
-    })
+    const supabase = createSupabaseServerClient()
     
     // Verify authorization
     const { data: { session } } = await supabase.auth.getSession()
