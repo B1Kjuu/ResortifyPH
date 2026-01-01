@@ -12,12 +12,14 @@
 html {
   height: 100%;
   overflow-x: hidden;
+  max-width: 100vw;
 }
 
 body {
   @apply bg-white text-slate-900 antialiased;
   min-height: 100%;
   overflow-x: hidden;
+  max-width: 100vw;
 }
 
 #root {

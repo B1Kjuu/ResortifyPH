@@ -667,9 +667,9 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
   return (
     <>
-    <div className="w-full min-h-screen bg-gradient-to-b from-resort-50 to-white pb-20 lg:pb-6">
+    <div className="w-full max-w-full min-h-screen bg-gradient-to-b from-resort-50 to-white pb-20 lg:pb-6 overflow-x-hidden">
       {/* Mobile Header - Fixed on mobile */}
-      <div className="lg:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-100 px-4 py-3 flex items-center gap-3">
+      <div className="lg:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-100 px-3 py-3 flex items-center gap-2">
         <Link href="/resorts" className="p-2 -ml-2 rounded-full hover:bg-slate-100 transition">
           <FiArrowLeft className="w-5 h-5 text-slate-700" />
         </Link>
@@ -687,7 +687,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
         )}
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 pt-4 lg:pt-10 space-y-4 sm:space-y-6">
+      <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-10 pt-4 lg:pt-10 space-y-4 sm:space-y-6 w-full">
         {/* Desktop back link */}
         <Link href="/resorts" className="hidden lg:inline-flex text-xs sm:text-sm text-resort-500 font-semibold items-center gap-1 hover:text-resort-600">
           <FiArrowLeft aria-hidden className="inline-block" /> Back to Resorts
@@ -750,7 +750,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
               {galleryImages.length > 1 && (
                 <>
                   {/* Mobile: horizontal scroll thumbnails */}
-                  <div className="sm:hidden flex gap-1.5 overflow-x-auto snap-x snap-mandatory py-1 -mx-1 px-1 scrollbar-hide">
+                  <div className="sm:hidden flex gap-1.5 overflow-x-auto snap-x snap-mandatory py-1 scrollbar-hide">
                     {galleryImages.map((img: string, idx: number) => (
                       <button
                         key={idx}
@@ -822,7 +822,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
               </div>
 
               {/* Mobile: Horizontal scroll quick stats */}
-              <div className="lg:hidden flex gap-2 overflow-x-auto scrollbar-hide -mx-2 px-2 pb-1">
+              <div className="lg:hidden flex gap-2 overflow-x-auto scrollbar-hide pb-1">
                 <div className="flex-shrink-0 flex items-center gap-2 bg-resort-50 px-3 py-2 rounded-xl">
                   <FiDollarSign aria-hidden className="text-resort-600 w-4 h-4" />
                   <div>
@@ -1400,24 +1400,23 @@ export default function ResortDetail({ params }: { params: { id: string } }){
     {/* Mobile sticky action bar - Improved design */}
     {resort?.status === 'approved' && (
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] pb-[env(safe-area-inset-bottom)]">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+        <div className="w-full px-3 py-3 flex items-center gap-2">
           {/* Price info */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-lg font-bold text-resort-900">₱{baseRate?.toLocaleString()}</span>
-              <span className="text-xs text-slate-500">{bookingType === 'daytour' ? '/day' : '/night'}</span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-base font-bold text-resort-900">₱{baseRate?.toLocaleString()}</span>
+              <span className="text-[10px] text-slate-500">{bookingType === 'daytour' ? '/day' : '/night'}</span>
             </div>
             {nights > 0 && totalCost > 0 && (
-              <p className="text-xs text-slate-600">
+              <p className="text-[10px] text-slate-600 truncate">
                 Total: <span className="font-semibold text-resort-700">₱{totalCost.toLocaleString()}</span>
-                {nights > 1 && ` (${nights} nights)`}
               </p>
             )}
           </div>
           {/* Book button */}
           <button
             onClick={scrollToBookingCard}
-            className="flex-shrink-0 px-6 py-3 bg-gradient-to-r from-resort-500 to-resort-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:from-resort-600 hover:to-resort-700 active:scale-[0.98] transition-all"
+            className="flex-shrink-0 px-4 py-2.5 bg-gradient-to-r from-resort-500 to-resort-600 text-white rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl hover:from-resort-600 hover:to-resort-700 active:scale-[0.98] transition-all"
           >
             Book Now
           </button>
