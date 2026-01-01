@@ -50,7 +50,9 @@ body {
 }
 
 /* Ensure proper box-sizing globally */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
