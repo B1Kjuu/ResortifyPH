@@ -491,7 +491,7 @@ export default function LocationPicker({
             />
             <button
               type="button"
-              onClick={handleSearch}
+              onClick={() => handleSearch()}
               disabled={isSearching}
               className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium text-sm transition-colors disabled:opacity-50"
             >
