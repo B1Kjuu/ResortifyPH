@@ -687,15 +687,15 @@ export default function ResortDetail({ params }: { params: { id: string } }){
         )}
       </div>
 
-      <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-10 pt-4 lg:pt-10 space-y-4 sm:space-y-6 w-full">
+      <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-10 pt-4 lg:pt-10 space-y-4 sm:space-y-6 w-full overflow-hidden">
         {/* Desktop back link */}
         <Link href="/resorts" className="hidden lg:inline-flex text-xs sm:text-sm text-resort-500 font-semibold items-center gap-1 hover:text-resort-600">
           <FiArrowLeft aria-hidden className="inline-block" /> Back to Resorts
         </Link>
 
-        <div className="grid lg:grid-cols-[1.55fr_1fr] gap-4 sm:gap-6">
+        <div className="grid lg:grid-cols-[1.55fr_1fr] gap-4 sm:gap-6 min-w-0">
           {/* Main Content */}
-          <div className="space-y-4">
+          <div className="space-y-4 min-w-0 overflow-hidden">
             {/* Gallery */}
             <div className="bg-white rounded-xl sm:rounded-2xl p-2 sm:p-3 shadow-card border border-slate-100 space-y-2 sm:space-y-3">
               {/* Main Image - Clickable */}

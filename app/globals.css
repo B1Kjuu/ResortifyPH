@@ -58,6 +58,12 @@ body {
   box-sizing: border-box;
 }
 
+/* Prevent any element from exceeding viewport on mobile */
+img, video, iframe, embed, object {
+  max-width: 100%;
+  height: auto;
+}
+
 /* Hide scrollbar for horizontal scroll containers */
 .scrollbar-hide {
   -ms-overflow-style: none;
