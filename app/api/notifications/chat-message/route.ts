@@ -1,10 +1,45 @@
 import { NextRequest, NextResponse } from "next/server"
 import { sendEmail, brandEmailTemplate } from "lib/email"
 import { getServerSupabaseOrNull } from "lib/supabaseServer"
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+
+// Helper to verify the request is from an authenticated user
+async function getAuthenticatedUser() {
+  try {
+    const cookieStore = cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) { return cookieStore.get(name)?.value },
+          set() {},
+          remove() {},
+        },
+      }
+    )
+    const { data: { user } } = await supabase.auth.getUser()
+    return user
+  } catch {
+    return null
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
+    // Security: Verify the user is authenticated
+    const authUser = await getAuthenticatedUser()
+    if (!authUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const { bookingId, resortId, senderUserId, content, to, skipSelfNotification } = await req.json()
+
+    // Security: Ensure senderUserId matches authenticated user (prevent spoofing)
+    if (senderUserId && senderUserId !== authUser.id) {
+      return NextResponse.json({ error: "Sender mismatch" }, { status: 403 })
+    }
 
     if (!content || (!bookingId && !resortId)) {
       return NextResponse.json({ error: "Missing content or identifiers" }, { status: 400 })

@@ -52,10 +52,13 @@ export default function Navbar(){
       setPasswordResetPending(isPending)
       
       // If password reset is pending but user navigated away from reset page, sign them out
-      if (isPending && !pathname?.includes('/auth/reset-password') && !pathname?.includes('/auth/forgot-password')) {
+      if (isPending && !pathname?.includes('/auth/reset-password') && !pathname?.includes('/auth/forgot-password') && !pathname?.includes('/auth/callback')) {
         sessionStorage.removeItem(PASSWORD_RESET_KEY)
         deleteCookie(PASSWORD_RESET_KEY)
-        supabase.auth.signOut().then(() => {
+        // Use try-catch to handle cases where session is already invalid
+        supabase.auth.signOut({ scope: 'local' }).catch(() => {
+          // Ignore errors - session might already be invalid
+        }).finally(() => {
           toast.error('Session ended for security', {
             description: 'Please complete the password reset process.'
           })
@@ -249,7 +252,7 @@ export default function Navbar(){
         localStorage.setItem('skipSignOutConfirm', 'true')
       }
       
-      await supabase.auth.signOut()
+      await supabase.auth.signOut({ scope: 'local' })
       setUser(null)
       setIsAdmin(false)
       setUserRole('')

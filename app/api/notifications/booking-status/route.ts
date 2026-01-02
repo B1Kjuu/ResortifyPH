@@ -1,9 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendBookingEmail } from "lib/email";
 import { getServerSupabaseOrNull } from "lib/supabaseServer";
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+
+// Helper to verify the request is from an authenticated user
+async function getAuthenticatedUser() {
+  try {
+    const cookieStore = cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) { return cookieStore.get(name)?.value },
+          set() {},
+          remove() {},
+        },
+      }
+    )
+    const { data: { user } } = await supabase.auth.getUser()
+    return user
+  } catch {
+    return null
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
+    // Security: Verify the user is authenticated
+    const authUser = await getAuthenticatedUser()
+    if (!authUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const {
       to,
       status, // "created" | "approved" | "rejected"
@@ -13,6 +43,11 @@ export async function POST(req: NextRequest) {
       link,
       userId,
     } = await req.json();
+
+    // Security: Ensure userId matches authenticated user (prevent spoofing)
+    if (userId && userId !== authUser.id) {
+      return NextResponse.json({ error: "User mismatch" }, { status: 403 })
+    }
 
     if (!to || !status || !resortName || !dateFrom || !dateTo) {
       return NextResponse.json(

@@ -75,6 +75,7 @@ export default function middleware(req: NextRequest) {
     `https://maps.googleapis.com`,
     `https://maps.gstatic.com`,
     `https://*.ggpht.com`,
+    `https://maps.geoapify.com`,
   ].join(' ')
 
   const nominatim = 'https://nominatim.openstreetmap.org'

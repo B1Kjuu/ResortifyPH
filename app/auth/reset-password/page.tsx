@@ -40,8 +40,12 @@ export default function ResetPasswordPage() {
       sessionStorage.removeItem(PASSWORD_RESET_KEY)
       deleteCookie(PASSWORD_RESET_KEY)
     } catch {}
-    // Sign out the user to prevent unauthorized access
-    await supabase.auth.signOut()
+    // Sign out the user to prevent unauthorized access (use local scope to avoid refresh token errors)
+    try {
+      await supabase.auth.signOut({ scope: 'local' })
+    } catch {
+      // Ignore errors - session might already be invalid
+    }
   }, [])
 
   // Security: Prevent navigation away from this page
@@ -214,8 +218,12 @@ export default function ResetPasswordPage() {
       deleteCookie(PASSWORD_RESET_KEY)
     } catch {}
 
-    // Sign out the session to force re-login with new password
-    await supabase.auth.signOut()
+    // Sign out the session to force re-login with new password (use local scope to avoid errors)
+    try {
+      await supabase.auth.signOut({ scope: 'local' })
+    } catch {
+      // Ignore errors
+    }
 
     toast.success('Password updated successfully! Please sign in with your new password.')
     setTimeout(() => {
