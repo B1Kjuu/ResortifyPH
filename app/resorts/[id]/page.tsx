@@ -687,7 +687,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
         )}
       </div>
 
-      <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-10 pt-4 lg:pt-10 space-y-4 sm:space-y-6 w-full overflow-hidden">
+      <div className="max-w-6xl mx-auto px-2 sm:px-6 lg:px-10 pt-4 lg:pt-10 space-y-3 sm:space-y-6 w-full overflow-hidden">
         {/* Desktop back link */}
         <Link href="/resorts" className="hidden lg:inline-flex text-xs sm:text-sm text-resort-500 font-semibold items-center gap-1 hover:text-resort-600">
           <FiArrowLeft aria-hidden className="inline-block" /> Back to Resorts
@@ -973,7 +973,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
               <div className="space-y-2">
                 <h3 className="text-lg font-semibold text-resort-900">About This Resort</h3>
-                <p className="text-sm text-slate-700 leading-relaxed">{resort.description}</p>
+                <p className="text-sm text-slate-700 leading-relaxed break-words">{resort.description}</p>
               </div>
 
               {resort.amenities && resort.amenities.length > 0 && (
@@ -1020,52 +1020,49 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
               {/* Location Map */}
               {(resort.latitude && resort.longitude) || resort.address || resort.location ? (
-                <div className="space-y-2">
+                <div className="space-y-2 w-full overflow-hidden">
                   <h3 className="text-lg font-semibold text-resort-900 flex items-center gap-2">
                     <FiMapPin className="text-resort-500" />
                     Location
                   </h3>
-                  <div className="rounded-xl overflow-hidden border border-slate-200 h-[250px] sm:h-[300px]">
+                  <div className="rounded-xl overflow-hidden border border-slate-200 w-full aspect-[4/3] sm:aspect-[16/9] relative group">
                     {resort.latitude && resort.longitude ? (
-                      // Use exact coordinates if available
-                      process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? (
-                        <iframe
-                          width="100%"
-                          height="100%"
-                          style={{ border: 0 }}
+                      // Use static map image (no API key needed) with link to interactive map
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${resort.latitude},${resort.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block w-full h-full relative"
+                      >
+                        <img
+                          src={`https://maps.geoapify.com/v1/staticmap?style=osm-bright&width=800&height=450&center=lonlat:${resort.longitude},${resort.latitude}&zoom=15&marker=lonlat:${resort.longitude},${resort.latitude};color:%2322c55e;size:large&apiKey=6dc7fb95a3b246cfa0f3bcef5ce9ed9a`}
+                          alt={`Map showing ${resort.name} location`}
+                          className="w-full h-full object-cover"
                           loading="lazy"
-                          allowFullScreen
-                          referrerPolicy="no-referrer-when-downgrade"
-                          src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${resort.latitude},${resort.longitude}&zoom=15`}
                         />
-                      ) : (
-                        <iframe
-                          width="100%"
-                          height="100%"
-                          style={{ border: 0 }}
-                          loading="lazy"
-                          src={`https://www.openstreetmap.org/export/embed.html?bbox=${resort.longitude - 0.01},${resort.latitude - 0.01},${resort.longitude + 0.01},${resort.latitude + 0.01}&layer=mapnik&marker=${resort.latitude},${resort.longitude}`}
-                        />
-                      )
-                    ) : (
-                      // Fallback to address/location search
-                      process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? (
-                        <iframe
-                          width="100%"
-                          height="100%"
-                          style={{ border: 0 }}
-                          loading="lazy"
-                          allowFullScreen
-                          referrerPolicy="no-referrer-when-downgrade"
-                          src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent((resort.address || '') + ' ' + (resort.location || '') + ', Philippines')}&zoom=13`}
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-slate-100 flex items-center justify-center">
-                          <p className="text-slate-500 text-sm text-center px-4">
-                            Map location: {resort.address || resort.location}
-                          </p>
+                        {/* Hover overlay */}
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium text-slate-800 shadow-lg flex items-center gap-2">
+                            <FiMapPin className="w-4 h-4" />
+                            View on Google Maps
+                          </div>
                         </div>
-                      )
+                      </a>
+                    ) : (
+                      // Fallback for address-only locations
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((resort.address || '') + ' ' + (resort.location || '') + ', Philippines')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex flex-col items-center justify-center gap-3 hover:from-slate-200 hover:to-slate-300 transition-colors"
+                      >
+                        <FiMapPin className="w-10 h-10 text-resort-500" />
+                        <div className="text-center px-4">
+                          <p className="text-sm font-medium text-slate-700">{resort.location}</p>
+                          {resort.address && <p className="text-xs text-slate-500 mt-1">{resort.address}</p>}
+                        </div>
+                        <span className="text-xs text-resort-600 font-medium">Tap to view on Google Maps</span>
+                      </a>
                     )}
                   </div>
                   {resort.address && (

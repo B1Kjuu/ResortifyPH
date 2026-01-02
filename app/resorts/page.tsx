@@ -429,6 +429,14 @@ export default function ResortsPage(){
                     setSortBy('nearest')
                     requestLocation()
                     setSelectedType('all')
+                    // Switch to map view on larger screens, split on desktop for better UX
+                    if (typeof window !== 'undefined') {
+                      if (window.innerWidth >= 1024) {
+                        setViewMode('split')
+                      } else {
+                        setViewMode('map')
+                      }
+                    }
                   } else if (['beach','mountain','nature','city','countryside','staycation','private','villa','glamping','farmstay','spa'].includes(cat.id)) {
                     setSelectedType(cat.id)
                     setShowNearby(false)
