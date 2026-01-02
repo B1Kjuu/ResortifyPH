@@ -59,7 +59,11 @@ body {
 }
 
 /* Prevent any element from exceeding viewport on mobile */
-img, video, iframe, embed, object {
+img,
+video,
+iframe,
+embed,
+object {
   max-width: 100%;
   height: auto;
 }
