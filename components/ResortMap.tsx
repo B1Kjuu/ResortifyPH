@@ -66,6 +66,7 @@ interface ResortMapProps {
   onRequestLocation?: () => void
   showNearbyButton?: boolean
   geoLoading?: boolean
+  flyToUserTrigger?: number // Increment to trigger fly-to-user
 }
 
 // Component to handle map bounds
@@ -154,11 +155,11 @@ function getMarkerIcon(isSelected: boolean = false, isUser: boolean = false, pri
   })
 }
 
-export default function ResortMap({ resorts, userPosition, onResortClick, selectedResortId, className = '', onRequestLocation, showNearbyButton = true, geoLoading = false }: ResortMapProps) {
+export default function ResortMap({ resorts, userPosition, onResortClick, selectedResortId, className = '', onRequestLocation, showNearbyButton = true, geoLoading = false, flyToUserTrigger = 0 }: ResortMapProps) {
   const [isClient, setIsClient] = useState(false)
   const [mapKey, setMapKey] = useState(0)
   const [mapRef, setMapRef] = useState<any>(null)
-  const [hasFlownToUser, setHasFlownToUser] = useState(false)
+  const [lastFlyTrigger, setLastFlyTrigger] = useState(0)
   
   useEffect(() => {
     setIsClient(true)
@@ -171,20 +172,21 @@ export default function ResortMap({ resorts, userPosition, onResortClick, select
     }
   }, [mapRef, userPosition])
 
-  // Auto-fly to user position when it first becomes available (only once)
+  // Fly to user position when flyToUserTrigger changes
   useEffect(() => {
-    if (mapRef && userPosition && !hasFlownToUser) {
+    if (mapRef && userPosition && flyToUserTrigger > lastFlyTrigger) {
       flyToUser()
-      setHasFlownToUser(true)
+      setLastFlyTrigger(flyToUserTrigger)
     }
-  }, [mapRef, userPosition, hasFlownToUser, flyToUser])
+  }, [mapRef, userPosition, flyToUserTrigger, lastFlyTrigger, flyToUser])
 
-  // Reset hasFlownToUser when userPosition is cleared
+  // Also fly when position first becomes available
   useEffect(() => {
-    if (!userPosition) {
-      setHasFlownToUser(false)
+    if (mapRef && userPosition && lastFlyTrigger === 0) {
+      flyToUser()
+      setLastFlyTrigger(1)
     }
-  }, [userPosition])
+  }, [mapRef, userPosition, lastFlyTrigger, flyToUser])
 
   // Calculate resort positions - prefer exact coordinates, fallback to city/province
   const resortPositions = useMemo(() => {

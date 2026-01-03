@@ -114,7 +114,7 @@ export const resortSchema = z.object({
   bedrooms: countField('Bedrooms', { required: false, min: 0, max: 50 }),
   bathrooms: countField('Bathrooms', { required: false, min: 0, max: 50 }),
   amenities: z.array(z.string()).max(30, 'You can pick up to 30 amenities').default([]),
-  images: z.array(z.string()).default([]),
+  images: z.array(z.string()).min(1, 'At least 1 image is required').max(10, 'Maximum 10 images allowed'),
   contact_number: z
     .string()
     .regex(/^(\+63|0)?9\d{9}$/, 'Invalid Philippine mobile number (e.g., 09171234567 or +639171234567)'),

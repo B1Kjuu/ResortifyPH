@@ -152,6 +152,10 @@ export default function EditResort(){
       alert('Please fill all required fields'); 
       return 
     }
+    if (images.length === 0) {
+      alert('At least 1 image is required');
+      return
+    }
     
     setSubmitting(true)
     const provinceInfo = getProvinceInfo(location)
@@ -356,10 +360,11 @@ export default function EditResort(){
             <label className="block text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiDollarSign className="w-4 h-4" /> Price per Night (₱) *</label>
             <input 
               type="number"
+              min={0}
               className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors" 
               placeholder="e.g., 5000" 
               value={price as any} 
-              onChange={e => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
+              onChange={e => setPrice(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))}
               required={pricingMode === 'simple'}
             />
           </div>
@@ -441,9 +446,27 @@ export default function EditResort(){
         </div>
 
         <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <FaStar className="w-5 h-5 text-slate-700" />
-            <label className="text-sm font-bold text-slate-700">Amenities</label>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <FaStar className="w-5 h-5 text-slate-700" />
+              <label className="text-sm font-bold text-slate-700">Amenities</label>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setAmenities(['Pool', 'WiFi', 'Parking', 'Breakfast', 'Beachfront', 'Air Conditioning', 'Spa', 'Bar', 'Pet Friendly', 'Kitchen', 'BBQ Grill', 'Videoke', 'Netflix', 'Billiards', 'Game Room', 'Outdoor Seating'])}
+                className="px-3 py-1.5 text-xs font-medium bg-resort-100 text-resort-700 rounded-lg hover:bg-resort-200 transition-colors"
+              >
+                Select All
+              </button>
+              <button
+                type="button"
+                onClick={() => setAmenities([])}
+                className="px-3 py-1.5 text-xs font-medium bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors"
+              >
+                Clear All
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {['Pool', 'WiFi', 'Parking', 'Breakfast', 'Beachfront', 'Air Conditioning', 'Spa', 'Bar', 'Pet Friendly', 'Kitchen', 'BBQ Grill', 'Videoke', 'Netflix', 'Billiards', 'Game Room', 'Outdoor Seating'].map(amenity => (
@@ -586,14 +609,15 @@ export default function EditResort(){
         <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-6">
           <div className="flex items-center gap-2 mb-3">
             <FiCamera className="w-5 h-5" />
-            <label className="text-sm font-bold text-slate-700">Resort Images (max 10)</label>
+            <label className="text-sm font-bold text-slate-700">Resort Images * <span className="text-slate-500 font-normal">(1 required, up to 10)</span></label>
           </div>
           <ImageUploader 
             existingUrls={images}
-            onUpload={(urls) => setImages(prev => [...prev, ...urls])} 
+            onUpload={(urls) => setImages(prev => [...prev, ...urls].slice(0, 10))} 
             onRemove={(url) => setImages(prev => prev.filter(u => u !== url))}
             maxFiles={10}
           />
+          {images.length === 0 && <p className="text-xs text-red-500 mt-2">At least 1 image is required</p>}
         </div>
 
         <div className="flex gap-4 pt-6 border-t-2 border-slate-100">

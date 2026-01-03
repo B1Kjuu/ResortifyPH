@@ -56,6 +56,7 @@ export default function ResortsPage(){
   // Geolocation for "Near You" feature
   const { position, loading: geoLoading, error: geoError, requestLocation, supported: geoSupported } = useGeolocation()
   const [showNearby, setShowNearby] = useState(false)
+  const [flyToUserTrigger, setFlyToUserTrigger] = useState(0) // Increment to trigger fly-to-user
   const [viewMode, setViewMode] = useState('grid' as 'grid' | 'map' | 'split')
   const [selectedMapResort, setSelectedMapResort] = useState<string | null>(null)
   const [showTotalPrice, setShowTotalPrice] = useState(false)
@@ -427,6 +428,7 @@ export default function ResortsPage(){
                   if (cat.id === 'nearby') {
                     setShowNearby(true)
                     setSortBy('nearest')
+                    setFlyToUserTrigger(prev => prev + 1)
                     requestLocation()
                     setSelectedType('all')
                     // Switch to map view on larger screens, split on desktop for better UX
@@ -489,7 +491,30 @@ export default function ResortsPage(){
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               {/* Near Me */}
               {mounted && geoSupported && (
-                <button onClick={() => { if (!showNearby) { setShowNearby(true); requestLocation() } else { setShowNearby(false) } }} disabled={geoLoading} className={`flex-shrink-0 flex items-center justify-center gap-2 px-3 py-2 h-10 rounded-xl text-sm font-medium transition-all shadow-sm ${showNearby && position ? 'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white border border-emerald-500' : geoLoading ? 'bg-slate-100 text-slate-400 border border-slate-200' : 'bg-gradient-to-b from-white to-slate-50 text-slate-700 border border-slate-200 hover:border-emerald-400 hover:text-emerald-600 hover:shadow'}`}>
+                <button onClick={() => { 
+                  if (!showNearby) { 
+                    setShowNearby(true); 
+                    setSortBy('nearest');
+                    setFlyToUserTrigger(prev => prev + 1);
+                    requestLocation();
+                    // Switch to map view to show user's location
+                    if (typeof window !== 'undefined') {
+                      if (window.innerWidth >= 1024) {
+                        setViewMode('split')
+                      } else {
+                        setViewMode('map')
+                      }
+                    }
+                  } else { 
+                    // If already showing nearby and have position, just re-fly to user
+                    if (position) {
+                      setFlyToUserTrigger(prev => prev + 1);
+                    } else {
+                      setShowNearby(false);
+                      setSortBy('newest');
+                    }
+                  } 
+                }} disabled={geoLoading} className={`flex-shrink-0 flex items-center justify-center gap-2 px-3 py-2 h-10 rounded-xl text-sm font-medium transition-all shadow-sm ${showNearby && position ? 'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white border border-emerald-500' : geoLoading ? 'bg-slate-100 text-slate-400 border border-slate-200' : 'bg-gradient-to-b from-white to-slate-50 text-slate-700 border border-slate-200 hover:border-emerald-400 hover:text-emerald-600 hover:shadow'}`}>
                   {geoLoading ? (<div className="w-4 h-4 border-2 border-slate-300 border-t-transparent rounded-full animate-spin" />) : (
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"/></svg>
                   )}
@@ -626,7 +651,7 @@ export default function ResortsPage(){
         ) : viewMode === 'map' ? (
           /* Full map view - responsive height */
           <div className="h-[60vh] sm:h-[70vh] min-h-[400px] rounded-2xl overflow-hidden shadow-lg border border-slate-200">
-            <ResortMap resorts={filteredResorts} userPosition={position} selectedResortId={selectedMapResort} onResortClick={(id) => setSelectedMapResort(id === selectedMapResort ? null : id)} className="h-full" onRequestLocation={requestLocation} geoLoading={geoLoading} />
+            <ResortMap resorts={filteredResorts} userPosition={position} selectedResortId={selectedMapResort} onResortClick={(id) => setSelectedMapResort(id === selectedMapResort ? null : id)} className="h-full" onRequestLocation={requestLocation} geoLoading={geoLoading} flyToUserTrigger={flyToUserTrigger} />
           </div>
         ) : (
           /* Split view - cards left, map right on desktop; stacked on mobile */
@@ -655,7 +680,7 @@ export default function ResortsPage(){
             </div>
             {/* Map section - sticky on desktop, shown below on mobile */}
             <div className="w-full lg:w-1/2 h-[50vh] sm:h-[60vh] lg:h-[calc(100vh-220px)] lg:sticky lg:top-[200px] rounded-2xl overflow-hidden shadow-lg border border-slate-200">
-              <ResortMap resorts={filteredResorts} userPosition={position} selectedResortId={selectedMapResort} onResortClick={(id) => setSelectedMapResort(id === selectedMapResort ? null : id)} className="h-full" onRequestLocation={requestLocation} geoLoading={geoLoading} />
+              <ResortMap resorts={filteredResorts} userPosition={position} selectedResortId={selectedMapResort} onResortClick={(id) => setSelectedMapResort(id === selectedMapResort ? null : id)} className="h-full" onRequestLocation={requestLocation} geoLoading={geoLoading} flyToUserTrigger={flyToUserTrigger} />
             </div>
           </div>
         )}

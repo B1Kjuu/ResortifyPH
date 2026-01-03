@@ -1,5 +1,5 @@
 'use client'
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useRef } from 'react'
 import Link from 'next/link'
 import { getResortTypeLabel } from '../lib/resortTypes'
 import Image from 'next/image'
@@ -26,20 +26,58 @@ export default function ResortCard({ resort, compact = false, nights = 0, showTo
   const { ready, isFavorite, toggleFavorite } = useFavorites()
   const isFavorited = useMemo(() => (resort?.id ? isFavorite(resort.id) : false), [isFavorite, resort?.id])
   
+  // Touch swipe state
+  const touchStartX = useRef<number | null>(null)
+  const touchEndX = useRef<number | null>(null)
+  const minSwipeDistance = 50
+  
   const images = resort.images?.length > 0 
     ? resort.images 
     : ['data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect width="400" height="400" fill="%23e2e8f0"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="48" fill="%2394a3b8"%3E🏨%3C/text%3E%3C/svg%3E']
   
-  const handlePrevImage = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
+  const handlePrevImage = (e?: React.MouseEvent | React.TouchEvent) => {
+    e?.preventDefault()
+    e?.stopPropagation()
     setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))
   }
   
-  const handleNextImage = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
+  const handleNextImage = (e?: React.MouseEvent | React.TouchEvent) => {
+    e?.preventDefault()
+    e?.stopPropagation()
     setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))
+  }
+  
+  // Touch handlers for swipe
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchEndX.current = null
+    touchStartX.current = e.targetTouches[0].clientX
+  }
+  
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX
+  }
+  
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartX.current || !touchEndX.current) return
+    
+    const distance = touchStartX.current - touchEndX.current
+    const isSwipe = Math.abs(distance) > minSwipeDistance
+    
+    if (isSwipe && images.length > 1) {
+      if (distance > 0) {
+        // Swiped left -> next image
+        handleNextImage()
+      } else {
+        // Swiped right -> previous image
+        handlePrevImage()
+      }
+      // Prevent navigation when swiping
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    
+    touchStartX.current = null
+    touchEndX.current = null
   }
   
   const handleFavorite = (e: React.MouseEvent) => {
@@ -57,12 +95,17 @@ export default function ResortCard({ resort, compact = false, nights = 0, showTo
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        {/* Image Container - Enhanced Style */}
-        <div className="relative overflow-hidden aspect-square rounded-xl sm:rounded-2xl bg-slate-100 shadow-card group-hover:shadow-card-hover transition-all duration-300">
+        {/* Image Container - Enhanced Style with Touch Swipe */}
+        <div 
+          className="relative overflow-hidden aspect-square rounded-xl sm:rounded-2xl bg-slate-100 shadow-card group-hover:shadow-card-hover transition-all duration-300 touch-pan-y"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           <img 
             src={images[currentImageIndex]} 
             alt={resort.name} 
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 pointer-events-none"
           />
           
           {/* Image Navigation Arrows - Always visible on mobile, hover on desktop */}

@@ -110,9 +110,9 @@ export default function SystemHealthPage() {
 
       const apiLatency = performance.now() - startTime;
 
-      // Determine statuses
-      const dbStatus = dbResponseTime < 100 ? 'healthy' : dbResponseTime < 500 ? 'degraded' : 'down';
-      const apiStatus = apiLatency < 2000 ? 'healthy' : apiLatency < 5000 ? 'degraded' : 'down';
+      // Determine statuses (thresholds adjusted for Supabase free tier)
+      const dbStatus = dbResponseTime < 300 ? 'healthy' : dbResponseTime < 1000 ? 'degraded' : 'down';
+      const apiStatus = apiLatency < 3000 ? 'healthy' : apiLatency < 8000 ? 'degraded' : 'down';
 
       setMetrics({
         users: {

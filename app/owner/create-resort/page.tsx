@@ -301,7 +301,7 @@ export default function CreateResort() {
             <input
               type="text"
               placeholder="e.g., Paradise Beach Resort"
-              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors text-sm sm:text-base"
+              className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border-2 rounded-xl focus:outline-none focus:ring-2 shadow-sm transition-colors text-sm sm:text-base ${errors.name ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-slate-200 focus:ring-resort-400 focus:border-resort-400 hover:border-slate-300'}`}
               {...register('name')}
             />
             {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
@@ -431,10 +431,11 @@ export default function CreateResort() {
                   <label className="block text-sm font-bold text-slate-700 mb-2">Base Price per Night (₱) *</label>
                   <input
                     type="number"
+                    min={0}
                     placeholder="e.g., 5000"
                     className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors bg-white"
                     {...register('price', {
-                      setValueAs: (value) => (value === '' ? undefined : Number(value)),
+                      setValueAs: (value) => (value === '' ? undefined : Math.max(0, Number(value))),
                     })}
                   />
                   {errors.price && <p className="text-xs text-red-500 mt-1">{errors.price.message}</p>}
@@ -444,10 +445,11 @@ export default function CreateResort() {
                   <label className="block text-sm font-bold text-slate-700 mb-2">Day Tour Price (₱)</label>
                   <input
                     type="number"
+                    min={0}
                     placeholder="e.g., 4999"
                     className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors bg-white"
                     {...register('day_tour_price', {
-                      setValueAs: (value) => (value === '' ? null : Number(value)),
+                      setValueAs: (value) => (value === '' ? null : Math.max(0, Number(value))),
                     })}
                   />
                 </div>
@@ -456,10 +458,11 @@ export default function CreateResort() {
                   <label className="block text-sm font-bold text-slate-700 mb-2">Night Tour Price (₱)</label>
                   <input
                     type="number"
+                    min={0}
                     placeholder="e.g., 5999"
                     className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors bg-white"
                     {...register('night_tour_price', {
-                      setValueAs: (value) => (value === '' ? null : Number(value)),
+                      setValueAs: (value) => (value === '' ? null : Math.max(0, Number(value))),
                     })}
                   />
                 </div>
@@ -468,10 +471,11 @@ export default function CreateResort() {
                   <label className="block text-sm font-bold text-slate-700 mb-2">Overnight Stay (₱)</label>
                   <input
                     type="number"
+                    min={0}
                     placeholder="e.g., 7999"
                     className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors bg-white"
                     {...register('overnight_price', {
-                      setValueAs: (value) => (value === '' ? null : Number(value)),
+                      setValueAs: (value) => (value === '' ? null : Math.max(0, Number(value))),
                     })}
                   />
                 </div>
@@ -480,10 +484,11 @@ export default function CreateResort() {
                   <label className="block text-sm font-bold text-slate-700 mb-2">Additional Guest Fee (₱)</label>
                   <input
                     type="number"
+                    min={0}
                     placeholder="e.g., 350"
                     className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors bg-white"
                     {...register('additional_guest_fee', {
-                      setValueAs: (value) => (value === '' ? null : Number(value)),
+                      setValueAs: (value) => (value === '' ? null : Math.max(0, Number(value))),
                     })}
                   />
                 </div>
@@ -563,7 +568,7 @@ export default function CreateResort() {
               <input
                 type="number"
                 placeholder="e.g., 10"
-                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors"
+                className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 shadow-sm transition-colors ${errors.capacity ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-slate-200 focus:ring-resort-400 focus:border-resort-400 hover:border-slate-300'}`}
                 {...register('capacity', {
                   setValueAs: (value) => (value === '' ? undefined : Number(value)),
                 })}
@@ -603,16 +608,34 @@ export default function CreateResort() {
             <input
               type="tel"
               placeholder="e.g., +63 912 345 6789"
-              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors"
+              className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 shadow-sm transition-colors ${errors.contact_number ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-slate-200 focus:ring-resort-400 focus:border-resort-400 hover:border-slate-300'}`}
               {...register('contact_number')}
             />
             {errors.contact_number && <p className="text-xs text-red-500 mt-1">{errors.contact_number.message}</p>}
           </div>
 
           <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <FaStar className="w-5 h-5" />
-              <label className="text-sm font-bold text-slate-700">Amenities</label>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <FaStar className="w-5 h-5" />
+                <label className="text-sm font-bold text-slate-700">Amenities</label>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setValue('amenities', [...AMENITIES], { shouldValidate: true, shouldDirty: true })}
+                  className="px-3 py-1.5 text-xs font-medium bg-resort-100 text-resort-700 rounded-lg hover:bg-resort-200 transition-colors"
+                >
+                  Select All
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setValue('amenities', [], { shouldValidate: true, shouldDirty: true })}
+                  className="px-3 py-1.5 text-xs font-medium bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors"
+                >
+                  Clear All
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {AMENITIES.map((amenity) => (
@@ -766,7 +789,7 @@ export default function CreateResort() {
             <textarea
               rows={5}
               placeholder="Describe your resort, amenities, and what makes it special..."
-              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors resize-none"
+              className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 shadow-sm transition-colors resize-none ${errors.description ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-slate-200 focus:ring-resort-400 focus:border-resort-400 hover:border-slate-300'}`}
               {...register('description')}
             />
             {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description.message}</p>}
@@ -833,10 +856,10 @@ export default function CreateResort() {
             </Select>
           </div>
 
-          <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-6">
+          <div className={`bg-slate-50 border-2 rounded-xl p-6 ${errors.images ? 'border-red-400' : 'border-slate-200'}`}>
             <div className="flex items-center gap-2 mb-3">
               <FiCamera className="w-5 h-5" />
-              <label className="text-sm font-bold text-slate-700">Resort Images</label>
+              <label className="text-sm font-bold text-slate-700">Resort Images * <span className="text-slate-500 font-normal">(1 required, up to 10)</span></label>
             </div>
             <ImageUploader 
               onUpload={handleImageUpload} 
