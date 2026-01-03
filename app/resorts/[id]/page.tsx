@@ -1285,19 +1285,16 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                   <div className="space-y-1">
                     <label className="block text-xs sm:text-sm font-semibold text-slate-700">Guests</label>
                     <input 
-                      type="text" 
+                      type="number" 
                       inputMode="numeric"
-                      pattern="[0-9]*"
-                      placeholder="1"
-                      value={guests === 1 ? '' : guests}
+                      min={1}
+                      max={resort.capacity}
+                      value={guests}
                       onChange={(e) => {
-                        const val = e.target.value === '' ? 1 : parseInt(e.target.value) || 1
+                        const val = parseInt(e.target.value) || 1
                         setGuests(Math.min(Math.max(1, val), resort.capacity))
                       }}
-                      onBlur={(e) => {
-                        if (e.target.value === '') setGuests(1)
-                      }}
-                      className="w-full px-2 sm:px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-500 text-center text-lg font-medium placeholder:text-slate-400"
+                      className="w-full px-2 sm:px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-500 text-center text-lg font-medium [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                     <p className="text-[10px] sm:text-xs text-slate-500">Max: {resort.capacity}</p>
                   </div>
