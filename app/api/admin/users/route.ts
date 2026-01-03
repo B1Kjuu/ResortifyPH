@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 // Create admin client with service role key for user management
@@ -19,57 +20,50 @@ function getAdminSupabase() {
   })
 }
 
-// Verify the requesting user is an admin
-async function verifyAdmin(request: NextRequest) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  
-  if (!url || !anonKey) {
-    return { isAdmin: false, error: 'Server configuration error' }
-  }
-  
-  // Get auth token from cookies
-  const cookieStore = await cookies()
-  const accessToken = cookieStore.get('sb-access-token')?.value || 
-    cookieStore.get('supabase-auth-token')?.value ||
-    request.headers.get('authorization')?.replace('Bearer ', '')
-  
-  if (!accessToken) {
-    return { isAdmin: false, error: 'Not authenticated' }
-  }
-  
-  const supabase = createClient(url, anonKey, {
-    global: {
-      headers: {
-        Authorization: `Bearer ${accessToken}`
+// Verify the requesting user is an admin using SSR client
+async function verifyAdmin() {
+  try {
+    const cookieStore = await cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) { return cookieStore.get(name)?.value },
+          set() {},
+          remove() {},
+        },
       }
+    )
+    
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+      return { isAdmin: false, error: 'Not authenticated' }
     }
-  })
-  
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) {
-    return { isAdmin: false, error: 'Invalid session' }
+    
+    // Check if user is admin
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+    
+    if (!profile?.is_admin) {
+      return { isAdmin: false, error: 'Not authorized' }
+    }
+    
+    return { isAdmin: true, userId: user.id }
+  } catch (err) {
+    console.error('Auth verification error:', err)
+    return { isAdmin: false, error: 'Authentication failed' }
   }
-  
-  // Check if user is admin
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single()
-  
-  if (!profile?.is_admin) {
-    return { isAdmin: false, error: 'Not authorized' }
-  }
-  
-  return { isAdmin: true, userId: user.id }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
     // Verify admin
-    const authCheck = await verifyAdmin(request)
+    const authCheck = await verifyAdmin()
     if (!authCheck.isAdmin) {
       return NextResponse.json({ error: authCheck.error }, { status: 403 })
     }
