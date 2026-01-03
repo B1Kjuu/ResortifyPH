@@ -1293,7 +1293,12 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                       onChange={(e) => {
                         const val = parseInt(e.target.value)
                         if (!isNaN(val) && val >= 1) {
-                          setGuests(Math.min(val, resort.capacity))
+                          const clamped = Math.min(val, resort.capacity)
+                          setGuests(clamped)
+                          // Also clamp the display value to prevent excessive digits
+                          if (val > resort.capacity) {
+                            e.target.value = String(clamped)
+                          }
                         }
                       }}
                       onBlur={(e) => {
@@ -1316,9 +1321,14 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                       type="text"
                       inputMode="numeric"
                       pattern="[0-9]*"
+                      maxLength={2}
                       placeholder="0"
                       value={childrenCount === 0 ? '' : childrenCount}
-                      onChange={(e) => setChildrenCount(e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value) || 0))}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/\D/g, '').slice(0, 2)
+                        const val = raw === '' ? 0 : Math.min(99, parseInt(raw) || 0)
+                        setChildrenCount(val)
+                      }}
                       onBlur={(e) => {
                         if (e.target.value === '') setChildrenCount(0)
                       }}
@@ -1332,11 +1342,14 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                       type="text"
                       inputMode="numeric"
                       pattern="[0-9]*"
+                      maxLength={2}
                       placeholder="0"
                       value={petsCount === 0 ? '' : petsCount}
                       onChange={(e) => {
                         if (!resort?.amenities?.includes('Pet Friendly')) return
-                        setPetsCount(e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value) || 0))
+                        const raw = e.target.value.replace(/\D/g, '').slice(0, 2)
+                        const val = raw === '' ? 0 : Math.min(20, parseInt(raw) || 0)
+                        setPetsCount(val)
                       }}
                       onBlur={(e) => {
                         if (e.target.value === '') setPetsCount(0)
