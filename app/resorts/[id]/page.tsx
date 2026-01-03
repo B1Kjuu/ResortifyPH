@@ -1289,10 +1289,22 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                       inputMode="numeric"
                       min={1}
                       max={resort.capacity}
-                      value={guests}
+                      defaultValue={1}
                       onChange={(e) => {
-                        const val = parseInt(e.target.value) || 1
-                        setGuests(Math.min(Math.max(1, val), resort.capacity))
+                        const val = parseInt(e.target.value)
+                        if (!isNaN(val) && val >= 1) {
+                          setGuests(Math.min(val, resort.capacity))
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const val = parseInt(e.target.value)
+                        if (isNaN(val) || val < 1) {
+                          e.target.value = '1'
+                          setGuests(1)
+                        } else if (val > resort.capacity) {
+                          e.target.value = String(resort.capacity)
+                          setGuests(resort.capacity)
+                        }
                       }}
                       className="w-full px-2 sm:px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-500 text-center text-lg font-medium [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
