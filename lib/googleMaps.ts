@@ -229,29 +229,36 @@ export async function calculateBatchDistances(
 
 /**
  * Search for places using Google Places Autocomplete API
+ * Enhanced to return full addresses like Google Maps website
  */
 export async function searchPlaces(query: string): Promise<Array<{
   placeId: string
   description: string
   mainText: string
   secondaryText: string
+  fullAddress?: string
 }>> {
   if (!GOOGLE_MAPS_API_KEY || !query.trim()) {
     return []
   }
 
   try {
+    // Use Places Autocomplete with additional parameters for better results
     const response = await fetch(
-      `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(query)}&components=country:ph&key=${GOOGLE_MAPS_API_KEY}`
+      `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(query)}&components=country:ph&types=address|establishment|geocode&key=${GOOGLE_MAPS_API_KEY}`
     )
     const data = await response.json()
 
     if (data.status === 'OK' && data.predictions) {
       return data.predictions.map((p: any) => ({
         placeId: p.place_id,
+        // Use the full description from the prediction which includes full address
         description: p.description,
         mainText: p.structured_formatting?.main_text || p.description,
+        // Combine secondary text for fuller address display
         secondaryText: p.structured_formatting?.secondary_text || '',
+        // Store the complete description as fullAddress
+        fullAddress: p.description,
       }))
     }
 

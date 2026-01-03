@@ -3,7 +3,14 @@ import React, { useEffect, useState, useCallback, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import 'leaflet/dist/leaflet.css'
 import { FiSearch, FiLoader, FiMapPin, FiInfo, FiCheck } from 'react-icons/fi'
-import { isGoogleMapsEnabled, reverseGeocode as googleReverseGeocode, geocodeAddress, searchPlaces, getPlaceDetails } from '../lib/googleMaps'
+import { isGoogleMapsEnabled } from '../lib/googleMaps'
+
+// Extend Window interface for Google Maps
+declare global {
+  interface Window {
+    google: any
+  }
+}
 
 // Dynamic imports for Leaflet components
 const MapContainer = dynamic(
@@ -332,8 +339,61 @@ export default function LocationPicker({
   const position: [number, number] | null = latitude && longitude ? [latitude, longitude] : null
   // Ref for map instance
   const mapRef = React.useRef<any>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
+  const autocompleteRef = useRef<any>(null)
   const searchDebounceRef = useRef<NodeJS.Timeout | null>(null)
-  // (Removed: zoom/pan logic now handled in InteractiveMap)
+  const [googleLoaded, setGoogleLoaded] = useState(false)
+  
+  // Load Google Places Autocomplete (client-side library)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    
+    // Check if already loaded
+    if (window.google?.maps?.places) {
+      setGoogleLoaded(true)
+      return
+    }
+    
+    // Wait for Google Maps to load
+    const checkLoaded = setInterval(() => {
+      if (window.google?.maps?.places) {
+        setGoogleLoaded(true)
+        clearInterval(checkLoaded)
+      }
+    }, 100)
+    
+    return () => clearInterval(checkLoaded)
+  }, [])
+  
+  // Initialize Google Places Autocomplete on input
+  useEffect(() => {
+    if (!googleLoaded || !searchInputRef.current || autocompleteRef.current) return
+    
+    try {
+      autocompleteRef.current = new window.google.maps.places.Autocomplete(
+        searchInputRef.current,
+        {
+          componentRestrictions: { country: 'ph' },
+          fields: ['geometry', 'formatted_address', 'name', 'address_components'],
+          types: ['geocode', 'establishment'],
+        }
+      )
+      
+      autocompleteRef.current.addListener('place_changed', () => {
+        const place = autocompleteRef.current.getPlace()
+        if (place.geometry?.location) {
+          const lat = place.geometry.location.lat()
+          const lng = place.geometry.location.lng()
+          onLocationChange(lat, lng)
+          onAddressChange(place.formatted_address || place.name || '')
+          setSearchQuery('')
+          setSearchResults([])
+        }
+      })
+    } catch (err) {
+      console.error('Failed to initialize Google Places Autocomplete:', err)
+    }
+  }, [googleLoaded, onLocationChange, onAddressChange])
 
   // Utility: Clean address to remove non-Latin characters
   const cleanAddress = (address: string) => {
@@ -341,16 +401,21 @@ export default function LocationPicker({
     return address.replace(/[^\p{Script=Latin}0-9.,\-()'"\s]/gu, '').replace(/\s+/g, ' ').trim()
   }
 
-  // Reverse geocode to get address from coordinates - uses Google if available, otherwise Nominatim
+  // Reverse geocode to get address from coordinates - uses Google Geocoder (client-side)
   const reverseGeocode = async (lat: number, lng: number) => {
     try {
-      // Try Google Maps API first if available
-      if (isGoogleMapsEnabled()) {
-        const result = await googleReverseGeocode(lat, lng)
-        if (result?.formattedAddress) {
-          onAddressChange(result.formattedAddress)
-          return
-        }
+      // Use Google Maps Geocoder (client-side) if available
+      if (window.google?.maps?.Geocoder) {
+        const geocoder = new window.google.maps.Geocoder()
+        geocoder.geocode(
+          { location: { lat, lng } },
+          (results: any[], status: string) => {
+            if (status === 'OK' && results?.[0]) {
+              onAddressChange(results[0].formatted_address)
+            }
+          }
+        )
+        return
       }
       
       // Fallback to Nominatim (OpenStreetMap)
@@ -391,34 +456,17 @@ export default function LocationPicker({
     )
   }, [onLocationChange])
 
-  // Search for address - uses Google Places Autocomplete if available, otherwise Nominatim (OpenStreetMap)
-  const handleSearch = async (query?: string) => {
-    const searchTerm = query ?? searchQuery
-    if (!searchTerm.trim()) return;
+  // Manual search fallback (when Google Autocomplete is not available)
+  // Google Places Autocomplete handles search automatically via the input
+  const handleManualSearch = async () => {
+    if (!searchQuery.trim() || googleLoaded) return; // Skip if Google Autocomplete is active
+    
     setIsSearching(true);
     setHasSearched(true);
     try {
-      // Try Google Places Autocomplete API first if available (better results like Google Maps)
-      if (isGoogleMapsEnabled()) {
-        const places = await searchPlaces(searchTerm)
-        if (places && places.length > 0) {
-          // Convert to search results format with placeId for later lookup
-          setSearchResults(places.map(p => ({
-            lat: '', // Will be fetched when selected
-            lon: '',
-            display_name: p.description,
-            type: p.secondaryText || 'Google Maps',
-            placeId: p.placeId,
-            mainText: p.mainText,
-          })))
-          setIsSearching(false)
-          return
-        }
-      }
-      
-      // Fallback to Nominatim
+      // Fallback to Nominatim (OpenStreetMap) when Google is not available
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&countrycodes=ph&limit=5`,
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&countrycodes=ph&limit=5`,
         { headers: { 'User-Agent': 'ResortifyPH' } }
       );
       const data = await response.json();
@@ -434,52 +482,9 @@ export default function LocationPicker({
       setIsSearching(false);
     }
   }
-  
-  // Auto-search with debounce when query changes
-  useEffect(() => {
-    if (searchDebounceRef.current) {
-      clearTimeout(searchDebounceRef.current)
-    }
-    
-    if (searchQuery.trim().length < 2) {
-      setSearchResults([])
-      setHasSearched(false)
-      return
-    }
-    
-    searchDebounceRef.current = setTimeout(() => {
-      handleSearch(searchQuery)
-    }, 400)
-    
-    return () => {
-      if (searchDebounceRef.current) {
-        clearTimeout(searchDebounceRef.current)
-      }
-    }
-  }, [searchQuery])
 
-  // Handle search result selection
-  const handleSelectResult = async (result: any) => {
-    // If result has placeId (Google Places), fetch details to get coordinates
-    if (result.placeId) {
-      setIsSearching(true)
-      try {
-        const details = await getPlaceDetails(result.placeId)
-        if (details) {
-          onLocationChange(details.lat, details.lng)
-          onAddressChange(details.formattedAddress)
-          setSearchResults([])
-          setSearchQuery('')
-          setIsSearching(false)
-          return
-        }
-      } catch (err) {
-        console.error('Failed to get place details:', err)
-      }
-      setIsSearching(false)
-    }
-    
-    // Fallback for Nominatim results
+  // Handle selecting a manual search result (for Nominatim fallback)
+  const handleSelectResult = (result: any) => {
     const lat = parseFloat(result.lat)
     const lng = parseFloat(result.lon)
     onLocationChange(lat, lng)
@@ -487,8 +492,6 @@ export default function LocationPicker({
     onAddressChange(cleaned)
     setSearchResults([])
     setSearchQuery('')
-    // Pan/zoom map to selected place
-    // (Removed: zoom/pan logic now handled in InteractiveMap)
   }
 
   // Handle map click
@@ -503,26 +506,36 @@ export default function LocationPicker({
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="flex-1 relative">
           <div className="flex gap-2">
+            {/* Google Places Autocomplete input - Google handles the dropdown automatically */}
             <input
+              ref={searchInputRef}
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleSearch())}
-              placeholder="Search for an address in the Philippines..."
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !googleLoaded) {
+                  e.preventDefault()
+                  handleManualSearch()
+                }
+              }}
+              placeholder={googleLoaded ? "Search for an address..." : "Search for an address in the Philippines..."}
               className="flex-1 px-4 py-2.5 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 text-sm"
             />
-            <button
-              type="button"
-              onClick={() => handleSearch()}
-              disabled={isSearching}
-              className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium text-sm transition-colors disabled:opacity-50"
-            >
-              {isSearching ? '...' : <FiSearch className="w-5 h-5" />}
-            </button>
+            {/* Only show search button when Google Autocomplete is not available */}
+            {!googleLoaded && (
+              <button
+                type="button"
+                onClick={() => handleManualSearch()}
+                disabled={isSearching}
+                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium text-sm transition-colors disabled:opacity-50"
+              >
+                {isSearching ? '...' : <FiSearch className="w-5 h-5" />}
+              </button>
+            )}
           </div>
-          {/* Search results dropdown */}
-          {searchResults.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden">
+          {/* Manual search results dropdown (only for Nominatim fallback) */}
+          {!googleLoaded && searchResults.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden max-h-[300px] overflow-y-auto">
               {searchResults.map((result, idx) => (
                 <button
                   key={idx}
@@ -530,13 +543,12 @@ export default function LocationPicker({
                   onClick={() => handleSelectResult(result)}
                   className="w-full px-4 py-3 text-left hover:bg-resort-50 transition-colors border-b border-slate-100 last:border-0"
                 >
-                  <p className="text-sm font-medium text-slate-900 truncate">{result.display_name}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">{result.type}</p>
+                  <p className="text-sm font-medium text-slate-900 line-clamp-2">{result.display_name}</p>
                 </button>
               ))}
             </div>
           )}
-          {searchResults.length === 0 && searchQuery.trim().length >= 2 && hasSearched && !isSearching && (
+          {!googleLoaded && searchResults.length === 0 && searchQuery.trim().length >= 2 && hasSearched && !isSearching && (
             <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden">
               <div className="px-4 py-3 text-slate-500 text-sm">No results found</div>
             </div>
@@ -564,8 +576,7 @@ export default function LocationPicker({
       {/* Instructions */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
         <p className="text-sm text-blue-800 flex items-center gap-1">
-          <span className="font-semibold inline-flex items-center gap-1"><FiInfo className="w-4 h-4" /> Tip:</span> Click on the map to pin your resort location, or drag the marker to adjust. 
-          You can also search for an address or use your current location.
+          <span className="font-semibold inline-flex items-center gap-1"><FiInfo className="w-4 h-4" /> Tip:</span> {googleLoaded ? 'Start typing to search for addresses. ' : ''}Click on the map to pin your resort location, or drag the marker to adjust.
         </p>
       </div>
       

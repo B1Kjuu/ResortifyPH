@@ -1045,18 +1045,39 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
                   <div className="rounded-xl overflow-hidden border border-slate-200 w-full aspect-[4/3] sm:aspect-[16/9] relative group">
                     {resort.latitude && resort.longitude ? (
-                      // Use static map image (no API key needed) with link to interactive map
+                      // Use Google Static Maps API for reliable map display
                       <a
                         href={`https://www.google.com/maps/search/?api=1&query=${resort.latitude},${resort.longitude}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="block w-full h-full relative"
                       >
+                        {/* Google Static Maps - High quality, reliable */}
                         <img
-                          src={`https://maps.geoapify.com/v1/staticmap?style=osm-bright&width=800&height=450&center=lonlat:${resort.longitude},${resort.latitude}&zoom=15&marker=lonlat:${resort.longitude},${resort.latitude};color:%2322c55e;size:large&apiKey=6dc7fb95a3b246cfa0f3bcef5ce9ed9a`}
+                          src={`https://maps.googleapis.com/maps/api/staticmap?center=${resort.latitude},${resort.longitude}&zoom=15&size=800x450&scale=2&maptype=roadmap&markers=color:red%7C${resort.latitude},${resort.longitude}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}`}
                           alt={`Map showing ${resort.name} location`}
                           className="w-full h-full object-cover"
                           loading="lazy"
+                          onError={(e) => {
+                            // Fallback to a placeholder if Google Static Maps fails
+                            const target = e.target as HTMLImageElement
+                            target.onerror = null
+                            target.style.display = 'none'
+                            const parent = target.parentElement
+                            if (parent) {
+                              const fallback = document.createElement('div')
+                              fallback.className = 'w-full h-full bg-gradient-to-br from-blue-50 to-green-50 flex flex-col items-center justify-center gap-2'
+                              fallback.innerHTML = `
+                                <svg class="w-12 h-12 text-resort-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                <p class="text-sm font-medium text-slate-700">View on Google Maps</p>
+                                <p class="text-xs text-slate-500">${resort.latitude.toFixed(4)}, ${resort.longitude.toFixed(4)}</p>
+                              `
+                              parent.appendChild(fallback)
+                            }
+                          }}
                         />
                         {/* Hover overlay */}
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">

@@ -72,6 +72,7 @@ export default function middleware(req: NextRequest) {
     `https://images.unsplash.com`,
     `https://lh3.googleusercontent.com`,
     `https://*.tile.openstreetmap.org`,
+    `https://staticmap.openstreetmap.de`, // OpenStreetMap static map service
     `https://maps.googleapis.com`,
     `https://maps.gstatic.com`,
     `https://*.ggpht.com`,
