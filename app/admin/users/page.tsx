@@ -27,7 +27,9 @@ export default function AdminUsersPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended'>('all')
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [showSuspendModal, setShowSuspendModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [suspendReason, setSuspendReason] = useState('')
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [processing, setProcessing] = useState(false)
   const router = useRouter()
 
@@ -123,6 +125,34 @@ export default function AdminUsersPage() {
     } catch (err) {
       console.error('Error unsuspending user:', err)
       alert('Failed to unsuspend user')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  async function deleteUser(userId: string) {
+    setProcessing(true)
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId })
+      })
+      
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete user')
+      }
+      
+      await loadUsers()
+      setShowDeleteModal(false)
+      setSelectedUser(null)
+      setDeleteConfirmText('')
+      alert(result.message || 'User deleted successfully')
+    } catch (err: any) {
+      console.error('Error deleting user:', err)
+      alert(err.message || 'Failed to delete user')
     } finally {
       setProcessing(false)
     }
@@ -360,6 +390,15 @@ export default function AdminUsersPage() {
                               <FiShield className="w-4 h-4" />
                             </button>
                           )}
+                          {!user.is_admin && (
+                            <button
+                              onClick={() => { setSelectedUser(user); setShowDeleteModal(true) }}
+                              className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                              title="Delete user"
+                            >
+                              <FiTrash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -377,7 +416,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* User Details Modal */}
-      {selectedUser && !showSuspendModal && (
+      {selectedUser && !showSuspendModal && !showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl max-h-[80vh] overflow-y-auto">
             <div className="sticky top-0 z-10 flex items-center justify-between p-4 bg-white border-b border-slate-200">
@@ -484,6 +523,68 @@ export default function AdminUsersPage() {
                 </button>
                 <button
                   onClick={() => { setShowSuspendModal(false); setSuspendReason('') }}
+                  disabled={processing}
+                  className="px-6 py-3 border border-slate-300 text-slate-600 rounded-xl hover:bg-slate-100 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete User Modal */}
+      {showDeleteModal && selectedUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <FiTrash2 className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-800">Delete User Permanently</h2>
+                  <p className="text-sm text-slate-500">{selectedUser.email}</p>
+                </div>
+              </div>
+
+              <div className="p-4 bg-red-50 border border-red-200 rounded-xl mb-4">
+                <p className="text-sm text-red-800 font-medium mb-2">⚠️ This action is irreversible!</p>
+                <p className="text-sm text-red-600">
+                  Deleting this user will permanently remove:
+                </p>
+                <ul className="text-sm text-red-600 mt-2 list-disc list-inside">
+                  <li>Their profile and account</li>
+                  <li>All their bookings</li>
+                  <li>All their resorts (if owner)</li>
+                  <li>All chat messages and notifications</li>
+                </ul>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Type <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded">DELETE</span> to confirm
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={e => setDeleteConfirmText(e.target.value)}
+                  placeholder="Type DELETE here"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => deleteUser(selectedUser.id)}
+                  disabled={processing || deleteConfirmText !== 'DELETE'}
+                  className="flex-1 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {processing ? 'Deleting...' : 'Delete User Forever'}
+                </button>
+                <button
+                  onClick={() => { setShowDeleteModal(false); setDeleteConfirmText('') }}
                   disabled={processing}
                   className="px-6 py-3 border border-slate-300 text-slate-600 rounded-xl hover:bg-slate-100 transition-colors"
                 >
