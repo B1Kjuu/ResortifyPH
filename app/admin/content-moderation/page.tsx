@@ -239,7 +239,7 @@ export default function ContentModerationPage() {
   const pendingReports = reports.filter(r => r.status === 'pending').length
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white pb-24 lg:pb-8">
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -248,8 +248,11 @@ export default function ContentModerationPage() {
               <Link href="/admin/command-center" className="text-sm text-resort-500 hover:underline mb-2 inline-block">← Back to Command Center</Link>
               <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
                 <FiMessageSquare className="w-6 h-6 text-slate-600" />
-                Content Moderation
+                Reports & Content Review
               </h1>
+              <p className="text-sm text-slate-600 mt-1">
+                Handle user reports from the Report Button, moderate reviews, and monitor chat messages for policy violations.
+              </p>
             </div>
             <button
               onClick={loadTabData}

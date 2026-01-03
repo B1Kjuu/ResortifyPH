@@ -5,9 +5,9 @@ import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '../lib/supabaseClient'
 import { 
   FiHome, FiUsers, FiCheckCircle, FiMessageSquare, FiDollarSign, 
-  FiBookOpen, FiSettings, FiMenu, FiX, FiChevronRight, FiShield,
-  FiBell, FiActivity, FiAlertTriangle, FiMap, FiLogOut, FiBarChart2,
-  FiFileText, FiFlag, FiUserCheck, FiVolume2, FiToggleRight, FiHeart
+  FiBookOpen, FiMenu, FiX, FiChevronRight, FiShield,
+  FiMap, FiLogOut, FiBarChart2,
+  FiFileText, FiFlag, FiUserCheck, FiVolume2, FiHeart
 } from 'react-icons/fi'
 
 interface AdminLayoutProps {
@@ -96,22 +96,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   const navItems: NavItem[] = [
     { href: '/admin/command-center', label: 'Command Center', icon: <FiHome className="w-5 h-5" /> },
-    { href: '/admin/dashboard', label: 'Dashboard', icon: <FiActivity className="w-5 h-5" /> },
     { href: '/admin/analytics', label: 'Analytics', icon: <FiBarChart2 className="w-5 h-5" /> },
     { href: '/admin/approvals', label: 'Resort Approvals', icon: <FiCheckCircle className="w-5 h-5" />, badge: stats.pendingResorts },
-    { href: '/admin/resorts', label: 'All Resorts', icon: <FiMap className="w-5 h-5" /> },
+    { href: '/admin/resorts', label: 'Active Resorts', icon: <FiMap className="w-5 h-5" /> },
     { href: '/admin/users', label: 'User Management', icon: <FiUsers className="w-5 h-5" /> },
-    { href: '/admin/verifications', label: 'Verifications', icon: <FiUserCheck className="w-5 h-5" /> },
-    { href: '/admin/content-moderation', label: 'Content Moderation', icon: <FiMessageSquare className="w-5 h-5" />, badge: stats.openReports },
-    { href: '/admin/disputes', label: 'Disputes', icon: <FiFlag className="w-5 h-5" /> },
-    { href: '/admin/fraud-detection', label: 'Fraud Detection', icon: <FiAlertTriangle className="w-5 h-5" /> },
+    { href: '/admin/verifications', label: 'ID Verifications', icon: <FiUserCheck className="w-5 h-5" /> },
+    { href: '/admin/content-moderation', label: 'Reports & Reviews', icon: <FiMessageSquare className="w-5 h-5" />, badge: stats.openReports },
+    { href: '/admin/disputes', label: 'Booking Disputes', icon: <FiFlag className="w-5 h-5" /> },
     { href: '/admin/payment-oversight', label: 'Payment Oversight', icon: <FiDollarSign className="w-5 h-5" /> },
-    { href: '/admin/resort-bookings', label: 'Resort Bookings', icon: <FiBookOpen className="w-5 h-5" /> },
-    { href: '/admin/chat-audit', label: 'Chat Audit', icon: <FiMessageSquare className="w-5 h-5" /> },
-    { href: '/admin/notifications-audit', label: 'Notifications Audit', icon: <FiBell className="w-5 h-5" /> },
-    { href: '/admin/audit-logs', label: 'Audit Logs', icon: <FiFileText className="w-5 h-5" /> },
+    { href: '/admin/resort-bookings', label: 'All Bookings', icon: <FiBookOpen className="w-5 h-5" /> },
     { href: '/admin/announcements', label: 'Announcements', icon: <FiVolume2 className="w-5 h-5" /> },
-    { href: '/admin/feature-flags', label: 'Feature Flags', icon: <FiToggleRight className="w-5 h-5" /> },
+    { href: '/admin/audit-logs', label: 'Audit Logs', icon: <FiFileText className="w-5 h-5" /> },
     { href: '/admin/system-health', label: 'System Health', icon: <FiHeart className="w-5 h-5" /> },
   ]
 

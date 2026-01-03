@@ -218,7 +218,7 @@ export default function FeatureFlagsPage() {
   const enabledCount = flags.filter(f => f.is_enabled).length;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 lg:p-8">
+    <div className="min-h-screen bg-gray-50 p-4 lg:p-8 pb-24 lg:pb-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>

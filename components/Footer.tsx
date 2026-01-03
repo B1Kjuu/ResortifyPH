@@ -2,10 +2,18 @@
 import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { usePathname } from 'next/navigation'
 import { FiMail } from 'react-icons/fi'
 import { FaFacebook, FaInstagram } from 'react-icons/fa'
 
 export default function Footer(){
+  const pathname = usePathname()
+  
+  // Don't render Footer on admin pages - AdminLayout has its own footer
+  if (pathname?.startsWith('/admin')) {
+    return null
+  }
+  
   // Lightweight client-side navigation helper for E2E stability
   function push(path: string) {
     try { (window as any).next?.router?.push?.(path) } catch {}

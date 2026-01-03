@@ -79,7 +79,7 @@ export default function AdminResortDetail({ params }: { params: { id: string } }
   if (!isAdmin || !resort) return <div className="w-full px-6 py-10 text-center">Unauthorized or not found</div>
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <div className="w-full min-h-screen bg-gradient-to-b from-slate-50 to-white pb-24 lg:pb-8">
       <div className="w-full px-4 sm:px-6 lg:px-8 py-12 max-w-6xl mx-auto">
         <Link href="/admin/approvals" className="text-sm text-resort-500 font-semibold mb-6 inline-flex items-center gap-2">← Back to Approvals</Link>
         <h1 className="text-2xl font-bold mb-4">Resort Submission Details</h1>

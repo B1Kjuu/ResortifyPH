@@ -27,6 +27,13 @@ function deleteCookie(name: string) {
 }
 
 export default function Navbar(){
+  const pathname = usePathname()
+  
+  // Don't render Navbar on admin pages - AdminLayout has its own navigation
+  if (pathname?.startsWith('/admin')) {
+    return null
+  }
+  
   const [user, setUser] = useState<any>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [userRole, setUserRole] = useState<string>('')
@@ -41,7 +48,6 @@ export default function Navbar(){
   const [pendingHostSwitch, setPendingHostSwitch] = useState(false)
   const authCompletedRef = useRef(false)
   const router = useRouter()
-  const pathname = usePathname()
   const searchParams = useSearchParams()
   const isAdminContext = isAdmin && pathname?.startsWith('/admin')
 

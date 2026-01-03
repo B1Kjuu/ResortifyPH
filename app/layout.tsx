@@ -4,6 +4,7 @@ import { headers } from 'next/headers'
 import Script from 'next/script'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import AnnouncementBanner from '../components/AnnouncementBanner'
 import { Toaster } from 'sonner'
 import RouteLoadNudger from '../components/RouteLoadNudger'
 import AuthHashHandler from '../components/AuthHashHandler'
@@ -101,6 +102,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
+        <AnnouncementBanner />
         <Navbar />
         <main className="w-full">{children}</main>
         <Footer />

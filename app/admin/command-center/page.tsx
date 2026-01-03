@@ -224,56 +224,69 @@ export default function CommandCenter(){
 
           <Link href="/admin/content-moderation" className="group bg-gradient-to-br from-amber-500 to-orange-500 text-white rounded-xl lg:rounded-2xl p-4 lg:p-6 hover:shadow-2xl hover:-translate-y-1 transition-all border-2 border-amber-400 hover:border-amber-300">
             <div className="text-2xl lg:text-4xl mb-2 lg:mb-3 group-hover:scale-110 transition-transform">💬</div>
-            <h3 className="text-sm sm:text-base lg:text-xl font-bold mb-1 lg:mb-2">Moderation</h3>
-            <p className="hidden sm:block mb-2 lg:mb-4 opacity-95 text-xs lg:text-sm">Reviews, messages, and reports</p>
+            <h3 className="text-sm sm:text-base lg:text-xl font-bold mb-1 lg:mb-2">Reports & Reviews</h3>
+            <p className="hidden sm:block mb-2 lg:mb-4 opacity-95 text-xs lg:text-sm">Handle user reports and review content</p>
             <span className="inline-block text-[10px] lg:text-xs font-bold group-hover:translate-x-2 transition-transform bg-white/20 px-2 lg:px-3 py-1 lg:py-1.5 rounded-lg">Moderate →</span>
           </Link>
 
-          <Link href="/admin/payment-oversight" className="group bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-xl lg:rounded-2xl p-4 lg:p-6 hover:shadow-2xl hover:-translate-y-1 transition-all border-2 border-green-400 hover:border-green-300">
-            <div className="text-2xl lg:text-4xl mb-2 lg:mb-3 group-hover:scale-110 transition-transform">💳</div>
-            <h3 className="text-sm sm:text-base lg:text-xl font-bold mb-1 lg:mb-2">Payments</h3>
-            <p className="hidden sm:block mb-2 lg:mb-4 opacity-95 text-xs lg:text-sm">Monitor payment submissions</p>
-            <span className="inline-block text-[10px] lg:text-xs font-bold group-hover:translate-x-2 transition-transform bg-white/20 px-2 lg:px-3 py-1 lg:py-1.5 rounded-lg">View →</span>
+          <Link href="/admin/disputes" className="group bg-gradient-to-br from-red-500 to-rose-500 text-white rounded-xl lg:rounded-2xl p-4 lg:p-6 hover:shadow-2xl hover:-translate-y-1 transition-all border-2 border-red-400 hover:border-red-300">
+            <div className="text-2xl lg:text-4xl mb-2 lg:mb-3 group-hover:scale-110 transition-transform">⚖️</div>
+            <h3 className="text-sm sm:text-base lg:text-xl font-bold mb-1 lg:mb-2">Booking Disputes</h3>
+            <p className="hidden sm:block mb-2 lg:mb-4 opacity-95 text-xs lg:text-sm">Resolve guest/host conflicts</p>
+            <span className="inline-block text-[10px] lg:text-xs font-bold group-hover:translate-x-2 transition-transform bg-white/20 px-2 lg:px-3 py-1 lg:py-1.5 rounded-lg">Resolve →</span>
           </Link>
 
           <Link href="/admin/resort-bookings" className="group bg-gradient-to-br from-blue-500 to-cyan-500 text-white rounded-xl lg:rounded-2xl p-4 lg:p-6 hover:shadow-2xl hover:-translate-y-1 transition-all border-2 border-blue-400 hover:border-blue-300">
             <div className="text-2xl lg:text-4xl mb-2 lg:mb-3 group-hover:scale-110 transition-transform">📘</div>
-            <h3 className="text-sm sm:text-base lg:text-xl font-bold mb-1 lg:mb-2">Bookings</h3>
-            <p className="hidden sm:block mb-2 lg:mb-4 opacity-95 text-xs lg:text-sm">View all bookings (read-only)</p>
+            <h3 className="text-sm sm:text-base lg:text-xl font-bold mb-1 lg:mb-2">All Bookings</h3>
+            <p className="hidden sm:block mb-2 lg:mb-4 opacity-95 text-xs lg:text-sm">View platform booking activity</p>
             <span className="inline-block text-[10px] lg:text-xs font-bold group-hover:translate-x-2 transition-transform bg-white/20 px-2 lg:px-3 py-1 lg:py-1.5 rounded-lg">View →</span>
           </Link>
 
           <Link href="/admin/resorts" className="group bg-gradient-to-br from-rose-500 to-pink-500 text-white rounded-xl lg:rounded-2xl p-4 lg:p-6 hover:shadow-2xl hover:-translate-y-1 transition-all border-2 border-rose-400 hover:border-rose-300">
             <div className="text-2xl lg:text-4xl mb-2 lg:mb-3 group-hover:scale-110 transition-transform">🏖️</div>
-            <h3 className="text-sm sm:text-base lg:text-xl font-bold mb-1 lg:mb-2">All Resorts</h3>
-            <p className="hidden sm:block mb-2 lg:mb-4 opacity-95 text-xs lg:text-sm">Browse and manage all resorts</p>
+            <h3 className="text-sm sm:text-base lg:text-xl font-bold mb-1 lg:mb-2">Active Resorts</h3>
+            <p className="hidden sm:block mb-2 lg:mb-4 opacity-95 text-xs lg:text-sm">Browse approved resorts with stats</p>
             <span className="inline-block text-[10px] lg:text-xs font-bold group-hover:translate-x-2 transition-transform bg-white/20 px-2 lg:px-3 py-1 lg:py-1.5 rounded-lg">Browse →</span>
           </Link>
         </div>
 
-        {/* Profile Info */}
-        <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-xl lg:rounded-2xl p-4 sm:p-6 lg:p-8 shadow-sm">
-          <div className="flex items-center gap-2 sm:gap-3 mb-4 lg:mb-6">
-            <span className="text-2xl lg:text-3xl">🔐</span>
-            <h3 className="text-lg lg:text-2xl font-bold text-purple-900">Your Admin Profile</h3>
+        {/* Platform Quick Stats */}
+        <div className="bg-white border border-slate-200 rounded-xl lg:rounded-2xl p-4 sm:p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-xl">📊</span>
+            <h3 className="text-lg font-bold text-slate-900">Quick Actions</h3>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 text-slate-700">
-            <div>
-              <p className="text-xs sm:text-sm font-semibold text-slate-600 mb-1">📧 Email</p>
-              <p className="text-sm sm:text-lg font-bold text-slate-900 truncate">{profile?.email}</p>
-            </div>
-            <div>
-              <p className="text-xs sm:text-sm font-semibold text-slate-600 mb-1">📝 Name</p>
-              <p className="text-sm sm:text-lg font-bold text-slate-900">{profile?.full_name || 'Not set'}</p>
-            </div>
-            <div>
-              <p className="text-xs sm:text-sm font-semibold text-slate-600 mb-1">🛡️ Role</p>
-              <p className="text-sm sm:text-lg font-bold text-purple-600">Moderator</p>
-            </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Link href="/admin/announcements" className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-purple-50 rounded-xl transition-colors group">
+              <span className="text-2xl group-hover:scale-110 transition-transform">📢</span>
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Announcements</p>
+                <p className="text-xs text-slate-500">Post site-wide notices</p>
+              </div>
+            </Link>
+            <Link href="/admin/verifications" className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-blue-50 rounded-xl transition-colors group">
+              <span className="text-2xl group-hover:scale-110 transition-transform">🪪</span>
+              <div>
+                <p className="text-sm font-semibold text-slate-900">ID Verifications</p>
+                <p className="text-xs text-slate-500">Review user documents</p>
+              </div>
+            </Link>
+            <Link href="/admin/analytics" className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-emerald-50 rounded-xl transition-colors group">
+              <span className="text-2xl group-hover:scale-110 transition-transform">📈</span>
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Analytics</p>
+                <p className="text-xs text-slate-500">Platform insights</p>
+              </div>
+            </Link>
+            <Link href="/admin/system-health" className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-red-50 rounded-xl transition-colors group">
+              <span className="text-2xl group-hover:scale-110 transition-transform">💓</span>
+              <div>
+                <p className="text-sm font-semibold text-slate-900">System Health</p>
+                <p className="text-xs text-slate-500">Monitor status</p>
+              </div>
+            </Link>
           </div>
-          <Link href="/profile" className="mt-4 lg:mt-6 inline-block px-4 lg:px-6 py-2 lg:py-3 text-sm lg:text-base bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-lg lg:rounded-xl font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all">
-            ✏️ Edit Profile
-          </Link>
         </div>
       </div>
     </div>

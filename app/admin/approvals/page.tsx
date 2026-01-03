@@ -149,7 +149,7 @@ export default function ApprovalsPage(){
   if (!isAdmin) return <div className="w-full px-4 sm:px-6 lg:px-8 py-10 text-center text-slate-600">Unauthorized</div>
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <div className="w-full min-h-screen bg-gradient-to-b from-slate-50 to-white pb-24 lg:pb-8">
       <div className="w-full px-4 sm:px-6 lg:px-8 py-12 max-w-7xl mx-auto">
         <Link href="/admin/command-center" className="text-sm text-resort-500 font-semibold mb-8 inline-flex items-center gap-2 hover:gap-3 transition-all">← Back to Command Center</Link>
         

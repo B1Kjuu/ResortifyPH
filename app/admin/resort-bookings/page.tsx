@@ -74,7 +74,7 @@ export default function ResortBookingsPage(){
   if (!isAdmin) return <div className="w-full px-4 sm:px-6 lg:px-8 py-10 text-center text-slate-600">Unauthorized</div>
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <div className="w-full min-h-screen bg-gradient-to-b from-slate-50 to-white pb-24 lg:pb-8">
       <div className="w-full px-4 sm:px-6 lg:px-8 py-10 max-w-6xl mx-auto">
         <Link href="/admin/command-center" className="text-sm text-blue-600 font-semibold mb-6 inline-block">← Back to Command Center</Link>
         <div className="mb-6">

@@ -207,14 +207,17 @@ export default function VerificationsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 lg:p-8">
+    <div className="min-h-screen bg-gray-50 p-4 lg:p-8 pb-24 lg:pb-8">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 flex items-center gap-2">
           <FiUserCheck className="w-7 h-7 text-green-600" />
-          User Verification
+          ID Verification Center
         </h1>
-        <p className="text-gray-600 text-sm mt-1">Review and verify user documents</p>
+        <p className="text-gray-600 text-sm mt-1">
+          Review and approve user identity documents. This includes government IDs, business permits, 
+          DTI certificates, and contact verification for resort owners to establish trust on the platform.
+        </p>
       </div>
 
       {/* Stats */}

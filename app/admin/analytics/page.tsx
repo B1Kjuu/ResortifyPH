@@ -266,7 +266,7 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4 lg:p-8">
+      <div className="min-h-screen bg-gray-50 p-4 lg:p-8 pb-24 lg:pb-8">
         <div className="animate-pulse space-y-6">
           <div className="h-8 bg-gray-200 rounded w-48" />
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -284,7 +284,7 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 lg:p-8">
+    <div className="min-h-screen bg-gray-50 p-4 lg:p-8 pb-24 lg:pb-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>

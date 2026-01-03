@@ -234,14 +234,17 @@ export default function DisputesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 lg:p-8">
+    <div className="min-h-screen bg-gray-50 p-4 lg:p-8 pb-24 lg:pb-8">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 flex items-center gap-2">
           <FiAlertTriangle className="w-7 h-7 text-amber-600" />
-          Dispute Resolution Center
+          Booking Dispute Resolution
         </h1>
-        <p className="text-gray-600 text-sm mt-1">Manage and resolve booking disputes</p>
+        <p className="text-gray-600 text-sm mt-1">
+          Resolve conflicts between guests and hosts related to bookings. This includes payment issues, 
+          property misrepresentation, cancellations, damage claims, and refund requests.
+        </p>
       </div>
 
       {/* Stats */}
