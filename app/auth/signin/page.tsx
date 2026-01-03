@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 export default function SignInPage(){
   const [loading, setLoading] = useState(false)
   const [oauthLoading, setOauthLoading] = useState(false)
+  const [rememberMe, setRememberMe] = useState(true)
   
   const router = useRouter()
   
@@ -20,10 +21,22 @@ export default function SignInPage(){
 
   async function onSubmit(data: SignInInput){
     setLoading(true)
+    
+    // Set session persistence based on remember me checkbox
+    // When rememberMe is false, session will only last for current browser session
     const { error } = await supabase.auth.signInWithPassword({ 
       email: data.email, 
-      password: data.password 
+      password: data.password,
     })
+    
+    // If remember me is unchecked, we can't directly control Supabase session storage
+    // but we can clear the session on browser close by storing a flag
+    if (!rememberMe) {
+      sessionStorage.setItem('resortify_session_only', 'true')
+    } else {
+      sessionStorage.removeItem('resortify_session_only')
+    }
+    
     setLoading(false)
     
     if (error){ 
@@ -107,11 +120,21 @@ export default function SignInPage(){
             {errors.password && (
               <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>
             )}
-            <div className="text-right mt-1.5">
-              <Link href="/auth/forgot-password" className="text-xs text-resort-600 hover:underline">
-                Forgot password?
-              </Link>
-            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300 text-resort-600 focus:ring-resort-500 cursor-pointer"
+              />
+              <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">Remember me</span>
+            </label>
+            <Link href="/auth/forgot-password" className="text-xs text-resort-600 hover:underline">
+              Forgot password?
+            </Link>
           </div>
 
           <button

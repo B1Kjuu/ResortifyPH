@@ -18,9 +18,18 @@ type Props = {
   compact?: boolean
   nights?: number
   showTotalPrice?: boolean
+  distance?: number | null  // Distance in km from user location
 }
 
-export default function ResortCard({ resort, compact = false, nights = 0, showTotalPrice = false }: Props){
+// Format distance for display
+function formatDistanceDisplay(km: number): string {
+  if (km < 1) {
+    return `${Math.round(km * 1000)}m`
+  }
+  return `${km.toFixed(1)}km`
+}
+
+export default function ResortCard({ resort, compact = false, nights = 0, showTotalPrice = false, distance }: Props){
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isHovered, setIsHovered] = useState(false)
   const { ready, isFavorite, toggleFavorite } = useFavorites()
@@ -180,6 +189,14 @@ export default function ResortCard({ resort, compact = false, nights = 0, showTo
           {!resort.rating && resort.created_at && isNewListing(resort.created_at) && (
             <div className="absolute top-3 left-3 bg-white rounded-full px-2.5 py-1 shadow-sm">
               <span className="text-xs font-semibold text-slate-900">New</span>
+            </div>
+          )}
+          
+          {/* Distance badge - bottom left to avoid overlap with top badges */}
+          {distance !== null && distance !== undefined && (
+            <div className="absolute bottom-3 left-3 px-2 py-1 bg-white/95 backdrop-blur-sm rounded-full shadow-md flex items-center gap-1 z-10">
+              <svg className="w-3 h-3 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"/></svg>
+              <span className="text-xs font-semibold text-emerald-700">{formatDistanceDisplay(distance)}</span>
             </div>
           )}
         </div>

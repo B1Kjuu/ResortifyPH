@@ -8,11 +8,19 @@ export default function NotificationsBell(){
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState<any[]>([])
   const [unread, setUnread] = useState(0)
-  const [soundOn, setSoundOn] = useState<boolean>(() => {
-    try { return localStorage.getItem('notif_sound') === 'on' } catch { return true }
-  })
+  const [soundOn, setSoundOn] = useState<boolean>(true) // Default to true, will sync from localStorage in useEffect
   const [toast, setToast] = useState<{ title: string; body?: string; link?: string } | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Sync soundOn from localStorage on mount (client-side only)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('notif_sound')
+      if (stored !== null) {
+        setSoundOn(stored === 'on')
+      }
+    } catch {}
+  }, [])
 
   // Close dropdown when clicking outside
   useEffect(() => {

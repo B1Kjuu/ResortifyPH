@@ -1,6 +1,5 @@
 import './globals.css'
 import React from 'react'
-import { headers } from 'next/headers'
 import Script from 'next/script'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
@@ -74,8 +73,6 @@ export const viewport = {
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const nonce = headers().get('x-csp-nonce') || undefined
-  
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
@@ -90,18 +87,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   }
 
   return (
-    <html lang="en">
-      <head>
+    <html lang="en" suppressHydrationWarning>
+      <head suppressHydrationWarning>
         <Script
           id="jsonld"
           type="application/ld+json"
-          nonce={nonce}
           // Use beforeInteractive to ensure JSON-LD is available early without violating CSP
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          suppressHydrationWarning
         />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <AnnouncementBanner />
         <Navbar />
         <main className="w-full">{children}</main>
@@ -114,22 +111,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Ensure a 'load' event fires promptly after DOM is ready for tests */}
         <Script
           id="emit-load-event"
-          nonce={nonce}
           strategy="afterInteractive"
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: `window.addEventListener('DOMContentLoaded', function(){ try { window.dispatchEvent(new Event('load')); } catch {} });`,
           }}
         />
-        {/* Provide nonce to Next internal scripts; suppress hydration warnings */}
-        {nonce && (
-          <Script
-            id="next-internal-nonce"
-            nonce={nonce}
-            strategy="beforeInteractive"
-            dangerouslySetInnerHTML={{ __html: `window.__NEXT_SCRIPT_NONCE="${nonce}"` }}
-            suppressHydrationWarning
-          />
-        )}
       </body>
     </html>
   )

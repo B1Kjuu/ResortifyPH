@@ -16,6 +16,22 @@ import {
 } from '../lib/bookingTypes'
 import type { ResortPricingConfig } from '../lib/validations'
 
+// Prevent typing minus sign for price inputs
+const preventNegativeInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  if (e.key === '-' || e.key === 'e' || e.key === 'E') {
+    e.preventDefault()
+  }
+}
+
+// Clamp value on blur/change to prevent spinner from going negative
+const clampPrice = (e: React.FocusEvent<HTMLInputElement> | React.ChangeEvent<HTMLInputElement>) => {
+  const val = parseInt(e.target.value) || 0
+  if (val < 0) e.target.value = '0'
+  if (val > MAX_PRICE) e.target.value = String(MAX_PRICE)
+}
+
+const MAX_PRICE = 10000000 // 10 million peso max
+
 // Custom time slot type
 interface CustomTimeSlot {
   id: string
@@ -463,8 +479,11 @@ export default function PricingConfigurator({ value, onChange, capacity }: Prici
                               <input
                                 type="number"
                                 min={0}
+                                max={MAX_PRICE}
+                                onKeyDown={preventNegativeInput}
+                                onBlur={clampPrice}
                                 value={getPrice(bookingType, 'weekday', tier.id) || ''}
-                                onChange={(e) => updatePrice(bookingType, 'weekday', tier.id, parseInt(e.target.value) || 0)}
+                                onChange={(e) => updatePrice(bookingType, 'weekday', tier.id, Math.min(MAX_PRICE, Math.max(0, parseInt(e.target.value) || 0)))}
                                 placeholder="0"
                                 className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg text-right focus:ring-2 focus:ring-amber-400"
                               />
@@ -476,8 +495,11 @@ export default function PricingConfigurator({ value, onChange, capacity }: Prici
                               <input
                                 type="number"
                                 min={0}
+                                max={MAX_PRICE}
+                                onKeyDown={preventNegativeInput}
+                                onBlur={clampPrice}
                                 value={getPrice(bookingType, 'weekend', tier.id) || ''}
-                                onChange={(e) => updatePrice(bookingType, 'weekend', tier.id, parseInt(e.target.value) || 0)}
+                                onChange={(e) => updatePrice(bookingType, 'weekend', tier.id, Math.min(MAX_PRICE, Math.max(0, parseInt(e.target.value) || 0)))}
                                 placeholder="0"
                                 className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg text-right focus:ring-2 focus:ring-amber-400"
                               />
@@ -507,8 +529,9 @@ export default function PricingConfigurator({ value, onChange, capacity }: Prici
             type="number"
             min={0}
             max={100}
+            onKeyDown={preventNegativeInput}
             value={config.downpaymentPercentage}
-            onChange={(e) => updateConfig({ downpaymentPercentage: parseInt(e.target.value) || 0 })}
+            onChange={(e) => updateConfig({ downpaymentPercentage: Math.min(100, Math.max(0, parseInt(e.target.value) || 0)) })}
             className="w-24 px-3 py-2 border border-slate-300 rounded-lg text-center font-semibold focus:ring-2 focus:ring-rose-400"
           />
           <span className="text-slate-700 font-medium">%</span>

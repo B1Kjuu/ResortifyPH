@@ -1,6 +1,6 @@
 'use client'
 import React, { useEffect, useRef, useState, useCallback } from 'react'
-import { FiMapPin, FiNavigation, FiCrosshair, FiLoader, FiMaximize2, FiMinimize2 } from 'react-icons/fi'
+import { FiMapPin, FiNavigation, FiCrosshair, FiLoader } from 'react-icons/fi'
 
 interface Resort {
   id: string
@@ -52,7 +52,6 @@ export default function GoogleMapView({
   const userMarkerRef = useRef<any>(null)
   const infoWindowRef = useRef<any>(null)
   const [isLoaded, setIsLoaded] = useState(false)
-  const [isFullscreen, setIsFullscreen] = useState(false)
 
   // Load Google Maps script
   useEffect(() => {
@@ -357,11 +356,6 @@ export default function GoogleMapView({
     }
   }, [isLoaded, resorts, selectedResortId, userPosition, onResortClick])
 
-  // Handle fullscreen toggle
-  const toggleFullscreen = useCallback(() => {
-    setIsFullscreen(prev => !prev)
-  }, [])
-
   if (!GOOGLE_MAPS_API_KEY) {
     return (
       <div className={`bg-slate-100 rounded-xl flex items-center justify-center ${className}`} style={{ minHeight: 300 }}>
@@ -375,7 +369,7 @@ export default function GoogleMapView({
   }
 
   return (
-    <div className={`relative ${isFullscreen ? 'fixed inset-0 z-50' : ''} ${className}`}>
+    <div className={`relative ${className}`}>
       {/* Loading state */}
       {!isLoaded && (
         <div className="absolute inset-0 bg-slate-100 rounded-xl flex items-center justify-center z-10">
@@ -389,7 +383,7 @@ export default function GoogleMapView({
       {/* Map container */}
       <div
         ref={mapRef}
-        className={`w-full ${isFullscreen ? 'h-full' : 'h-full min-h-[400px] rounded-xl'}`}
+        className="w-full h-full min-h-[400px] rounded-xl"
       />
 
       {/* Legend and controls - top right */}
@@ -455,25 +449,6 @@ export default function GoogleMapView({
           </button>
         )}
       </div>
-
-      {/* Fullscreen toggle - bottom left */}
-      <button
-        onClick={toggleFullscreen}
-        className={`absolute ${isFullscreen ? 'top-4 left-4' : 'bottom-14 left-3'} flex items-center gap-1.5 px-3 py-2 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200 hover:bg-slate-50 transition text-xs font-medium text-slate-700`}
-        title={isFullscreen ? 'Exit fullscreen' : 'View map fullscreen'}
-      >
-        {isFullscreen ? (
-          <>
-            <FiMinimize2 className="w-4 h-4" />
-            <span>Exit Fullscreen</span>
-          </>
-        ) : (
-          <>
-            <FiMaximize2 className="w-4 h-4" />
-            <span>Fullscreen</span>
-          </>
-        )}
-      </button>
 
       {/* Resort count indicator */}
       <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg px-3 py-1.5 border border-slate-200">

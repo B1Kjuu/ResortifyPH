@@ -11,6 +11,7 @@ type Props = {
   onRemove?: (url: string) => void
   multiple?: boolean
   maxFiles?: number
+  compact?: boolean // For single-image verification uploads - more compact layout
 }
 
 export default function ImageUploader({ 
@@ -19,7 +20,8 @@ export default function ImageUploader({
   existingUrls = [],
   onRemove,
   multiple = true,
-  maxFiles = 10
+  maxFiles = 10,
+  compact = false
 }: Props){
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({})
@@ -98,6 +100,73 @@ export default function ImageUploader({
   }
 
   const allUrls = existingUrls
+
+  // Compact layout for single-image verification uploads
+  if (compact) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <input 
+            ref={fileInputRef}
+            type="file" 
+            multiple={multiple}
+            accept="image/*"
+            onChange={handleFileChange}
+            disabled={uploading}
+            className="hidden"
+            id={`image-input-${inputId}`}
+          />
+          <label 
+            htmlFor={`image-input-${inputId}`}
+            className={`inline-flex items-center gap-2 px-4 py-2 border-2 border-slate-300 rounded-lg font-medium text-sm text-slate-700 hover:border-resort-400 hover:bg-resort-50 transition-all cursor-pointer bg-white shadow-sm ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            {uploading ? (
+              <>
+                <FiLoader className="w-4 h-4 animate-spin" />
+                <span>Uploading...</span>
+              </>
+            ) : (
+              <>
+                <FiFolder className="w-4 h-4" />
+                <span>Choose File</span>
+              </>
+            )}
+          </label>
+          
+          {allUrls.length > 0 && (
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-green-50 border border-green-200 rounded-lg">
+              <FiCheck className="text-green-600 w-3.5 h-3.5" />
+              <span className="text-green-700 font-medium text-xs">Uploaded</span>
+            </div>
+          )}
+        </div>
+        
+        {allUrls.length > 0 && (
+          <div className="flex gap-2">
+            {allUrls.map((url, index) => (
+              <div key={url} className="relative group w-16 h-16 flex-shrink-0">
+                <img 
+                  src={url} 
+                  alt={`Uploaded ${index + 1}`} 
+                  className="w-full h-full object-cover rounded-lg border-2 border-green-300 shadow-sm" 
+                />
+                {onRemove && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImage(url)}
+                    className="absolute -top-1.5 -right-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-lg"
+                    title="Remove image"
+                  >
+                    <FiX className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">

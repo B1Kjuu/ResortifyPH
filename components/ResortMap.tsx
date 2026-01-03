@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useMemo, useState, useCallback } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { getLocationCoordinates } from '../lib/locations'
 import 'leaflet/dist/leaflet.css'
@@ -39,10 +39,9 @@ const Popup = dynamic(
   () => import('react-leaflet').then((mod) => mod.Popup),
   { ssr: false }
 )
-const useMap = dynamic(
-  () => import('react-leaflet').then((mod) => mod.useMap as any),
-  { ssr: false }
-) as any
+
+// Dynamic import MapFlyController - it uses react-leaflet hooks so must be dynamic
+const MapFlyController = dynamic(() => import('./MapFlyController'), { ssr: false })
 
 interface Resort {
   id: string
@@ -64,6 +63,7 @@ interface ResortMapProps {
   selectedResortId?: string | null
   className?: string
   onRequestLocation?: () => void
+  onFlyToUser?: () => void // Call to trigger fly-to-user animation
   showNearbyButton?: boolean
   geoLoading?: boolean
   flyToUserTrigger?: number // Increment to trigger fly-to-user
@@ -155,38 +155,13 @@ function getMarkerIcon(isSelected: boolean = false, isUser: boolean = false, pri
   })
 }
 
-export default function ResortMap({ resorts, userPosition, onResortClick, selectedResortId, className = '', onRequestLocation, showNearbyButton = true, geoLoading = false, flyToUserTrigger = 0 }: ResortMapProps) {
+export default function ResortMap({ resorts, userPosition, onResortClick, selectedResortId, className = '', onRequestLocation, onFlyToUser, showNearbyButton = true, geoLoading = false, flyToUserTrigger = 0 }: ResortMapProps) {
   const [isClient, setIsClient] = useState(false)
   const [mapKey, setMapKey] = useState(0)
-  const [mapRef, setMapRef] = useState<any>(null)
-  const [lastFlyTrigger, setLastFlyTrigger] = useState(0)
   
   useEffect(() => {
     setIsClient(true)
   }, [])
-
-  // Fly to user position when it becomes available
-  const flyToUser = useCallback(() => {
-    if (mapRef && userPosition) {
-      mapRef.flyTo([userPosition.latitude, userPosition.longitude], 14, { duration: 1.5 })
-    }
-  }, [mapRef, userPosition])
-
-  // Fly to user position when flyToUserTrigger changes
-  useEffect(() => {
-    if (mapRef && userPosition && flyToUserTrigger > lastFlyTrigger) {
-      flyToUser()
-      setLastFlyTrigger(flyToUserTrigger)
-    }
-  }, [mapRef, userPosition, flyToUserTrigger, lastFlyTrigger, flyToUser])
-
-  // Also fly when position first becomes available
-  useEffect(() => {
-    if (mapRef && userPosition && lastFlyTrigger === 0) {
-      flyToUser()
-      setLastFlyTrigger(1)
-    }
-  }, [mapRef, userPosition, lastFlyTrigger, flyToUser])
 
   // Calculate resort positions - prefer exact coordinates, fallback to city/province
   const resortPositions = useMemo(() => {
@@ -306,8 +281,8 @@ export default function ResortMap({ resorts, userPosition, onResortClick, select
         <div className="absolute top-24 left-2 z-[1000] flex flex-col gap-2">
           <button
             onClick={() => {
-              if (userPosition) {
-                flyToUser()
+              if (userPosition && onFlyToUser) {
+                onFlyToUser()
               } else if (onRequestLocation) {
                 onRequestLocation()
               }
@@ -350,12 +325,14 @@ export default function ResortMap({ resorts, userPosition, onResortClick, select
         zoom={zoom}
         style={{ height: '100%', width: '100%', minHeight: '400px' }}
         scrollWheelZoom={true}
-        ref={setMapRef}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        
+        {/* Controller to fly to user location */}
+        <MapFlyController userPosition={userPosition} flyToUserTrigger={flyToUserTrigger} />
         
         {/* User position marker */}
         {userPosition && (

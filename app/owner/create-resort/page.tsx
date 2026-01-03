@@ -519,6 +519,7 @@ export default function CreateResort() {
                     bucket="verification-docs" 
                     multiple={false}
                     maxFiles={1}
+                    compact={true}
                     existingUrls={watch('dti_sec_certificate_url') ? [watch('dti_sec_certificate_url') as string] : []}
                     onUpload={(urls) => setValue('dti_sec_certificate_url', urls[0] || '', { shouldValidate: true })} 
                     onRemove={() => setValue('dti_sec_certificate_url', '', { shouldValidate: true })}
@@ -530,6 +531,7 @@ export default function CreateResort() {
                     bucket="verification-docs" 
                     multiple={false}
                     maxFiles={1}
+                    compact={true}
                     existingUrls={watch('business_permit_url') ? [watch('business_permit_url') as string] : []}
                     onUpload={(urls) => setValue('business_permit_url', urls[0] || '', { shouldValidate: true })} 
                     onRemove={() => setValue('business_permit_url', '', { shouldValidate: true })}
@@ -541,6 +543,7 @@ export default function CreateResort() {
                     bucket="verification-docs" 
                     multiple={false}
                     maxFiles={1}
+                    compact={true}
                     existingUrls={watch('gov_id_owner_url') ? [watch('gov_id_owner_url') as string] : []}
                     onUpload={(urls) => setValue('gov_id_owner_url', urls[0] || '', { shouldValidate: true })} 
                     onRemove={() => setValue('gov_id_owner_url', '', { shouldValidate: true })}
@@ -870,21 +873,33 @@ export default function CreateResort() {
             {errors.images && <p className="text-xs text-red-500 mt-2">{errors.images.message}</p>}
           </div>
 
-          <div className="flex gap-4 pt-6">
+          {/* Validation Errors Summary */}
+          {Object.keys(errors).length > 0 && (
+            <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
+              <p className="text-sm font-bold text-red-700 mb-2">Please fix the following errors:</p>
+              <ul className="text-xs text-red-600 list-disc list-inside space-y-1">
+                {Object.entries(errors).map(([field, err]) => (
+                  <li key={field}><strong>{field}:</strong> {(err as any)?.message || 'Invalid'}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 px-6 py-4 bg-gradient-to-r from-resort-500 to-blue-500 text-white rounded-xl font-bold text-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full sm:flex-1 px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-resort-500 to-blue-500 text-white rounded-xl font-bold text-base sm:text-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
             >
               {isSubmitting ? (
-                <span className="inline-flex items-center gap-2"><FiClock className="w-5 h-5" /> Creating...</span>
+                <span className="inline-flex items-center justify-center gap-2"><FiClock className="w-4 sm:w-5 h-4 sm:h-5" /> Creating...</span>
               ) : (
-                <span className="inline-flex items-center gap-2"><FaStar className="w-5 h-5" /> Create Resort</span>
+                <span className="inline-flex items-center justify-center gap-2"><FaStar className="w-4 sm:w-5 h-4 sm:h-5" /> Create Resort</span>
               )}
             </button>
             <Link
               href="/owner/dashboard"
-              className="flex-1 px-6 py-4 border-2 border-slate-300 rounded-xl font-bold text-lg text-center hover:bg-slate-50 transition-all text-slate-700"
+              className="w-full sm:flex-1 px-4 sm:px-6 py-3 sm:py-4 border-2 border-slate-300 rounded-xl font-bold text-base sm:text-lg text-center hover:bg-slate-50 transition-all text-slate-700 active:scale-[0.98]"
             >
               Cancel
             </Link>
