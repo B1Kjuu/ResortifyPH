@@ -37,6 +37,8 @@ export default function Navbar(){
   const [showMobileFilters, setShowMobileFilters] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [passwordResetPending, setPasswordResetPending] = useState(false)
+  const [showFirstHostModal, setShowFirstHostModal] = useState(false)
+  const [pendingHostSwitch, setPendingHostSwitch] = useState(false)
   const authCompletedRef = useRef(false)
   const router = useRouter()
   const pathname = usePathname()
@@ -198,8 +200,21 @@ export default function Navbar(){
               setUserRole(newRole)
               toast.success(`Switched to ${roleLabel} mode`)
               
-              if (newRole === 'owner') router.push('/owner/empire')
-              else if (newRole === 'guest') router.push('/guest/adventure-hub')
+              // Check if first time switching to host
+              if (newRole === 'owner') {
+                const firstHostKey = `resortify_first_host_shown_${user?.id}`
+                const hasSeenFirstHostModal = localStorage.getItem(firstHostKey)
+                
+                if (!hasSeenFirstHostModal) {
+                  // Show first-time host modal
+                  setShowFirstHostModal(true)
+                  setPendingHostSwitch(true)
+                  return
+                }
+                router.push('/owner/empire')
+              } else if (newRole === 'guest') {
+                router.push('/guest/adventure-hub')
+              }
             } catch (err) {
               console.error('Role switch error:', err)
               toast.error('Failed to switch role')
@@ -213,6 +228,23 @@ export default function Navbar(){
         duration: 10000,
       }
     )
+  }
+
+  // Handle first-time host modal responses
+  function handleFirstHostYes() {
+    const firstHostKey = `resortify_first_host_shown_${user?.id}`
+    localStorage.setItem(firstHostKey, 'true')
+    setShowFirstHostModal(false)
+    setPendingHostSwitch(false)
+    router.push('/owner/bookings?tab=calendar')
+  }
+
+  function handleFirstHostNo() {
+    const firstHostKey = `resortify_first_host_shown_${user?.id}`
+    localStorage.setItem(firstHostKey, 'true')
+    setShowFirstHostModal(false)
+    setPendingHostSwitch(false)
+    router.push('/owner/empire')
   }
 
   function applyQuickFilter(province: string | null) {
@@ -684,6 +716,43 @@ export default function Navbar(){
               className="px-4 py-2.5 text-sm font-semibold text-white bg-red-500 rounded-xl hover:bg-red-600 transition"
             >
               Sign Out
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* First-time Host Modal */}
+    {showFirstHostModal && (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+          <div className="text-center mb-5">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-resort-400 to-resort-600 flex items-center justify-center">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-slate-900">Welcome to Host Mode! 🎉</h3>
+            <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+              Do you have any existing bookings from before using ResortifyPH that you'd like to add to your calendar?
+            </p>
+            <p className="text-xs text-slate-500 mt-3 bg-slate-50 p-3 rounded-lg">
+              This helps keep your availability accurate and prevents double bookings.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={handleFirstHostNo}
+              className="px-4 py-3 text-sm font-semibold text-slate-700 border-2 border-slate-200 rounded-xl hover:bg-slate-50 transition"
+            >
+              No, I'm Good
+            </button>
+            <button
+              onClick={handleFirstHostYes}
+              className="px-4 py-3 text-sm font-semibold text-white bg-gradient-to-r from-resort-500 to-resort-600 rounded-xl hover:from-resort-600 hover:to-resort-700 transition shadow-lg"
+            >
+              Yes, Add Bookings
             </button>
           </div>
         </div>

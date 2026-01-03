@@ -42,7 +42,7 @@ export default function TimePicker({ value = '14:00', onChange, className = '', 
   }
 
   const hours = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-  const minutes = [0, 15, 30, 45]
+  const minutes = Array.from({ length: 60 }, (_, i) => i)
 
   return (
     <div className={`flex items-center gap-2 ${className}`} id={id}>

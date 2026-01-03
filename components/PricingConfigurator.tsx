@@ -309,7 +309,7 @@ export default function PricingConfigurator({ value, onChange, capacity }: Prici
                         onChange={() => toggleTimeSlot(slot.id)}
                         className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
                       />
-                      <span>{slot.startTime} - {slot.endTime}</span>
+                      <span>{slot.label.replace(/^(Daytour|Overnight|22 Hours):\s*/, '')}</span>
                     </label>
                   ))}
                   

@@ -1,7 +1,7 @@
 'use client'
 import React, { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../../lib/supabaseClient'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import OwnerBookingsContent from '../../../components/OwnerBookingsContent'
 import { eachDayOfInterval } from 'date-fns'
 import { toast as sonnerToast } from 'sonner'
@@ -20,6 +20,16 @@ export default function OwnerBookingsPage(){
   const [ownerResorts, setOwnerResorts] = useState<{ id: string; name: string }[]>([])
   const calendarRef = React.useRef<HTMLDivElement | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  
+  // Get initial tab from URL query param
+  const initialTab = useMemo(() => {
+    const tabParam = searchParams.get('tab')
+    if (tabParam && ['requests', 'calendar', 'confirmed', 'cancellations', 'history'].includes(tabParam)) {
+      return tabParam as 'requests' | 'calendar' | 'confirmed' | 'cancellations' | 'history'
+    }
+    return undefined
+  }, [searchParams])
 
   // Load owner's resorts for manual booking feature
   async function loadOwnerResorts(){
@@ -728,6 +738,7 @@ export default function OwnerBookingsPage(){
       cancelBooking={cancelBooking}
       allResorts={ownerResorts}
       onAddManualBooking={addManualBooking}
+      initialTab={initialTab}
     />
   )
 }

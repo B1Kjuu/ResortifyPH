@@ -242,7 +242,7 @@ export async function searchPlaces(query: string): Promise<Array<{
 
   try {
     const response = await fetch(
-      `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(query)}&types=geocode&components=country:ph&key=${GOOGLE_MAPS_API_KEY}`
+      `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(query)}&components=country:ph&key=${GOOGLE_MAPS_API_KEY}`
     )
     const data = await response.json()
 

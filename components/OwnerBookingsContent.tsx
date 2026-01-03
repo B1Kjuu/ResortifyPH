@@ -53,6 +53,8 @@ type Props = {
   // Manual booking props
   allResorts?: { id: string; name: string }[]
   onAddManualBooking?: (data: ManualBookingData) => Promise<void>
+  // Optional initial tab from URL
+  initialTab?: 'requests' | 'calendar' | 'confirmed' | 'cancellations' | 'history'
 }
 
 export default function OwnerBookingsContent(props: Props){
@@ -64,11 +66,11 @@ export default function OwnerBookingsContent(props: Props){
     selectedBookings, toggleSelect, toggleSelectAll, bulkDeleteBookings,
     deleteBooking, confirmBooking, rejectBooking, updateVerificationDetails, togglePaymentVerified,
     approveCancellation, declineCancellation, bulkApproveCancellations, bulkDeclineCancellations, cancelBooking,
-    allResorts, onAddManualBooking,
+    allResorts, onAddManualBooking, initialTab,
   } = props
 
   // Top-level owner nav tabs
-  const [tab, setTab] = React.useState<'requests' | 'calendar' | 'confirmed' | 'cancellations' | 'history'>('requests')
+  const [tab, setTab] = React.useState<'requests' | 'calendar' | 'confirmed' | 'cancellations' | 'history'>(initialTab || 'requests')
   const [showOnlyVerified, setShowOnlyVerified] = React.useState(false)
   const [showOnlyCancellations, setShowOnlyCancellations] = React.useState(false)
   const [verificationEdits, setVerificationEdits] = React.useState<Record<string, { method: string; reference: string; notes: string }>>({})
