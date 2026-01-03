@@ -120,6 +120,40 @@ export default function OwnerBookingsPage(){
     return () => { mounted = false }
   }, [router])
 
+  // Auto-cancel expired pending bookings (past the start date)
+  async function autoCancelExpiredBookings() {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const todayStr = today.toISOString().split('T')[0]
+    
+    // Find pending bookings where date_from is before today
+    const expiredPending = bookings.filter(b => 
+      b.status === 'pending' && 
+      b.date_from && 
+      b.date_from < todayStr
+    )
+    
+    if (expiredPending.length === 0) return
+    
+    // Update them to 'expired' status
+    const expiredIds = expiredPending.map(b => b.id)
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ status: 'expired' })
+        .in('id', expiredIds)
+      
+      if (!error) {
+        sonnerToast.info(`${expiredIds.length} expired pending booking(s) auto-cancelled`, {
+          description: 'Bookings past their start date have been marked as expired.'
+        })
+        loadOwnerBookings()
+      }
+    } catch (err) {
+      console.error('Auto-cancel expired bookings error:', err)
+    }
+  }
+
   // Load bookings when userId is set
   useEffect(() => {
     if (!userId) return
@@ -147,6 +181,13 @@ export default function OwnerBookingsPage(){
       subscription.unsubscribe()
     }
   }, [userId])
+
+  // Check for expired pending bookings after bookings are loaded
+  useEffect(() => {
+    if (bookings.length > 0 && !loading) {
+      autoCancelExpiredBookings()
+    }
+  }, [bookings.length, loading])
 
   async function confirmBooking(bookingId: string){
     try {
@@ -653,7 +694,7 @@ export default function OwnerBookingsPage(){
 
   const pendingBookings = bookings.filter(b => b.status === 'pending')
   const confirmedBookings = bookings.filter(b => b.status === 'confirmed')
-  const rejectedBookings = bookings.filter(b => b.status === 'rejected')
+  const rejectedBookings = bookings.filter(b => b.status === 'rejected' || b.status === 'expired')
 
   const resortOptions = useMemo(() => {
     const map = new Map<string, string>()

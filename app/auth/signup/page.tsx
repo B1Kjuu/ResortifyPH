@@ -20,6 +20,31 @@ export default function SignUpPage(){
 
   async function onSubmit(data: SignUpInput){
     setLoading(true)
+    
+    // Check if email already exists
+    const { data: existingUser, error: checkError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', data.email.toLowerCase())
+      .maybeSingle()
+    
+    if (checkError && checkError.code !== 'PGRST116') {
+      // PGRST116 means no rows found, which is expected
+      console.error('Email check error:', checkError)
+    }
+    
+    if (existingUser) {
+      setLoading(false)
+      toast.error('An account with this email already exists', {
+        description: 'Please sign in instead or use a different email.',
+        action: {
+          label: 'Sign In',
+          onClick: () => router.push('/auth/signin')
+        }
+      })
+      return
+    }
+    
     const { error } = await supabase.auth.signUp({ 
       email: data.email, 
       password: data.password,
