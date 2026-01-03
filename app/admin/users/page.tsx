@@ -179,30 +179,29 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white pb-20 lg:pb-8">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white border-b border-slate-200 sticky top-0 z-30 lg:top-0">
+        <div className="max-w-7xl mx-auto px-4 py-3 lg:py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 lg:gap-4">
             <div>
-              <Link href="/admin/command-center" className="text-sm text-resort-500 hover:underline mb-2 inline-block">← Back to Command Center</Link>
-              <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                <FiUser className="w-6 h-6 text-slate-600" />
+              <h1 className="text-lg lg:text-2xl font-bold text-slate-900 flex items-center gap-2">
+                <FiUser className="w-5 lg:w-6 h-5 lg:h-6 text-slate-600" />
                 User Management
               </h1>
             </div>
             <button
               onClick={loadUsers}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
+              className="inline-flex items-center justify-center gap-2 px-3 lg:px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm"
             >
               <FiRefreshCw className="w-4 h-4" />
-              Refresh
+              <span className="hidden sm:inline">Refresh</span>
             </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-7xl mx-auto px-4 py-4 lg:py-6">
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
           <div className="bg-white border border-slate-200 rounded-xl p-4 text-center">

@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react'
 import { FiDollarSign, FiUsers, FiClock, FiPlus, FiTrash2, FiSun, FiMoon } from 'react-icons/fi'
+import TimePicker from './TimePicker'
 import {
   BookingType,
   DayType,
@@ -259,20 +260,18 @@ export default function PricingConfigurator({ value, onChange, capacity }: Prici
                     <div className="flex flex-wrap items-end gap-3">
                       <div>
                         <label className="block text-xs text-slate-600 mb-1">Start Time</label>
-                        <input
-                          type="time"
+                        <TimePicker
                           value={customStartTime}
-                          onChange={(e) => setCustomStartTime(e.target.value)}
-                          className="px-2 py-1.5 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-purple-400"
+                          onChange={(value) => setCustomStartTime(value)}
+                          className="!gap-1"
                         />
                       </div>
                       <div>
                         <label className="block text-xs text-slate-600 mb-1">End Time</label>
-                        <input
-                          type="time"
+                        <TimePicker
                           value={customEndTime}
-                          onChange={(e) => setCustomEndTime(e.target.value)}
-                          className="px-2 py-1.5 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-purple-400"
+                          onChange={(value) => setCustomEndTime(value)}
+                          className="!gap-1"
                         />
                       </div>
                       <button

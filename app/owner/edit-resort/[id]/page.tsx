@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import ImageUploader from '../../../../components/ImageUploader'
 import LocationCombobox from '../../../../components/LocationCombobox'
+import LocationPicker from '../../../../components/LocationPicker'
 import Select from '../../../../components/Select'
 import TimePicker from '../../../../components/TimePicker'
 import DisclaimerBanner from '../../../../components/DisclaimerBanner'
@@ -49,6 +50,10 @@ export default function EditResort(){
   const [bringOwnItems, setBringOwnItems] = useState('')
   const [pricingConfig, setPricingConfig] = useState<ResortPricingConfig | null>(null)
   const [pricingMode, setPricingMode] = useState<'simple' | 'advanced'>('advanced')
+  // Exact location fields
+  const [latitude, setLatitude] = useState<number | null>(null)
+  const [longitude, setLongitude] = useState<number | null>(null)
+  const [address, setAddress] = useState('')
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [isAuthorized, setIsAuthorized] = useState(false)
@@ -126,6 +131,10 @@ export default function EditResort(){
       setBringOwnItems(resort.bring_own_items || '')
       setPricingConfig(resort.pricing_config || null)
       setPricingMode(resort.pricing_config ? 'advanced' : 'simple')
+      // Load exact location data
+      setLatitude(resort.latitude || null)
+      setLongitude(resort.longitude || null)
+      setAddress(resort.address || '')
       
       setUserId(session.user.id)
       setIsAuthorized(true)
@@ -153,6 +162,9 @@ export default function EditResort(){
         name, 
         description, 
         location, 
+        latitude,
+        longitude,
+        address,
         region_code: provinceInfo?.regionCode ?? null,
         region_name: provinceInfo?.regionName ?? null,
         type,
@@ -254,11 +266,34 @@ export default function EditResort(){
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiMapPin className="w-4 h-4" /> Location *</label>
+          <label className="text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiMapPin className="w-4 h-4" /> Province/City *</label>
           <LocationCombobox
             value={location}
             onChange={setLocation}
             placeholder="Search or pick a province"
+          />
+        </div>
+
+        {/* Exact Location Map Picker */}
+        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-xl p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <FiMapPin className="w-5 h-5 text-emerald-600" />
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">Pin Your Exact Location</h3>
+              <p className="text-sm text-slate-600">Help guests find your resort easily on the map</p>
+            </div>
+          </div>
+          <LocationPicker
+            latitude={latitude}
+            longitude={longitude}
+            address={address}
+            onLocationChange={(lat, lng) => {
+              setLatitude(lat)
+              setLongitude(lng)
+            }}
+            onAddressChange={(addr) => {
+              setAddress(addr)
+            }}
           />
         </div>
 
@@ -428,6 +463,68 @@ export default function EditResort(){
                 <span className="text-sm font-medium text-slate-700">{amenity}</span>
               </label>
             ))}
+          </div>
+          
+          {/* Custom amenities display */}
+          {amenities.filter(a => !['Pool', 'WiFi', 'Parking', 'Breakfast', 'Beachfront', 'Air Conditioning', 'Spa', 'Bar', 'Pet Friendly', 'Kitchen', 'BBQ Grill', 'Videoke', 'Netflix', 'Billiards', 'Game Room', 'Outdoor Seating'].includes(a)).length > 0 && (
+            <div className="mt-4 pt-4 border-t border-slate-200">
+              <p className="text-xs font-semibold text-slate-600 mb-2">Custom Amenities:</p>
+              <div className="flex flex-wrap gap-2">
+                {amenities.filter(a => !['Pool', 'WiFi', 'Parking', 'Breakfast', 'Beachfront', 'Air Conditioning', 'Spa', 'Bar', 'Pet Friendly', 'Kitchen', 'BBQ Grill', 'Videoke', 'Netflix', 'Billiards', 'Game Room', 'Outdoor Seating'].includes(a)).map(customAmenity => (
+                  <span 
+                    key={customAmenity}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-resort-100 text-resort-700 rounded-full text-sm font-medium"
+                  >
+                    {customAmenity}
+                    <button
+                      type="button"
+                      onClick={() => setAmenities(amenities.filter(a => a !== customAmenity))}
+                      className="ml-1 text-resort-500 hover:text-resort-700"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Add custom amenity input */}
+          <div className="mt-4 pt-4 border-t border-slate-200">
+            <label className="text-xs font-semibold text-slate-600 mb-2 block">Add Custom Amenity:</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                id="custom-amenity-input-edit"
+                placeholder="e.g., Hammock, Fire Pit, Telescope..."
+                className="flex-1 px-3 py-2 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 text-sm"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    const input = e.target as HTMLInputElement
+                    const value = input.value.trim()
+                    if (value && !amenities.includes(value)) {
+                      setAmenities([...amenities, value])
+                      input.value = ''
+                    }
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const input = document.getElementById('custom-amenity-input-edit') as HTMLInputElement
+                  const value = input?.value.trim()
+                  if (value && !amenities.includes(value)) {
+                    setAmenities([...amenities, value])
+                    input.value = ''
+                  }
+                }}
+                className="px-4 py-2 bg-resort-500 text-white rounded-lg font-medium text-sm hover:bg-resort-600 transition-colors"
+              >
+                Add
+              </button>
+            </div>
           </div>
         </div>
 

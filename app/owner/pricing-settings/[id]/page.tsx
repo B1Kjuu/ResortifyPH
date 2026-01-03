@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
+import TimePicker from '@/components/TimePicker'
 import {
   BookingType,
   DayType,
@@ -524,21 +525,19 @@ export default function PricingSettingsPage() {
                     
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Start</label>
-                      <input
-                        type="time"
+                      <TimePicker
                         value={slot.start_time.substring(0, 5)}
-                        onChange={e => updateTimeSlot(index, { start_time: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-resort-500"
+                        onChange={(value) => updateTimeSlot(index, { start_time: value })}
+                        className="!gap-1"
                       />
                     </div>
                     
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">End</label>
-                      <input
-                        type="time"
+                      <TimePicker
                         value={slot.end_time.substring(0, 5)}
-                        onChange={e => updateTimeSlot(index, { end_time: e.target.value })}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-resort-500"
+                        onChange={(value) => updateTimeSlot(index, { end_time: value })}
+                        className="!gap-1"
                       />
                     </div>
                     

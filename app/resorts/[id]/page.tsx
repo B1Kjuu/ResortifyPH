@@ -1020,11 +1020,29 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
               {/* Location Map */}
               {(resort.latitude && resort.longitude) || resort.address || resort.location ? (
-                <div className="space-y-2 w-full overflow-hidden">
+                <div className="space-y-3 w-full overflow-hidden">
                   <h3 className="text-lg font-semibold text-resort-900 flex items-center gap-2">
                     <FiMapPin className="text-resort-500" />
                     Location
                   </h3>
+                  
+                  {/* Address Card - Show prominently above map */}
+                  {(resort.address || resort.location) && (
+                    <div className="bg-gradient-to-r from-slate-50 to-slate-100 border border-slate-200 rounded-xl p-4">
+                      {resort.address && (
+                        <p className="text-sm font-medium text-slate-800 flex items-start gap-2">
+                          <FiMapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-resort-500" />
+                          <span>{resort.address}</span>
+                        </p>
+                      )}
+                      {resort.location && (
+                        <p className="text-xs text-slate-500 mt-1 ml-6">
+                          {resort.location}, Philippines
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   <div className="rounded-xl overflow-hidden border border-slate-200 w-full aspect-[4/3] sm:aspect-[16/9] relative group">
                     {resort.latitude && resort.longitude ? (
                       // Use static map image (no API key needed) with link to interactive map
@@ -1058,19 +1076,12 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                       >
                         <FiMapPin className="w-10 h-10 text-resort-500" />
                         <div className="text-center px-4">
-                          <p className="text-sm font-medium text-slate-700">{resort.location}</p>
-                          {resort.address && <p className="text-xs text-slate-500 mt-1">{resort.address}</p>}
+                          <p className="text-sm font-medium text-slate-700">View location on map</p>
                         </div>
-                        <span className="text-xs text-resort-600 font-medium">Tap to view on Google Maps</span>
+                        <span className="text-xs text-resort-600 font-medium">Tap to open Google Maps</span>
                       </a>
                     )}
                   </div>
-                  {resort.address && (
-                    <p className="text-sm text-slate-600 flex items-start gap-2">
-                      <FiMapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-slate-400" />
-                      {resort.address}
-                    </p>
-                  )}
                   {resort.latitude && resort.longitude ? (
                     <a
                       href={`https://www.google.com/maps/search/?api=1&query=${resort.latitude},${resort.longitude}`}

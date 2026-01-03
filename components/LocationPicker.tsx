@@ -3,7 +3,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import 'leaflet/dist/leaflet.css'
 import { FiSearch, FiLoader, FiMapPin, FiInfo, FiCheck } from 'react-icons/fi'
-import { isGoogleMapsEnabled, reverseGeocode as googleReverseGeocode, geocodeAddress } from '../lib/googleMaps'
+import { isGoogleMapsEnabled, reverseGeocode as googleReverseGeocode, geocodeAddress, searchPlaces, getPlaceDetails } from '../lib/googleMaps'
 
 // Dynamic imports for Leaflet components
 const MapContainer = dynamic(
@@ -391,24 +391,26 @@ export default function LocationPicker({
     )
   }, [onLocationChange])
 
-  // Search for address - uses Google if available, otherwise Nominatim (OpenStreetMap)
+  // Search for address - uses Google Places Autocomplete if available, otherwise Nominatim (OpenStreetMap)
   const handleSearch = async (query?: string) => {
     const searchTerm = query ?? searchQuery
     if (!searchTerm.trim()) return;
     setIsSearching(true);
     setHasSearched(true);
     try {
-      // Try Google Geocoding API first if available
+      // Try Google Places Autocomplete API first if available (better results like Google Maps)
       if (isGoogleMapsEnabled()) {
-        const result = await geocodeAddress(searchTerm + ', Philippines')
-        if (result) {
-          // Convert to search results format
-          setSearchResults([{
-            lat: result.lat.toString(),
-            lon: result.lng.toString(),
-            display_name: result.formattedAddress,
-            type: 'Google Maps',
-          }])
+        const places = await searchPlaces(searchTerm)
+        if (places && places.length > 0) {
+          // Convert to search results format with placeId for later lookup
+          setSearchResults(places.map(p => ({
+            lat: '', // Will be fetched when selected
+            lon: '',
+            display_name: p.description,
+            type: p.secondaryText || 'Google Maps',
+            placeId: p.placeId,
+            mainText: p.mainText,
+          })))
           setIsSearching(false)
           return
         }
@@ -457,7 +459,27 @@ export default function LocationPicker({
   }, [searchQuery])
 
   // Handle search result selection
-  const handleSelectResult = (result: any) => {
+  const handleSelectResult = async (result: any) => {
+    // If result has placeId (Google Places), fetch details to get coordinates
+    if (result.placeId) {
+      setIsSearching(true)
+      try {
+        const details = await getPlaceDetails(result.placeId)
+        if (details) {
+          onLocationChange(details.lat, details.lng)
+          onAddressChange(details.formattedAddress)
+          setSearchResults([])
+          setSearchQuery('')
+          setIsSearching(false)
+          return
+        }
+      } catch (err) {
+        console.error('Failed to get place details:', err)
+      }
+      setIsSearching(false)
+    }
+    
+    // Fallback for Nominatim results
     const lat = parseFloat(result.lat)
     const lng = parseFloat(result.lon)
     onLocationChange(lat, lng)

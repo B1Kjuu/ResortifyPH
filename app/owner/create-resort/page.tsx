@@ -618,7 +618,7 @@ export default function CreateResort() {
               {AMENITIES.map((amenity) => (
                 <label
                   key={amenity}
-                  className="flex items-center gap-3 cursor-pointer bg-white px-4 py-3 rounded-lg border-2 border-slate-200 hover:border-resорт-400 transition-colors"
+                  className="flex items-center gap-3 cursor-pointer bg-white px-4 py-3 rounded-lg border-2 border-slate-200 hover:border-resort-400 transition-colors"
                 >
                   <input
                     type="checkbox"
@@ -630,6 +630,69 @@ export default function CreateResort() {
                 </label>
               ))}
             </div>
+            
+            {/* Custom amenities display */}
+            {amenities.filter(a => !AMENITIES.includes(a)).length > 0 && (
+              <div className="mt-4 pt-4 border-t border-slate-200">
+                <p className="text-xs font-semibold text-slate-600 mb-2">Custom Amenities:</p>
+                <div className="flex flex-wrap gap-2">
+                  {amenities.filter(a => !AMENITIES.includes(a)).map(customAmenity => (
+                    <span 
+                      key={customAmenity}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-resort-100 text-resort-700 rounded-full text-sm font-medium"
+                    >
+                      {customAmenity}
+                      <button
+                        type="button"
+                        onClick={() => toggleAmenity(customAmenity)}
+                        className="ml-1 text-resort-500 hover:text-resort-700"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Add custom amenity input */}
+            <div className="mt-4 pt-4 border-t border-slate-200">
+              <label className="text-xs font-semibold text-slate-600 mb-2 block">Add Custom Amenity:</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  id="custom-amenity-input"
+                  placeholder="e.g., Hammock, Fire Pit, Telescope..."
+                  className="flex-1 px-3 py-2 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 text-sm"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      const input = e.target as HTMLInputElement
+                      const value = input.value.trim()
+                      if (value && !amenities.includes(value)) {
+                        toggleAmenity(value)
+                        input.value = ''
+                      }
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const input = document.getElementById('custom-amenity-input') as HTMLInputElement
+                    const value = input?.value.trim()
+                    if (value && !amenities.includes(value)) {
+                      toggleAmenity(value)
+                      input.value = ''
+                    }
+                  }}
+                  className="px-4 py-2 bg-resort-500 text-white rounded-lg font-medium text-sm hover:bg-resort-600 transition-colors"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+            
             {errors.amenities && <p className="text-xs text-red-500 mt-3">{errors.amenities.message}</p>}
           </div>
 
