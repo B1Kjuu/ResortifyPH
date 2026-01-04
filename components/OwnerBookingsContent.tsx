@@ -264,20 +264,24 @@ export default function OwnerBookingsContent(props: Props){
 
               {/* Add Existing Booking Modal */}
               {showManualBookingModal && allResorts && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
                   <div className="absolute inset-0 bg-black/40" onClick={() => setShowManualBookingModal(false)} />
-                  <div className="relative bg-white rounded-2xl border-2 border-slate-200 shadow-xl w-[95%] max-w-lg p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="text-2xl font-bold text-slate-900">Add Existing Booking</h3>
-                        <p className="text-slate-600 text-sm">Block dates for bookings made before using this platform</p>
+                  <div className="relative bg-white rounded-t-2xl sm:rounded-2xl border-2 border-slate-200 shadow-xl w-full sm:w-[95%] sm:max-w-lg max-h-[90vh] overflow-y-auto">
+                    <div className="sticky top-0 bg-white z-10 p-4 sm:p-6 pb-3 border-b border-slate-100">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="text-xl sm:text-2xl font-bold text-slate-900">Add Existing Booking</h3>
+                          <p className="text-slate-600 text-xs sm:text-sm">Block dates for bookings made outside this platform</p>
+                        </div>
+                        <button
+                          type="button"
+                          className="p-2 rounded-lg border-2 border-slate-200 hover:bg-slate-50 text-sm"
+                          onClick={() => setShowManualBookingModal(false)}
+                          aria-label="Close modal"
+                        >✖</button>
                       </div>
-                      <button
-                        type="button"
-                        className="px-3 py-2 rounded-lg border-2 border-slate-200 hover:bg-slate-50"
-                        onClick={() => setShowManualBookingModal(false)}
-                      >✖</button>
                     </div>
+                    <div className="p-4 sm:p-6 pt-4">
                     <form onSubmit={handleManualBookingSubmit} className="space-y-4">
                       <div>
                         <label className="block text-sm font-bold text-slate-700 mb-1">Resort *</label>
@@ -349,7 +353,7 @@ export default function OwnerBookingsContent(props: Props){
                       <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
                         💡 <strong>Note:</strong> This booking will be marked as confirmed and will block the selected dates on your calendar. Use this for reservations made outside this platform.
                       </div>
-                      <div className="flex gap-3 pt-2">
+                      <div className="flex gap-3 pt-2 pb-4 sm:pb-0">
                         <button
                           type="button"
                           onClick={() => setShowManualBookingModal(false)}
@@ -366,6 +370,7 @@ export default function OwnerBookingsContent(props: Props){
                         </button>
                       </div>
                     </form>
+                    </div>
                   </div>
                 </div>
               )}

@@ -203,20 +203,36 @@ export default function ProfilePage(){
                       return
                     }
                     
+                    // Verify user is still authenticated
+                    const { data: { user } } = await supabase.auth.getUser()
+                    if (!user) {
+                      toast.error('Please log in again to upload photos')
+                      return
+                    }
+                    
                     toast.loading('Uploading photo...')
                     
-                    const safeName = file.name.toLowerCase().replace(/[^a-z0-9\.\-]+/g, '-')
-                    const filePath = `${profile.id}/${Date.now()}_${safeName}`
+                    // Use a simpler file extension extraction
+                    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+                    const filePath = `${profile.id}/${Date.now()}.${ext}`
                     
                     const { error: uploadError, data: uploadData } = await supabase.storage
                       .from('avatars')
                       .upload(filePath, file, { 
                         contentType: file.type,
-                        upsert: true 
+                        upsert: true,
+                        cacheControl: '3600'
                       })
                     
                     if (uploadError) {
                       console.error('Upload error details:', uploadError)
+                      // Provide user-friendly error messages
+                      if (uploadError.message?.includes('Bucket not found')) {
+                        throw new Error('Avatar storage is not configured. Please contact support.')
+                      }
+                      if (uploadError.message?.includes('row-level security') || uploadError.message?.includes('policy')) {
+                        throw new Error('Upload permission denied. Please try logging out and back in.')
+                      }
                       throw new Error(uploadError.message || 'Upload failed')
                     }
                     
@@ -550,7 +566,22 @@ export default function ProfilePage(){
                                   try {
                                     setLinking(p as 'google' | 'facebook')
                                     const { error } = await supabase.auth.linkIdentity({ provider: p as any, options: { redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/profile` : undefined } })
-                                    if (error) throw error
+                                    if (error) {
+                                      const msg = error.message?.toLowerCase() || ''
+                                      // Check for manual linking disabled error
+                                      if (msg.includes('manual linking') || msg.includes('disabled')) {
+                                        throw new Error('Account linking is currently unavailable. Please contact support.')
+                                      }
+                                      // Check for already linked to another account
+                                      if (msg.includes('already linked') || msg.includes('already registered') || msg.includes('already exists') || msg.includes('identity already exists')) {
+                                        throw new Error(`This ${p === 'google' ? 'Google' : 'Facebook'} account is already linked to another user.`)
+                                      }
+                                      // Check for email already in use
+                                      if (msg.includes('email') && (msg.includes('already') || msg.includes('exists') || msg.includes('in use'))) {
+                                        throw new Error(`The email from this ${p === 'google' ? 'Google' : 'Facebook'} account is already registered with another user.`)
+                                      }
+                                      throw error
+                                    }
                                     const { data: userData } = await supabase.auth.getUser()
                                     setAuthUser(userData?.user || null)
                                     toast.success(`${p === 'google' ? 'Google' : 'Facebook'} linked`)
