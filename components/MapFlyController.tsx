@@ -19,7 +19,7 @@ export default function MapFlyController({ userPosition, flyToUserTrigger }: Map
       console.log('[MapFlyController] Flying to user:', userPosition, 'trigger:', flyToUserTrigger)
       lastTriggerRef.current = flyToUserTrigger
       // Always fly to zoom level 15 for user location - close enough to see details
-      map.flyTo([userPosition.latitude, userPosition.longitude], 15, { duration: 1.2 })
+      map.flyTo([userPosition.latitude, userPosition.longitude], 17, { duration: 1.2 })
     }
   }, [map, userPosition, flyToUserTrigger])
 

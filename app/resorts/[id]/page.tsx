@@ -435,10 +435,25 @@ export default function ResortDetail({ params }: { params: { id: string } }){
     // Get time slot details if selected (for legacy time slots)
     const timeSlotDetails = selectedTimeSlot ? getTimeSlotById(selectedTimeSlot) : null
     
+    // Default times based on booking type (fallback if no time slot selected)
+    const getDefaultTimes = (type: BookingType): { start: string; end: string } => {
+      switch (type) {
+        case 'daytour': return { start: '08:00', end: '17:00' }
+        case 'overnight': return { start: '19:00', end: '06:00' }
+        case '22hrs': return { start: '08:00', end: '06:00' }
+        default: return { start: '08:00', end: '17:00' }
+      }
+    }
+    const defaultTimes = getDefaultTimes(bookingType)
+    
     // Determine which pricing mode to use
     const isAdvancedPricing = useTimeSlotCalendar && selectedDbSlotId && dynamicPrice
     const finalPrice = isAdvancedPricing ? dynamicPrice : totalCost
     const finalSlotId = isAdvancedPricing ? selectedDbSlotId : selectedTimeSlot
+    
+    // Use time slot times if available, otherwise use defaults based on booking type
+    const checkInTime = timeSlotDetails?.startTime ?? defaultTimes.start
+    const checkOutTime = timeSlotDetails?.endTime ?? defaultTimes.end
 
     let newId: string | null = null
     let error: any = null
@@ -454,8 +469,8 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       // New booking type fields
       p_booking_type: bookingType,
       p_time_slot_id: finalSlotId,
-      p_check_in_time: timeSlotDetails?.startTime ?? null,
-      p_check_out_time: timeSlotDetails?.endTime ?? null,
+      p_check_in_time: checkInTime,
+      p_check_out_time: checkOutTime,
       p_total_price: finalPrice,
       p_downpayment_amount: downpaymentAmount,
       // Legacy fields
@@ -483,8 +498,8 @@ export default function ResortDetail({ params }: { params: { id: string } }){
           guest_count: guests,
           booking_type: bookingType || null,
           time_slot_id: finalSlotId || null,
-          check_in_time: timeSlotDetails?.startTime ?? null,
-          check_out_time: timeSlotDetails?.endTime ?? null,
+          check_in_time: checkInTime,
+          check_out_time: checkOutTime,
           total_price: finalPrice,
           downpayment_amount: downpaymentAmount,
           children_count: childrenCount,
@@ -1188,61 +1203,27 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                 <span className="text-xs sm:text-sm text-slate-500">Flexible dates</span>
               </div>
 
-              {/* New Booking Type Selector */}
-              {hasAdvancedPricing ? (
-                <BookingTypeSelector
-                  pricingConfig={pricingConfig}
-                  selectedBookingType={bookingType}
-                  selectedTimeSlot={selectedTimeSlot}
-                  selectedDate={selectedDate ?? null}
-                  guestCount={guests}
-                  onBookingTypeChange={(type) => {
-                    setBookingType(type)
-                    setSelectedTimeSlot(null)
-                    // Reset ALL date selections when switching types to prevent glitches
-                    setSelectedRange({ from: undefined, to: undefined })
-                    setSelectedSingleDate(undefined)
-                  }}
-                  onTimeSlotChange={setSelectedTimeSlot}
-                  legacyPricing={{
-                    day_tour_price: resort.day_tour_price,
-                    night_tour_price: resort.night_tour_price,
-                    overnight_price: resort.overnight_price,
-                  }}
-                />
-              ) : (
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700">Stay Type</label>
-                  <div className="mt-1">
-                    {/* Legacy styled select for stay type/time */}
-                    <div className="relative">
-                      <select 
-                        value={bookingType} 
-                        onChange={(e) => {
-                          const val = e.target.value
-                          if (val === 'daytour' || val === 'overnight' || val === '22hrs') {
-                            setBookingType(val)
-                            // Reset ALL date selections when switching types to prevent glitches
-                            setSelectedRange({ from: undefined, to: undefined })
-                            setSelectedSingleDate(undefined)
-                            setSelectedTimeSlot(null)
-                          } else {
-                            setStayType(val as any)
-                          }
-                        }} 
-                        className="appearance-none w-full px-3 py-2.5 h-11 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-resort-500/20 focus:border-resort-500 bg-white pr-9 hover:border-slate-300 transition-all"
-                      >
-                        <option value="daytour">Daytour (8am - 5pm)</option>
-                        <option value="overnight">Overnight (7pm - 6am)</option>
-                        <option value="22hrs">22 Hours (extended stay)</option>
-                      </select>
-                      <svg className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* Unified Booking Type Selector - Always use button UI */}
+              <BookingTypeSelector
+                pricingConfig={pricingConfig}
+                selectedBookingType={bookingType}
+                selectedTimeSlot={selectedTimeSlot}
+                selectedDate={selectedDate ?? null}
+                guestCount={guests}
+                onBookingTypeChange={(type) => {
+                  setBookingType(type)
+                  setSelectedTimeSlot(null)
+                  // Reset ALL date selections when switching types to prevent glitches
+                  setSelectedRange({ from: undefined, to: undefined })
+                  setSelectedSingleDate(undefined)
+                }}
+                onTimeSlotChange={setSelectedTimeSlot}
+                legacyPricing={{
+                  day_tour_price: resort.day_tour_price,
+                  night_tour_price: resort.night_tour_price,
+                  overnight_price: resort.overnight_price,
+                }}
+              />
 
               {message && (
                 <div className={`px-4 py-3 rounded-lg text-sm font-semibold ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>

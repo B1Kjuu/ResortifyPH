@@ -130,7 +130,8 @@ export default function EditResort(){
       setNearbyLandmarks(resort.nearby_landmarks || '')
       setBringOwnItems(resort.bring_own_items || '')
       setPricingConfig(resort.pricing_config || null)
-      setPricingMode(resort.pricing_config ? 'advanced' : 'simple')
+      // Use use_advanced_pricing flag if set, otherwise check if pricing_config exists
+      setPricingMode(resort.use_advanced_pricing || resort.pricing_config ? 'advanced' : 'simple')
       // Load exact location data
       setLatitude(resort.latitude || null)
       setLongitude(resort.longitude || null)
@@ -148,8 +149,15 @@ export default function EditResort(){
 
   async function handleUpdate(e: React.FormEvent){
     e.preventDefault()
-    if (!userId || !name || !location || !price || !capacity || !contactNumber) { 
+    // For advanced pricing, base price is optional (comes from pricing config)
+    const isAdvancedPricing = pricingMode === 'advanced' && pricingConfig?.pricing?.length
+    if (!userId || !name || !location || !capacity || !contactNumber) { 
       alert('Please fill all required fields'); 
+      return 
+    }
+    // Require price only for simple pricing mode
+    if (!isAdvancedPricing && !price) {
+      alert('Please set a base price'); 
       return 
     }
     if (images.length === 0) {
@@ -172,7 +180,7 @@ export default function EditResort(){
         region_code: provinceInfo?.regionCode ?? null,
         region_name: provinceInfo?.regionName ?? null,
         type,
-        price: Number(price),
+        price: price ? Number(price) : null,
         day_tour_price: dayTourPrice ? Number(dayTourPrice) : null,
         night_tour_price: nightTourPrice ? Number(nightTourPrice) : null,
         overnight_price: overnightPrice ? Number(overnightPrice) : null,
@@ -195,6 +203,7 @@ export default function EditResort(){
         nearby_landmarks: nearbyLandmarks,
         bring_own_items: bringOwnItems,
         pricing_config: pricingMode === 'advanced' ? pricingConfig : null,
+        use_advanced_pricing: pricingMode === 'advanced' && pricingConfig?.pricing?.length ? true : false,
         updated_at: new Date() 
       })
       .eq('id', resortId)

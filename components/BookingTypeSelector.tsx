@@ -42,20 +42,14 @@ export default function BookingTypeSelector({
   onTimeSlotChange,
   legacyPricing,
 }: BookingTypeSelectorProps) {
-  // Get enabled booking types
+  // Get enabled booking types - always show all 3 types for unified UI
   const enabledTypes = useMemo(() => {
     if (pricingConfig?.enabledBookingTypes?.length) {
       return BOOKING_TYPES.filter(t => pricingConfig.enabledBookingTypes.includes(t.id))
     }
-    // Fallback to legacy: show all types if legacy prices exist
-    const types: BookingType[] = []
-    if (legacyPricing?.day_tour_price) types.push('daytour')
-    if (legacyPricing?.night_tour_price) types.push('overnight')
-    if (legacyPricing?.overnight_price) types.push('22hrs')
-    // If no legacy prices, show all
-    if (types.length === 0) return BOOKING_TYPES
-    return BOOKING_TYPES.filter(t => types.includes(t.id))
-  }, [pricingConfig, legacyPricing])
+    // Always show all booking types for unified experience
+    return BOOKING_TYPES
+  }, [pricingConfig])
 
   // Get available time slots for selected booking type
   const availableSlots = useMemo(() => {
@@ -67,9 +61,19 @@ export default function BookingTypeSelector({
         pricingConfig.enabledTimeSlots.includes(s.id)
       )
     }
-    // Fallback: show default slots for the type
-    return getTimeSlotsForType(selectedBookingType).slice(0, 2)
+    // Fallback: show first default slot for the type (simplified mode)
+    return getTimeSlotsForType(selectedBookingType).slice(0, 1)
   }, [selectedBookingType, pricingConfig])
+
+  // Check if we should show time slot selector (only if multiple slots available)
+  const showTimeSlotSelector = availableSlots.length > 1
+
+  // Auto-select first time slot if only one available
+  React.useEffect(() => {
+    if (availableSlots.length === 1 && selectedTimeSlot !== availableSlots[0].id) {
+      onTimeSlotChange(availableSlots[0].id)
+    }
+  }, [availableSlots, selectedTimeSlot, onTimeSlotChange])
 
   // Calculate price for a booking type
   const getPriceForType = (type: BookingType): number | null => {
@@ -153,8 +157,8 @@ export default function BookingTypeSelector({
         </div>
       </div>
 
-      {/* Time Slot Selection */}
-      {selectedBookingType && availableSlots.length > 0 && (
+      {/* Time Slot Selection - Only show if multiple slots available */}
+      {selectedBookingType && showTimeSlotSelector && (
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-2">Time Slot</label>
           <div className="space-y-2">
@@ -189,6 +193,15 @@ export default function BookingTypeSelector({
               )
             })}
           </div>
+        </div>
+      )}
+
+      {/* Show single slot info when only one slot (no selector needed) */}
+      {selectedBookingType && availableSlots.length === 1 && (
+        <div className="text-sm text-slate-600 bg-slate-50 rounded-lg p-3">
+          <span className="font-medium">Time: </span>
+          {formatTime(availableSlots[0].startTime)} - {formatTime(availableSlots[0].endTime)}
+          <span className="text-slate-500 ml-1">({availableSlots[0].hours} hours)</span>
         </div>
       )}
 

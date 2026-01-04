@@ -12,6 +12,8 @@ const RESORT_LIST_COLUMNS = `
   day_tour_price,
   night_tour_price,
   overnight_price,
+  use_advanced_pricing,
+  pricing_config,
   type,
   capacity,
   amenities,
@@ -22,6 +24,49 @@ const RESORT_LIST_COLUMNS = `
   region_code,
   region_name
 `
+
+// Helper function to extract minimum display price from pricing_config
+function getDisplayPrice(resort: any): number | null {
+  // If resort has a simple price, use it
+  if (resort.price != null && resort.price > 0) {
+    return resort.price
+  }
+  
+  // Check pricing_config for advanced pricing (regardless of use_advanced_pricing flag)
+  if (resort.pricing_config) {
+    try {
+      const config = typeof resort.pricing_config === 'string' 
+        ? JSON.parse(resort.pricing_config) 
+        : resort.pricing_config
+      
+      // Try to get prices from the pricing array
+      if (config.pricing && Array.isArray(config.pricing)) {
+        const prices = config.pricing
+          .map((p: any) => p.price)
+          .filter((p: any) => typeof p === 'number' && p > 0)
+        
+        if (prices.length > 0) {
+          return Math.min(...prices)
+        }
+      }
+    } catch (e) {
+      console.error('Error parsing pricing_config:', e)
+    }
+  }
+  
+  // Fallback to legacy pricing fields
+  const legacyPrices = [
+    resort.day_tour_price,
+    resort.night_tour_price,
+    resort.overnight_price
+  ].filter((p: any) => typeof p === 'number' && p > 0)
+  
+  if (legacyPrices.length > 0) {
+    return Math.min(...legacyPrices)
+  }
+  
+  return null
+}
 
 // GET /api/resorts - Get paginated resorts with caching
 export async function GET(request: Request) {
@@ -49,8 +94,17 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch resorts' }, { status: 500 })
     }
 
+    // Process resorts to ensure display price is available
+    const processedResorts = (resorts || []).map(resort => ({
+      ...resort,
+      // Ensure price field has a display value for map/cards
+      price: getDisplayPrice(resort),
+      // Remove pricing_config from response to reduce payload size
+      pricing_config: undefined,
+    }))
+
     // Get aggregated ratings efficiently using RPC if available, else simple query
-    const resortIds = (resorts || []).map(r => r.id)
+    const resortIds = processedResorts.map(r => r.id)
     let ratingsMap: Record<string, { avg: number; count: number }> = {}
 
     if (resortIds.length > 0) {
@@ -70,7 +124,7 @@ export async function GET(request: Request) {
     }
 
     const response = NextResponse.json({
-      resorts: resorts || [],
+      resorts: processedResorts,
       ratings: ratingsMap,
       pagination: {
         page,

@@ -205,6 +205,7 @@ export default function CreateResort() {
       overnight_price: values.overnight_price ?? null,
       additional_guest_fee: values.additional_guest_fee ?? null,
       pricing_config: values.pricing_config ?? null,
+      use_advanced_pricing: values.pricing_config?.pricing?.length ? true : false,
       capacity: values.capacity,
       bedrooms: values.bedrooms ?? null,
       bathrooms: values.bathrooms ?? null,
