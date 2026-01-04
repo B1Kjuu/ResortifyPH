@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { supabase } from '../lib/supabaseClient'
 import { listNotifications, markAllRead, deleteAllNotifications } from '../lib/notifications'
@@ -9,71 +9,50 @@ export default function NotificationsBell(){
   const [items, setItems] = useState<any[]>([])
   const [unread, setUnread] = useState(0)
   const [soundOn, setSoundOn] = useState<boolean>(true) // Default to true, will sync from localStorage in useEffect
+  const soundOnRef = useRef(true) // Ref to track soundOn in subscription callback
   const [toast, setToast] = useState<{ title: string; body?: string; link?: string } | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const [userId, setUserId] = useState<string | null>(null)
 
   // Sync soundOn from localStorage on mount (client-side only)
   useEffect(() => {
     try {
       const stored = localStorage.getItem('notif_sound')
       if (stored !== null) {
-        setSoundOn(stored === 'on')
+        const isOn = stored === 'on'
+        setSoundOn(isOn)
+        soundOnRef.current = isOn
       }
     } catch {}
   }, [])
 
-  // Close dropdown when clicking outside
+  // Keep soundOnRef in sync
+  useEffect(() => {
+    soundOnRef.current = soundOn
+  }, [soundOn])
+
+  // Close dropdown when clicking outside OR scrolling on mobile
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setOpen(false)
       }
     }
+    function handleScroll() {
+      // Close on scroll (especially for mobile)
+      if (open) setOpen(false)
+    }
     if (open) {
       document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
+      window.addEventListener('scroll', handleScroll, true) // Capture phase for scroll
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside)
+        window.removeEventListener('scroll', handleScroll, true)
+      }
     }
   }, [open])
 
-  useEffect(() => {
-    let mounted = true
-    async function load(){
-      const data = await listNotifications(10)
-      if (!mounted) return
-      setItems(data)
-      setUnread((data || []).filter((n: any) => !n.read_at).length)
-    }
-    load()
-
-    const channel = supabase
-      .channel('notifications_changes')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, async (payload: any) => {
-        await load()
-        try {
-          const row = payload?.new
-          if (row && row.user_id) {
-            setToast({ title: row.title, body: row.body, link: row.link })
-            if (soundOn) beep()
-            setTimeout(() => setToast(null), 5000)
-          }
-        } catch {}
-      })
-      .subscribe()
-
-    return () => { channel.unsubscribe(); mounted = false }
-  }, [])
-
-  async function toggleOpen(){
-    setOpen(prev => !prev)
-    if (!open && unread > 0) {
-      await markAllRead()
-      const data = await listNotifications(10)
-      setItems(data)
-      setUnread((data || []).filter((n: any) => !n.read_at).length)
-    }
-  }
-
-  function beep(){
+  const beep = useCallback(() => {
     try {
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
       const o = ctx.createOscillator()
@@ -87,6 +66,70 @@ export default function NotificationsBell(){
       o.start()
       setTimeout(() => { g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.2); o.stop(ctx.currentTime + 0.2) }, 150)
     } catch {}
+  }, [])
+
+  useEffect(() => {
+    let mounted = true
+    let channel: any = null
+
+    async function init() {
+      // Get current user
+      const { data: { session } } = await supabase.auth.getSession()
+      const uid = session?.user?.id
+      if (!mounted) return
+      setUserId(uid || null)
+      
+      // Load initial notifications
+      const data = await listNotifications(10)
+      if (!mounted) return
+      setItems(data)
+      setUnread((data || []).filter((n: any) => !n.read_at).length)
+
+      // Only subscribe if we have a user
+      if (uid) {
+        channel = supabase
+          .channel('notifications_changes')
+          .on('postgres_changes', { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'notifications',
+            filter: `user_id=eq.${uid}` // Filter by current user
+          }, async (payload: any) => {
+            // Reload notifications
+            const newData = await listNotifications(10)
+            if (!mounted) return
+            setItems(newData)
+            setUnread((newData || []).filter((n: any) => !n.read_at).length)
+            
+            try {
+              const row = payload?.new
+              if (row && row.user_id === uid) {
+                setToast({ title: row.title, body: row.body, link: row.link })
+                if (soundOnRef.current) beep()
+                setTimeout(() => setToast(null), 5000)
+              }
+            } catch {}
+          })
+          .subscribe()
+      }
+    }
+
+    init()
+
+    return () => { 
+      mounted = false
+      if (channel) channel.unsubscribe()
+    }
+  }, [beep])
+
+  async function toggleOpen(){
+    setOpen(prev => !prev)
+    if (!open && unread > 0) {
+      await markAllRead()
+      const data = await listNotifications(10)
+      setItems(data)
+      setUnread((data || []).filter((n: any) => !n.read_at).length)
+    }
   }
 
   return (

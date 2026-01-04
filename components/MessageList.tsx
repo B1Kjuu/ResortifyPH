@@ -14,13 +14,37 @@ type Props = {
 
 export default function MessageList({ messages, currentUserId, onReact, ownerId, guestId }: Props) {
   const bottomRef = useRef<HTMLDivElement | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
   const [profiles, setProfiles] = useState<Record<string, UserProfile>>({})
   const [reactions, setReactions] = useState<Record<string, MessageReaction[]>>({})
   const [expandedImage, setExpandedImage] = useState<string | null>(null)
+  const [autoScrollEnabled, setAutoScrollEnabled] = useState(true)
+  const prevMessagesLengthRef = useRef(messages.length)
 
+  // Only auto-scroll if user is near the bottom (within 150px)
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    const container = containerRef.current
+    if (!container) return
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 150
+      setAutoScrollEnabled(isNearBottom)
+    }
+
+    container.addEventListener('scroll', handleScroll)
+    return () => container.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  // Scroll to bottom only when new messages arrive AND user was near bottom
+  useEffect(() => {
+    const isNewMessage = messages.length > prevMessagesLengthRef.current
+    prevMessagesLengthRef.current = messages.length
+
+    if (isNewMessage && autoScrollEnabled) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [messages, autoScrollEnabled])
 
   // Fetch user profiles for all senders
   useEffect(() => {
@@ -123,7 +147,7 @@ export default function MessageList({ messages, currentUserId, onReact, ownerId,
 
   return (
     <>
-      <div className="h-full overflow-y-auto p-4 space-y-4">
+      <div ref={containerRef} className="h-full overflow-y-auto p-4 space-y-4">
         {messages.map((m, idx) => {
           const mine = m.sender_id === currentUserId
           const isOwnerSender = ownerId ? m.sender_id === ownerId : false

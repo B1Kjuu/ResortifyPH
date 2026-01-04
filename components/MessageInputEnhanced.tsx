@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useRef, useEffect } from 'react'
+import Link from 'next/link'
 import supabase from '../lib/supabaseClient'
 import { FaPaperclip, FaPaperPlane } from 'react-icons/fa'
-import { FiCreditCard, FiCamera, FiX, FiChevronDown } from 'react-icons/fi'
+import { FiCreditCard, FiCamera, FiX, FiChevronDown, FiSettings } from 'react-icons/fi'
 import { PaymentTemplate, PAYMENT_METHODS } from '@/types/payment'
 import PaymentTemplateManager from './PaymentTemplateManager'
 
@@ -362,7 +363,17 @@ export default function MessageInputEnhanced({
               ) : null}
               
               <div className="pt-4 border-t border-slate-200">
-                <p className="text-sm text-slate-500 mb-3">Manage your templates:</p>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm text-slate-500">Manage your templates:</p>
+                  <Link 
+                    href="/owner/payment-settings" 
+                    className="inline-flex items-center gap-1.5 text-xs text-cyan-600 hover:text-cyan-700 font-medium"
+                    onClick={() => setShowTemplateModal(false)}
+                  >
+                    <FiSettings className="w-3.5 h-3.5" />
+                    Payment Settings
+                  </Link>
+                </div>
                 <PaymentTemplateManager onSelectTemplate={insertTemplate} selectionMode={false} />
               </div>
             </div>

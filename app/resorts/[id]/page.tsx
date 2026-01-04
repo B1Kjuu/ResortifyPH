@@ -609,8 +609,8 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                     to: owner.email,
                     status: 'created',
                     resortName: resort.name,
-                    dateFrom: format(selectedRange.from!, 'yyyy-MM-dd'),
-                    dateTo: format(selectedRange.to!, 'yyyy-MM-dd'),
+                    dateFrom: format(bookingDateFrom, 'yyyy-MM-dd'),
+                    dateTo: format(bookingDateTo, 'yyyy-MM-dd'),
                     link: `/chat/${newId}?as=owner`,
                     userId: owner.id,
                   })
@@ -618,6 +618,27 @@ export default function ResortDetail({ params }: { params: { id: string } }){
               }
             } catch (notifyErr) {
               console.warn('Notify owner (created) failed:', notifyErr)
+            }
+
+            // Fire guest notification email for booking request confirmation
+            try {
+              if (user?.email) {
+                await fetch('/api/notifications/booking-confirmed', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    to: user.email,
+                    resortName: resort.name,
+                    dateFrom: format(bookingDateFrom, 'yyyy-MM-dd'),
+                    dateTo: format(bookingDateTo, 'yyyy-MM-dd'),
+                    link: `/chat/${newId}?as=guest`,
+                    userId: user.id,
+                    status: 'pending',
+                  })
+                })
+              }
+            } catch (notifyErr) {
+              console.warn('Notify guest (created) failed:', notifyErr)
             }
           }
         } catch (chatSetupError) {

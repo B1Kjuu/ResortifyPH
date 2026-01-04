@@ -149,7 +149,21 @@ export default function PaymentSubmissionModal({
 
     } catch (err: any) {
       console.error('Error submitting payment:', err)
-      setError(err.message || 'Failed to submit payment')
+      // Provide user-friendly error messages
+      let errorMessage = 'Failed to submit payment'
+      const errMsg = err?.message?.toLowerCase() || ''
+      
+      if (errMsg.includes('bucket') || errMsg.includes('storage') || errMsg.includes('not found')) {
+        errorMessage = 'Unable to upload receipt. Please try again or contact support.'
+      } else if (errMsg.includes('permission') || errMsg.includes('policy') || errMsg.includes('not authorized')) {
+        errorMessage = 'You are not authorized to submit payments. Please sign in again.'
+      } else if (errMsg.includes('network') || errMsg.includes('fetch') || errMsg.includes('load failed')) {
+        errorMessage = 'Network error. Please check your internet connection and try again.'
+      } else if (err.message) {
+        errorMessage = err.message
+      }
+      
+      setError(errorMessage)
     } finally {
       setSubmitting(false)
       setUploading(false)
