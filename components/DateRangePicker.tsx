@@ -21,6 +21,9 @@ interface DateRangePickerProps {
   checkOutTime?: string // HH:mm format
   // Time cutoff props - when time exceeds cutoff, today is disabled
   cutoffTime?: string // HH:mm format - if current time > cutoff, today is disabled
+  // Slot-specific start times (from resort_time_slots)
+  overnightStartTime?: string // HH:mm format - cutoff for overnight bookings
+  twentyTwoHrsStartTime?: string // HH:mm format - cutoff for 22hrs bookings
 }
 
 export default function DateRangePicker({ 
@@ -36,6 +39,8 @@ export default function DateRangePicker({
   checkInTime,
   checkOutTime,
   cutoffTime,
+  overnightStartTime,
+  twentyTwoHrsStartTime,
 }: DateRangePickerProps) {
   const [monthCount, setMonthCount] = useState(1)
   const wrapperRef = useRef<HTMLDivElement | null>(null)
@@ -55,18 +60,45 @@ export default function DateRangePicker({
 
   // Check if today is past the cutoff time for this booking type
   const isTodayPastCutoff = (): boolean => {
-    if (!cutoffTime && !checkInTime) return false
-    
     const now = new Date()
+    const currentHour = now.getHours()
+    const currentMin = now.getMinutes()
+    
+    // For overnight bookings, use the host-configured overnight start time
+    // Falls back to 7 PM (19:00) if not set
+    if (bookingType === 'overnight') {
+      const overnightCutoff = overnightStartTime || '19:00'
+      try {
+        const [cutoffHour, cutoffMin] = overnightCutoff.split(':').map(Number)
+        if (currentHour > cutoffHour) return true
+        if (currentHour === cutoffHour && currentMin >= cutoffMin) return true
+        return false
+      } catch {
+        return false
+      }
+    }
+    
+    // For 22hrs, use the host-configured 22hrs start time
+    // Falls back to 2 PM (14:00) if not set
+    if (bookingType === '22hrs') {
+      const cutoff22hrs = twentyTwoHrsStartTime || '14:00'
+      try {
+        const [cutoffHour, cutoffMin] = cutoff22hrs.split(':').map(Number)
+        if (currentHour > cutoffHour) return true
+        if (currentHour === cutoffHour && currentMin >= cutoffMin) return true
+        return false
+      } catch {
+        return false
+      }
+    }
+    
+    // For daytour, use the provided cutoff (default to check-in time or noon)
+    if (!cutoffTime && !checkInTime) return false
     const cutoff = cutoffTime || checkInTime
     if (!cutoff) return false
     
     try {
       const [cutoffHour, cutoffMin] = cutoff.split(':').map(Number)
-      const currentHour = now.getHours()
-      const currentMin = now.getMinutes()
-      
-      // If current time is past the cutoff, today should be disabled
       if (currentHour > cutoffHour) return true
       if (currentHour === cutoffHour && currentMin >= cutoffMin) return true
       return false

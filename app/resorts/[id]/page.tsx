@@ -69,6 +69,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
   const [dynamicPrice, setDynamicPrice] = useState<number | null>(null)
   const [dynamicPriceLoading, setDynamicPriceLoading] = useState(false)
   const [selectedDbSlotId, setSelectedDbSlotId] = useState<string | null>(null)
+  const [resortTimeSlots, setResortTimeSlots] = useState<Array<{ slot_type: string; start_time: string; end_time: string }>>([])
   const bookingCardRef = useRef<HTMLDivElement | null>(null)
   const router = useRouter()
 
@@ -118,6 +119,17 @@ export default function ResortDetail({ params }: { params: { id: string } }){
         // Check if resort uses advanced pricing (database-backed time slots)
         if (resortData.use_advanced_pricing) {
           setUseTimeSlotCalendar(true)
+        }
+
+        // Fetch time slots for this resort (for cutoff times)
+        const { data: timeSlotsData } = await supabase
+          .from('resort_time_slots')
+          .select('slot_type, start_time, end_time')
+          .eq('resort_id', params.id)
+          .eq('is_active', true)
+        
+        if (timeSlotsData && mounted) {
+          setResortTimeSlots(timeSlotsData)
         }
 
         // Get owner info - with error handling
@@ -1298,6 +1310,8 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                       checkInTime={resort?.check_in_time}
                       checkOutTime={resort?.check_out_time}
                       cutoffTime={resort?.check_in_time}
+                      overnightStartTime={resortTimeSlots.find(s => s.slot_type === 'overnight')?.start_time}
+                      twentyTwoHrsStartTime={resortTimeSlots.find(s => s.slot_type === '22hrs')?.start_time}
                     />
                   )}
                 </div>
