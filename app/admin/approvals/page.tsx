@@ -108,11 +108,23 @@ export default function ApprovalsPage(){
       toast.error(`Error: ${error.message}`)
       return
     }
+    
+    // Notify owner via email and in-app notification
+    try {
+      await fetch('/api/notifications/resort-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resortId: resort.id, status: 'approved' }),
+      })
+    } catch (notifyErr) {
+      console.warn('Failed to send approval notification:', notifyErr)
+    }
+    
     toast.success('Resort approved!')
     await loadPendingResorts()
   }
 
-  async function rejectResort(id: string){
+  async function rejectResort(id: string, reason?: string){
     toast.loading('Rejecting resort...')
     
     const { error } = await supabase
@@ -126,6 +138,17 @@ export default function ApprovalsPage(){
       console.error('Reject error:', error)
       toast.error(`Error: ${error.message}`)
       return 
+    }
+    
+    // Notify owner via email and in-app notification
+    try {
+      await fetch('/api/notifications/resort-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resortId: id, status: 'rejected', reason }),
+      })
+    } catch (notifyErr) {
+      console.warn('Failed to send rejection notification:', notifyErr)
     }
     
     toast.success('Resort rejected')

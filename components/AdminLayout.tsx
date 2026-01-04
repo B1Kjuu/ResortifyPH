@@ -30,9 +30,26 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname()
   const router = useRouter()
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  // Close mobile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (!target.closest('#mobile-profile-menu') && !target.closest('#mobile-profile-btn')) {
+        setMobileMenuOpen(false)
+      }
+    }
+    if (mobileMenuOpen) {
+      document.addEventListener('click', handleClickOutside)
+      return () => document.removeEventListener('click', handleClickOutside)
+    }
+  }, [mobileMenuOpen])
+
   // Close sidebar when route changes
   useEffect(() => {
     setSidebarOpen(false)
+    setMobileMenuOpen(false)
   }, [pathname])
 
   // Close sidebar on escape key
@@ -141,10 +158,44 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <FiShield className="w-5 h-5 text-purple-600" />
             <span className="font-bold text-slate-900">Admin Panel</span>
           </div>
-          <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-            <span className="text-purple-700 font-bold text-sm">
-              {profile?.full_name?.charAt(0) || 'A'}
-            </span>
+          <div className="relative">
+            <button
+              id="mobile-profile-btn"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center hover:ring-2 hover:ring-purple-300 transition-all"
+              aria-label="Profile menu"
+            >
+              <span className="text-purple-700 font-bold text-sm">
+                {profile?.full_name?.charAt(0) || 'A'}
+              </span>
+            </button>
+            {/* Mobile Profile Dropdown */}
+            {mobileMenuOpen && (
+              <div
+                id="mobile-profile-menu"
+                className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-50"
+              >
+                <div className="px-4 py-2 border-b border-slate-100">
+                  <p className="text-sm font-medium text-slate-900 truncate">
+                    {profile?.full_name || 'Admin'}
+                  </p>
+                  <p className="text-xs text-slate-500 truncate">
+                    {profile?.email || ''}
+                  </p>
+                </div>
+                <button
+                  onClick={async () => {
+                    setMobileMenuOpen(false)
+                    await supabase.auth.signOut()
+                    router.push('/auth/login')
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2 text-left text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  <FiLogOut className="w-4 h-4" />
+                  <span className="text-sm font-medium">Log out</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
