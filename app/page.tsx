@@ -87,65 +87,106 @@ export default function Home(){
   return (
     <div className="w-full min-h-screen bg-white">
       <>
-      {/* Hero Section */}
-      <section className="relative overflow-hidden w-full px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-32 bg-gradient-to-b from-resort-50/80 via-white to-white">
-        {/* Ambient blurred gradient accents */}
-        <div aria-hidden className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[400px] sm:w-[600px] lg:w-[720px] h-[200px] sm:h-[300px] rounded-full bg-gradient-to-r from-resort-300/40 via-resort-500/25 to-ocean-400/20 blur-3xl float-slow"></div>
-        <div aria-hidden className="pointer-events-none absolute bottom-0 right-0 translate-x-10 translate-y-10 w-[250px] sm:w-[380px] h-[150px] sm:h-[220px] rounded-full bg-gradient-to-br from-ocean-200/40 to-resort-400/25 blur-3xl float-slow"></div>
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+      {/* Hero Section - Enhanced */}
+      <section className="relative overflow-hidden w-full px-4 sm:px-6 lg:px-8 py-20 sm:py-28 lg:py-36 bg-gradient-to-br from-slate-50 via-white to-resort-50/30">
+        {/* Animated background elements */}
+        <div aria-hidden className="pointer-events-none absolute top-0 left-0 w-full h-full">
+          <div className="absolute top-20 left-[10%] w-72 h-72 bg-resort-200/30 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-20 right-[10%] w-96 h-96 bg-ocean-200/30 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}}></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-resort-100/20 to-ocean-100/20 rounded-full blur-3xl"></div>
+        </div>
+        
+        <div className="relative max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Left Content */}
-            <div className="space-y-5 sm:space-y-6 lg:space-y-8 fade-in-up text-center lg:text-left">
-              <div>
-                <span className="inline-block px-3 py-1.5 bg-gradient-to-r from-resort-100 to-ocean-100 text-resort-700 rounded-full text-xs sm:text-sm font-semibold mb-4 shadow-sm">✨ Discover Your Perfect Escape</span>
-                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 leading-tight">
-                  Find Your Next <span className="bg-gradient-to-r from-resort-500 via-resort-600 to-ocean-600 bg-clip-text text-transparent">Paradise</span>
+            <div className="space-y-6 sm:space-y-8 text-center lg:text-left">
+              <div className="space-y-4">
+                <span className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm text-resort-700 rounded-full text-xs sm:text-sm font-semibold shadow-lg shadow-resort-500/10 border border-resort-100">
+                  <span className="w-2 h-2 bg-resort-500 rounded-full animate-pulse"></span>
+                  Discover Your Perfect Escape
+                </span>
+                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-slate-900 leading-[1.1]">
+                  Find Your Next<br />
+                  <span className="bg-gradient-to-r from-resort-500 via-ocean-500 to-resort-600 bg-clip-text text-transparent">Paradise</span>
                 </h1>
               </div>
               
-              <p className="text-base sm:text-lg lg:text-xl text-slate-600 leading-relaxed max-w-xl mx-auto lg:mx-0">
-                Explore stunning resorts across the Philippines. Book unique accommodations, connect with resort owners, and create unforgettable memories.
+              <p className="text-lg sm:text-xl text-slate-600 leading-relaxed max-w-xl mx-auto lg:mx-0">
+                Explore stunning resorts across the Philippines. Book unique accommodations, connect with resort hosts, and create unforgettable memories.
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 sm:pt-4 justify-center lg:justify-start">
-                <Link href="/auth/signup" prefetch={false} className="px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-resort-500 to-resort-600 text-white rounded-xl font-semibold hover:shadow-xl hover:shadow-resort-500/25 transition-all duration-300 text-center text-sm sm:text-base">
+              <div className="flex flex-col sm:flex-row gap-4 pt-2 justify-center lg:justify-start">
+                <Link href="/auth/signup" prefetch={false} className="group px-8 py-4 bg-gradient-to-r from-resort-500 to-resort-600 text-white rounded-2xl font-semibold hover:shadow-2xl hover:shadow-resort-500/30 transition-all duration-300 text-center flex items-center justify-center gap-2">
                   Get Started Free
+                  <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Link
                   href="/resorts"
                   prefetch={false}
-                  className="px-6 sm:px-8 py-3 sm:py-4 border-2 border-slate-300 text-slate-900 rounded-xl font-semibold hover:border-resort-500 hover:bg-resort-50/50 transition-all duration-300 text-center text-sm sm:text-base"
+                  className="px-8 py-4 bg-white border-2 border-slate-200 text-slate-900 rounded-2xl font-semibold hover:border-resort-500 hover:shadow-lg transition-all duration-300 text-center"
                 >
                   Browse Resorts
                 </Link>
               </div>
 
-              <div className="flex gap-4 sm:gap-6 pt-2 sm:pt-4 text-xs sm:text-sm text-slate-600 justify-center lg:justify-start">
+              <div className="flex flex-wrap gap-6 pt-4 text-sm text-slate-600 justify-center lg:justify-start">
                 <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-resort-100 flex items-center justify-center text-resort-600">✓</span>
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-resort-400 to-resort-600 flex items-center justify-center text-white text-xs">
+                    <FiCheckCircle size={14} />
+                  </div>
                   <span>No hidden fees</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-resort-100 flex items-center justify-center text-resort-600">✓</span>
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-resort-400 to-resort-600 flex items-center justify-center text-white text-xs">
+                    <FiCheckCircle size={14} />
+                  </div>
                   <span>Instant booking</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-resort-400 to-resort-600 flex items-center justify-center text-white text-xs">
+                    <FiCheckCircle size={14} />
+                  </div>
+                  <span>Verified hosts</span>
                 </div>
               </div>
             </div>
 
-            {/* Right Image */}
-            <div className="relative h-64 sm:h-80 lg:h-full hidden sm:block blur-in">
-              <div className="absolute inset-0 bg-gradient-to-br from-resort-100 via-ocean-50 to-resort-200 rounded-2xl sm:rounded-3xl"></div>
-              <div className="absolute inset-0 rounded-2xl sm:rounded-3xl overflow-hidden">
-                <svg className="w-full h-full" viewBox="0 0 400 400" fill="none">
-                  <rect width="400" height="400" fill="#F0F9FF"/>
-                  <circle cx="200" cy="200" r="150" fill="#22c55e" opacity="0.08"/>
-                  <circle cx="100" cy="100" r="80" fill="#0ea5e9" opacity="0.08"/>
-                  <circle cx="300" cy="300" r="100" fill="#22c55e" opacity="0.08"/>
-                  <path d="M 80 200 Q 200 100 320 200" stroke="#22c55e" strokeWidth="3" opacity="0.2"/>
-                </svg>
+            {/* Right Image - Enhanced */}
+            <div className="relative h-80 sm:h-96 lg:h-[500px] hidden sm:block">
+              {/* Background card */}
+              <div className="absolute inset-4 bg-gradient-to-br from-resort-100 via-ocean-50 to-resort-100 rounded-3xl shadow-2xl shadow-resort-500/10"></div>
+              
+              {/* Decorative circles */}
+              <div className="absolute top-1/4 right-1/4 w-32 h-32 border-2 border-resort-200/50 rounded-full"></div>
+              <div className="absolute bottom-1/4 left-1/4 w-48 h-48 border-2 border-ocean-200/50 rounded-full"></div>
+              
+              {/* Floating cards */}
+              <div className="absolute top-8 right-8 bg-white rounded-2xl shadow-xl p-4 flex items-center gap-3 animate-bounce" style={{animationDuration: '3s'}}>
+                <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-500 rounded-xl flex items-center justify-center text-white">
+                  <FiStar size={20} />
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-slate-900">4.8 Rating</div>
+                  <div className="text-xs text-slate-500">100+ Reviews</div>
+                </div>
               </div>
-              <div className="absolute inset-0 rounded-2xl sm:rounded-3xl overflow-hidden flex items-end justify-center pb-6 sm:pb-8">
-                <span className="text-6xl sm:text-7xl lg:text-8xl">🏝️</span>
+              
+              <div className="absolute bottom-16 left-4 bg-white rounded-2xl shadow-xl p-4 flex items-center gap-3 animate-bounce" style={{animationDuration: '3.5s', animationDelay: '0.5s'}}>
+                <div className="w-10 h-10 bg-gradient-to-br from-resort-400 to-resort-600 rounded-xl flex items-center justify-center text-white">
+                  <FiMapPin size={20} />
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-slate-900">50+ Locations</div>
+                  <div className="text-xs text-slate-500">Nationwide</div>
+                </div>
+              </div>
+              
+              {/* Main illustration */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="relative">
+                  <div className="w-40 h-40 sm:w-48 sm:h-48 lg:w-56 lg:h-56 bg-gradient-to-br from-ocean-400 to-ocean-500 rounded-full opacity-20"></div>
+                  <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-7xl sm:text-8xl lg:text-9xl">🏝️</span>
+                </div>
               </div>
             </div>
           </div>
@@ -422,77 +463,95 @@ export default function Home(){
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-4">Frequently Asked Questions</h2>
             <p className="text-lg text-slate-600 max-w-2xl mx-auto">Everything you need to know about booking on ResortifyPH</p>
           </div>
-          <div className="grid md:grid-cols-2 gap-4">
-            <Reveal as="details" className="faq-item p-5">
-              <summary className="faq-summary">
-                <span className="flex items-center gap-2"><FiShield className="text-resort-600" /> Is payment secure?</span>
-                <FiChevronDown className="faq-caret text-slate-500" />
-              </summary>
-              <p className="mt-3 text-sm text-slate-600">We don’t process payments on-site. Coordinate payment details directly with the host in chat, and verify amounts and accounts before sending money. We’ll add in-site payment options later once the platform has more traction.</p>
+<div className="grid md:grid-cols-2 gap-4 items-start">
+            <Reveal>
+              <details className="faq-item p-5">
+                <summary className="faq-summary">
+                  <span className="flex items-center gap-2"><FiShield className="text-resort-600" /> Is payment secure?</span>
+                  <FiChevronDown className="faq-caret text-slate-500" />
+                </summary>
+                <p className="mt-3 text-sm text-slate-600">We don&apos;t process payments on-site. Coordinate payment details directly with the host in chat, and verify amounts and accounts before sending money. We&apos;ll add in-site payment options later once the platform has more traction.</p>
+              </details>
             </Reveal>
 
-            <Reveal as="details" className="faq-item p-5">
-              <summary className="faq-summary">
-                <span className="flex items-center gap-2"><FiCalendar className="text-resort-600" /> How do I change dates?</span>
-                <FiChevronDown className="faq-caret text-slate-500" />
-              </summary>
-              <p className="mt-3 text-sm text-slate-600">You can modify dates from your Bookings dashboard if the listing supports changes. Otherwise, message the host to request a new schedule—most respond quickly and will offer alternatives when the calendar is tight.</p>
+            <Reveal>
+              <details className="faq-item p-5">
+                <summary className="faq-summary">
+                  <span className="flex items-center gap-2"><FiCalendar className="text-resort-600" /> How do I change dates?</span>
+                  <FiChevronDown className="faq-caret text-slate-500" />
+                </summary>
+                <p className="mt-3 text-sm text-slate-600">You can modify dates from your Bookings dashboard if the listing supports changes. Otherwise, message the host to request a new schedule—most respond quickly and will offer alternatives when the calendar is tight.</p>
+              </details>
             </Reveal>
 
-            <Reveal as="details" className="faq-item p-5">
-              <summary className="faq-summary">
-                <span className="flex items-center gap-2"><FiCheckCircle className="text-resort-600" /> Are hosts verified?</span>
-                <FiChevronDown className="faq-caret text-slate-500" />
-              </summary>
-              <p className="mt-3 text-sm text-slate-600">Yes. We review listings and perform checks on host identities, property details, and policy compliance. Verified hosts display badges, and we regularly audit reviews to keep the marketplace high quality.</p>
+            <Reveal>
+              <details className="faq-item p-5">
+                <summary className="faq-summary">
+                  <span className="flex items-center gap-2"><FiCheckCircle className="text-resort-600" /> Are hosts verified?</span>
+                  <FiChevronDown className="faq-caret text-slate-500" />
+                </summary>
+                <p className="mt-3 text-sm text-slate-600">Yes. We review listings and perform checks on host identities, property details, and policy compliance. Verified hosts display badges, and we regularly audit reviews to keep the marketplace high quality.</p>
+              </details>
             </Reveal>
 
-            <Reveal as="details" className="faq-item p-5">
-              <summary className="faq-summary">
-                <span className="flex items-center gap-2"><FiFileText className="text-resort-600" /> What’s the cancellation policy?</span>
-                <FiChevronDown className="faq-caret text-slate-500" />
-              </summary>
-              <p className="mt-3 text-sm text-slate-600">Policies vary by resort and appear in the Cancellation section of each listing. Many offer full refunds within a grace period; stricter policies may apply during peak seasons or for last-minute changes.</p>
+<Reveal>
+              <details className="faq-item p-5">
+                <summary className="faq-summary">
+                  <span className="flex items-center gap-2"><FiFileText className="text-resort-600" /> What&apos;s the cancellation policy?</span>
+                  <FiChevronDown className="faq-caret text-slate-500" />
+                </summary>
+                <p className="mt-3 text-sm text-slate-600">Policies vary by resort and appear in the Cancellation section of each listing. Many offer full refunds within a grace period; stricter policies may apply during peak seasons or for last-minute changes.</p>
+              </details>
             </Reveal>
 
-            <Reveal as="details" className="faq-item p-5">
-              <summary className="faq-summary">
-                <span className="flex items-center gap-2"><FiRefreshCcw className="text-resort-600" /> Can I get a refund?</span>
-                <FiChevronDown className="faq-caret text-slate-500" />
-              </summary>
-              <p className="mt-3 text-sm text-slate-600">Refunds follow the listing’s policy. If eligible, we process refunds automatically to your original payment method; timing depends on your bank. You’ll receive status updates by email and in your dashboard.</p>
+<Reveal>
+              <details className="faq-item p-5">
+                <summary className="faq-summary">
+                  <span className="flex items-center gap-2"><FiRefreshCcw className="text-resort-600" /> Can I get a refund?</span>
+                  <FiChevronDown className="faq-caret text-slate-500" />
+                </summary>
+                <p className="mt-3 text-sm text-slate-600">Refunds follow the listing&apos;s policy. If eligible, we process refunds automatically to your original payment method; timing depends on your bank. You&apos;ll receive status updates by email and in your dashboard.</p>
+              </details>
             </Reveal>
 
-            <Reveal as="details" className="faq-item p-5">
-              <summary className="faq-summary">
-                <span className="flex items-center gap-2"><FiClock className="text-resort-600" /> What are check-in and check-out times?</span>
-                <FiChevronDown className="faq-caret text-slate-500" />
-              </summary>
-              <p className="mt-3 text-sm text-slate-600">Check-in and check-out are set by the host and appear on each listing. If you need early check-in or late check-out, message the host—they’ll confirm based on cleaning schedules and availability.</p>
+<Reveal>
+              <details className="faq-item p-5">
+                <summary className="faq-summary">
+                  <span className="flex items-center gap-2"><FiClock className="text-resort-600" /> What are check-in and check-out times?</span>
+                  <FiChevronDown className="faq-caret text-slate-500" />
+                </summary>
+                <p className="mt-3 text-sm text-slate-600">Check-in and check-out are set by the host and appear on each listing. If you need early check-in or late check-out, message the host—they&apos;ll confirm based on cleaning schedules and availability.</p>
+              </details>
             </Reveal>
 
-            <Reveal as="details" className="faq-item p-5">
-              <summary className="faq-summary">
-                <span className="flex items-center gap-2"><FiDollarSign className="text-resort-600" /> Are there any extra fees?</span>
-                <FiChevronDown className="faq-caret text-slate-500" />
-              </summary>
-              <p className="mt-3 text-sm text-slate-600">Pricing is transparent—taxes, cleaning, or security deposits are shown before checkout. If a host charges optional add-ons (like equipment rental), they’ll be clearly listed on the resort page.</p>
+<Reveal>
+              <details className="faq-item p-5">
+                <summary className="faq-summary">
+                  <span className="flex items-center gap-2"><FiDollarSign className="text-resort-600" /> Are there any extra fees?</span>
+                  <FiChevronDown className="faq-caret text-slate-500" />
+                </summary>
+                <p className="mt-3 text-sm text-slate-600">Pricing is transparent—taxes, cleaning, or security deposits are shown before checkout. If a host charges optional add-ons (like equipment rental), they&apos;ll be clearly listed on the resort page.</p>
+              </details>
             </Reveal>
 
-            <Reveal as="details" className="faq-item p-5">
-              <summary className="faq-summary">
-                <span className="flex items-center gap-2"><FiPhoneCall className="text-resort-600" /> How do I contact support?</span>
-                <FiChevronDown className="faq-caret text-slate-500" />
-              </summary>
-              <p className="mt-3 text-sm text-slate-600">Open the Help Center for quick answers or submit a ticket via the contact form. Our team is available daily and can assist with payments, booking changes, or reporting listing issues.</p>
+            <Reveal>
+              <details className="faq-item p-5">
+                <summary className="faq-summary">
+                  <span className="flex items-center gap-2"><FiPhoneCall className="text-resort-600" /> How do I contact support?</span>
+                  <FiChevronDown className="faq-caret text-slate-500" />
+                </summary>
+                <p className="mt-3 text-sm text-slate-600">Open the Help Center for quick answers or submit a ticket via the contact form. Our team is available daily and can assist with payments, booking changes, or reporting listing issues.</p>
+              </details>
             </Reveal>
 
-            <Reveal as="details" className="faq-item p-5">
-              <summary className="faq-summary">
-                <span className="flex items-center gap-2"><FiXCircle className="text-resort-600" /> My payment failed. What should I do?</span>
-                <FiChevronDown className="faq-caret text-slate-500" />
-              </summary>
-              <p className="mt-3 text-sm text-slate-600">Retry after a few minutes or switch methods (card, e-wallet, or bank transfer). If it still fails, contact support with the error code—we’ll verify the gateway and help you complete the booking.</p>
+<Reveal>
+              <details className="faq-item p-5">
+                <summary className="faq-summary">
+                  <span className="flex items-center gap-2"><FiXCircle className="text-resort-600" /> My payment failed. What should I do?</span>
+                  <FiChevronDown className="faq-caret text-slate-500" />
+                </summary>
+                <p className="mt-3 text-sm text-slate-600">Retry after a few minutes or switch methods (card, e-wallet, or bank transfer). If it still fails, contact support with the error code—we&apos;ll verify the gateway and help you complete the booking.</p>
+              </details>
             </Reveal>
           </div>
         </div>

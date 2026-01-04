@@ -605,16 +605,33 @@ textarea:focus {
 
 /* FAQ styles */
 details.faq-item {
-  @apply border border-slate-200 rounded-xl bg-white shadow-sm;
+  @apply border border-slate-200 rounded-xl bg-white shadow-sm transition-all duration-200;
+}
+details.faq-item:hover {
+  @apply border-resort-200 shadow-md;
+}
+details.faq-item[open] {
+  @apply border-resort-300 shadow-md bg-resort-50/30;
 }
 .faq-summary {
-  @apply flex items-center justify-between text-slate-900 font-semibold cursor-pointer;
+  @apply flex items-center justify-between text-slate-900 font-semibold cursor-pointer list-none;
+}
+.faq-summary::-webkit-details-marker {
+  display: none;
+}
+.faq-summary::marker {
+  display: none;
+  content: '';
 }
 .faq-caret {
+  @apply flex-shrink-0 ml-4;
   transition: transform 0.2s ease;
 }
 details.faq-item[open] .faq-caret {
   transform: rotate(180deg);
+}
+details.faq-item p {
+  @apply text-slate-600 leading-relaxed;
 }
 
 /* --------- Animations & Motion Utilities --------- */

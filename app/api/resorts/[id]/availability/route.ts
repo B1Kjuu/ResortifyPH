@@ -75,14 +75,16 @@ export async function GET(
     const isToday = now.toISOString().slice(0, 10) === dateStr
     const currentHour = now.getHours()
     const currentMinute = now.getMinutes()
+    const currentTimeMinutes = currentHour * 60 + currentMinute
     
-    // Cutoff times (in 24hr format):
-    // - Daytour: Cannot book after 12:00 PM (noon) on the same day
-    // - Overnight: Cannot book after 4:00 PM on the same day  
-    // - 22hrs: Cannot book after 10:00 AM on the same day
-    const DAYTOUR_CUTOFF_HOUR = 12
-    const OVERNIGHT_CUTOFF_HOUR = 16
-    const TWENTYTWO_CUTOFF_HOUR = 10
+    // Helper to parse time string "HH:MM" or "HH:MM:SS" to minutes since midnight
+    const parseTimeToMinutes = (timeStr: string): number => {
+      if (!timeStr) return 0
+      const parts = timeStr.split(':')
+      const hours = parseInt(parts[0], 10) || 0
+      const minutes = parseInt(parts[1], 10) || 0
+      return hours * 60 + minutes
+    }
     
     // Calculate availability for each slot
     const availableSlots = timeSlots.map(slot => {
@@ -90,16 +92,18 @@ export async function GET(
       let reason = ''
       
       // Time-based cutoff for same-day bookings
-      if (isToday) {
-        if ((slot.slot_type === 'daytour' || slot.slot_type === 'day_12h') && currentHour >= DAYTOUR_CUTOFF_HOUR) {
+      // Use the slot's configured start_time as the cutoff
+      if (isToday && slot.start_time) {
+        const slotStartMinutes = parseTimeToMinutes(slot.start_time)
+        
+        // If the slot crosses midnight (overnight), allow booking until the start time
+        // Otherwise, for daytour slots, the cutoff is the start time
+        if (currentTimeMinutes >= slotStartMinutes) {
           isAvailable = false
-          reason = `Daytour bookings close at ${DAYTOUR_CUTOFF_HOUR}:00 PM. It's past the cutoff time.`
-        } else if ((slot.slot_type === 'overnight' || slot.slot_type === 'overnight_22h') && currentHour >= OVERNIGHT_CUTOFF_HOUR) {
-          isAvailable = false
-          reason = `Overnight bookings close at ${OVERNIGHT_CUTOFF_HOUR}:00. It's past the cutoff time.`
-        } else if (slot.slot_type === '22hrs' && currentHour >= TWENTYTWO_CUTOFF_HOUR) {
-          isAvailable = false
-          reason = `22-hour bookings close at ${TWENTYTWO_CUTOFF_HOUR}:00 AM. It's past the cutoff time.`
+          const cutoffHour = Math.floor(slotStartMinutes / 60)
+          const cutoffMin = slotStartMinutes % 60
+          const cutoffFormatted = `${cutoffHour > 12 ? cutoffHour - 12 : cutoffHour}:${cutoffMin.toString().padStart(2, '0')} ${cutoffHour >= 12 ? 'PM' : 'AM'}`
+          reason = `Bookings for this slot close at ${cutoffFormatted}. It's past the cutoff time.`
         }
       }
       // Past dates are not bookable

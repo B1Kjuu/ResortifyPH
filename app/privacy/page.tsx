@@ -118,8 +118,7 @@ export default function PrivacyPage() {
             <h2 className="text-2xl font-bold text-slate-900 mb-4">10. Contact Us</h2>
             <p className="text-slate-600 leading-relaxed">
               If you have questions about this Privacy Policy, please contact us at:<br/>
-              Email: privacy@resortifyph.com<br/>
-              Phone: +63 (2) 1234-5678
+              Email: <a href="mailto:resortifyph@gmail.com" className="text-resort-600 hover:underline">resortifyph@gmail.com</a>
             </p>
           </section>
         </div>
