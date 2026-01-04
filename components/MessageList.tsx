@@ -20,29 +20,45 @@ export default function MessageList({ messages, currentUserId, onReact, ownerId,
   const [expandedImage, setExpandedImage] = useState<string | null>(null)
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(true)
   const prevMessagesLengthRef = useRef(messages.length)
+  const userHasScrolledRef = useRef(false)
 
-  // Only auto-scroll if user is near the bottom (within 150px)
+  // Track if user has manually scrolled up - disable auto-scroll if so
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
 
     const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = container
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 150
-      setAutoScrollEnabled(isNearBottom)
+      const distanceFromBottom = scrollHeight - scrollTop - clientHeight
+      // User is "near bottom" if within 100px
+      const isNearBottom = distanceFromBottom < 100
+      
+      // If user scrolled up significantly, disable auto-scroll
+      if (distanceFromBottom > 200) {
+        userHasScrolledRef.current = true
+        setAutoScrollEnabled(false)
+      } else if (isNearBottom) {
+        // User scrolled back to bottom, re-enable auto-scroll
+        userHasScrolledRef.current = false
+        setAutoScrollEnabled(true)
+      }
     }
 
-    container.addEventListener('scroll', handleScroll)
+    container.addEventListener('scroll', handleScroll, { passive: true })
     return () => container.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Scroll to bottom only when new messages arrive AND user was near bottom
+  // Scroll to bottom only when new messages arrive AND user hasn't scrolled up
   useEffect(() => {
     const isNewMessage = messages.length > prevMessagesLengthRef.current
     prevMessagesLengthRef.current = messages.length
 
-    if (isNewMessage && autoScrollEnabled) {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    // Only auto-scroll if enabled AND user hasn't manually scrolled up
+    if (isNewMessage && autoScrollEnabled && !userHasScrolledRef.current) {
+      // Use requestAnimationFrame for smoother scroll
+      requestAnimationFrame(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+      })
     }
   }, [messages, autoScrollEnabled])
 

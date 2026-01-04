@@ -945,20 +945,9 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                     )}
                   </div>
                 )}
-                <div className="flex gap-2">
-                  <div className="flex-1 bg-slate-50 rounded-xl p-3">
-                    <p className="text-xs font-semibold text-slate-700 mb-1">Check-in / Check-out</p>
-                    <p className="text-xs text-slate-600">{formatTime12h(resort.check_in_time || '14:00')} - {formatTime12h(resort.check_out_time || '12:00')}</p>
-                  </div>
-                  {latestBookingId ? (
-                    <div className="flex-shrink-0">
-                      <ChatLink bookingId={latestBookingId} as="guest" label="Chat" title={resort.name} variant="primary" />
-                    </div>
-                  ) : (
-                    <div className="flex-shrink-0">
-                      <ChatLink resortId={params.id} as="guest" label="Chat" title={resort.name} variant="primary" />
-                    </div>
-                  )}
+                <div className="bg-slate-50 rounded-xl p-3">
+                  <p className="text-xs font-semibold text-slate-700 mb-1">Check-in / Check-out</p>
+                  <p className="text-xs text-slate-600">{formatTime12h(resort.check_in_time || '14:00')} - {formatTime12h(resort.check_out_time || '12:00')}</p>
                 </div>
               </div>
 

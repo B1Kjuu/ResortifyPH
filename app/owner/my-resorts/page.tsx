@@ -85,20 +85,15 @@ export default function MyResorts(){
       <div className="w-full px-4 sm:px-6 lg:px-8 py-12 max-w-7xl mx-auto">
         <Link href="/owner/empire" className="text-sm text-resort-500 font-semibold mb-8 inline-flex items-center gap-2 hover:gap-3 transition-all">← Back to Dashboard</Link>
         
-        <div className="flex justify-between items-start mb-10 gap-6 flex-wrap">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-10 gap-4 sm:gap-6">
           <div className="flex items-center gap-3">
-            <FaHotel className="w-10 h-10 text-slate-700" />
+            <FaHotel className="w-8 h-8 sm:w-10 sm:h-10 text-slate-700 flex-shrink-0" />
             <div>
-              <h1 className="text-4xl font-bold text-slate-900">My Resorts</h1>
-              <p className="text-lg text-slate-600 mt-1">Manage your resort listings</p>
-              <div className="mt-4">
-                <DisclaimerBanner title="Owner Payment Notice">
-                  ResortifyPH does not process payments. Please share payment details with guests in chat and verify incoming transfers before confirming stays.
-                </DisclaimerBanner>
-              </div>
+              <h1 className="text-2xl sm:text-4xl font-bold text-slate-900">My Resorts</h1>
+              <p className="text-sm sm:text-lg text-slate-600 mt-1">Manage your resort listings</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
@@ -110,10 +105,20 @@ export default function MyResorts(){
                 <option key={t.id} value={t.id}>{t.label}</option>
               ))}
             </select>
-            <Link href="/owner/create-resort" className="px-8 py-4 bg-gradient-to-r from-resort-500 to-blue-500 text-white rounded-xl font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all border-2 border-resort-400 whitespace-nowrap">
+            <Link href="/owner/create-resort" className="px-4 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-resort-500 to-blue-500 text-white rounded-xl font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all border-2 border-resort-400 whitespace-nowrap text-center text-sm sm:text-base">
               ➕ Create Resort
             </Link>
           </div>
+          <div className="mt-3 sm:hidden">
+            <DisclaimerBanner title="Owner Payment Notice">
+              ResortifyPH does not process payments. Please share payment details with guests in chat and verify incoming transfers before confirming stays.
+            </DisclaimerBanner>
+          </div>
+        </div>
+        <div className="hidden sm:block mb-6">
+          <DisclaimerBanner title="Owner Payment Notice">
+            ResortifyPH does not process payments. Please share payment details with guests in chat and verify incoming transfers before confirming stays.
+          </DisclaimerBanner>
         </div>
 
         {resorts.length === 0 ? (

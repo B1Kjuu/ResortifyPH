@@ -324,7 +324,7 @@ export default function OwnerBookingsContent(props: Props){
                           ))}
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <div>
                           <label className="block text-sm font-bold text-slate-700 mb-1">Check-in Date *</label>
                           <input
@@ -332,7 +332,7 @@ export default function OwnerBookingsContent(props: Props){
                             required
                             value={manualBookingForm.date_from}
                             onChange={(e) => setManualBookingForm(prev => ({ ...prev, date_from: e.target.value }))}
-                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl"
+                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-base bg-white focus:outline-none focus:ring-2 focus:ring-resort-500/20 focus:border-resort-500"
                           />
                         </div>
                         <div>
@@ -343,7 +343,7 @@ export default function OwnerBookingsContent(props: Props){
                             value={manualBookingForm.date_to}
                             min={manualBookingForm.date_from || undefined}
                             onChange={(e) => setManualBookingForm(prev => ({ ...prev, date_to: e.target.value }))}
-                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl"
+                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-base bg-white focus:outline-none focus:ring-2 focus:ring-resort-500/20 focus:border-resort-500"
                           />
                         </div>
                       </div>

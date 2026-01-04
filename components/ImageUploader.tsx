@@ -113,7 +113,7 @@ export default function ImageUploader({
             accept="image/*"
             onChange={handleFileChange}
             disabled={uploading}
-            className="hidden"
+            className="sr-only"
             id={`image-input-${inputId}`}
           />
           <label 
@@ -178,7 +178,7 @@ export default function ImageUploader({
           accept="image/*"
           onChange={handleFileChange}
           disabled={uploading}
-          className="hidden"
+          className="sr-only"
           id={`image-input-${inputId}`}
         />
         <label 

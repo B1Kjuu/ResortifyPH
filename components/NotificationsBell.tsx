@@ -1,6 +1,7 @@
 "use client"
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { supabase } from '../lib/supabaseClient'
 import { listNotifications, markAllRead, deleteAllNotifications } from '../lib/notifications'
 
@@ -13,6 +14,16 @@ export default function NotificationsBell(){
   const [toast, setToast] = useState<{ title: string; body?: string; link?: string } | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [userId, setUserId] = useState<string | null>(null)
+  const pathname = usePathname()
+  const pathnameRef = useRef(pathname)
+  
+  // Keep pathnameRef in sync for use in subscription callback
+  useEffect(() => {
+    pathnameRef.current = pathname
+  }, [pathname])
+  
+  // Check if user is in a chat page (suppress notifications)
+  const isInChat = pathname?.startsWith('/chat')
 
   // Sync soundOn from localStorage on mount (client-side only)
   useEffect(() => {
@@ -103,7 +114,9 @@ export default function NotificationsBell(){
             
             try {
               const row = payload?.new
-              if (row && row.user_id === uid) {
+              // Don't show toast or play sound if user is in chat
+              const currentlyInChat = pathnameRef.current?.startsWith('/chat')
+              if (row && row.user_id === uid && !currentlyInChat) {
                 setToast({ title: row.title, body: row.body, link: row.link })
                 if (soundOnRef.current) beep()
                 setTimeout(() => setToast(null), 5000)
