@@ -85,9 +85,11 @@ export default function middleware(req: NextRequest) {
   // Frame sources for map embeds
   const frameSources = 'https://www.google.com https://maps.google.com https://www.openstreetmap.org'
   
+  // CSP policy - production is stricter, dev allows unsafe-inline for HMR and debugging
+  // Google Maps requires 'unsafe-inline' as it dynamically injects inline scripts
   const csp = isProd
-    ? `default-src 'self'; img-src ${imgSources}; script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://maps.googleapis.com; style-src 'self' 'unsafe-inline' ${googleFonts}; font-src 'self' ${googleFonts} data:; connect-src 'self' ${supabaseHost} ${supabaseWss} ${nominatim} ${googleMaps}; frame-src ${frameSources}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
-    : `default-src 'self'; img-src ${imgSources}; script-src 'self' 'nonce-${nonce}' 'unsafe-eval' 'strict-dynamic' https://maps.googleapis.com; style-src 'self' 'unsafe-inline' ${googleFonts}; font-src 'self' ${googleFonts} data:; connect-src 'self' ${supabaseHost} ${supabaseWss} ${nominatim} ${googleMaps} ws:; frame-src ${frameSources}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
+    ? `default-src 'self'; img-src ${imgSources}; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' ${googleFonts}; font-src 'self' ${googleFonts} data:; connect-src 'self' ${supabaseHost} ${supabaseWss} ${nominatim} ${googleMaps}; frame-src ${frameSources}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
+    : `default-src 'self'; img-src ${imgSources}; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' ${googleFonts}; font-src 'self' ${googleFonts} data:; connect-src 'self' ${supabaseHost} ${supabaseWss} ${nominatim} ${googleMaps} ws:; frame-src ${frameSources}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
 
   // Normalize double-encoded bracket segments in Next static chunk paths
   // e.g. %255BbookingId%255D -> %5BbookingId%5D
