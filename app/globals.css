@@ -32,7 +32,7 @@ body {
     overflow-x: hidden !important;
     max-width: 100vw !important;
   }
-  
+
   /* Target Next.js root elements */
   #__next,
   main {
