@@ -13,7 +13,8 @@ const pesoField = (
   if (typeof max === 'number') {
     schema = schema.max(max, `${label} must not exceed ₱${max.toLocaleString()}`)
   }
-  return required ? schema : schema.optional().nullable()
+  // For optional fields, allow undefined/null AND skip min validation when not provided
+  return required ? schema : z.union([schema, z.undefined(), z.null()])
 }
 
 const countField = (
@@ -102,11 +103,11 @@ export const resortSchema = z.object({
   type: z.enum(['beach', 'mountain', 'nature', 'city', 'countryside', 'staycation', 'private', 'villa', 'glamping', 'farmstay', 'spa'], {
     message: 'Please select a resort type',
   }),
-  // Legacy pricing fields (kept for backwards compatibility)
-  price: pesoField('Base price', { required: false, min: 500, max: 1_000_000 }),
-  day_tour_price: pesoField('Day tour price', { required: false, min: 500, max: 1_000_000 }),
-  night_tour_price: pesoField('Night tour price', { required: false, min: 500, max: 1_000_000 }),
-  overnight_price: pesoField('Overnight price', { required: false, min: 500, max: 1_000_000 }),
+  // Legacy pricing fields (kept for backwards compatibility) - all optional, min 0
+  price: pesoField('Base price', { required: false, min: 0, max: 1_000_000 }),
+  day_tour_price: pesoField('Day tour price', { required: false, min: 0, max: 1_000_000 }),
+  night_tour_price: pesoField('Night tour price', { required: false, min: 0, max: 1_000_000 }),
+  overnight_price: pesoField('Overnight price', { required: false, min: 0, max: 1_000_000 }),
   additional_guest_fee: pesoField('Additional guest fee', { required: false, min: 0, max: 100_000 }),
   // New tiered pricing configuration
   pricing_config: resortPricingConfigSchema.optional().nullable(),

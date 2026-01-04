@@ -107,6 +107,15 @@ export default function CreateResort() {
     defaultValues: defaultResortValues,
   })
 
+  const onFormError = (formErrors: any) => {
+    console.error('[CreateResort] Validation errors:', formErrors)
+    // Scroll to error summary
+    const errorSummary = document.getElementById('validation-error-summary')
+    if (errorSummary) {
+      errorSummary.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }
+
   const amenities = watch('amenities') ?? []
   const images = watch('images') ?? []
 
@@ -295,7 +304,7 @@ export default function CreateResort() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="bg-white border-2 border-slate-200 rounded-xl sm:rounded-2xl shadow-card p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
+        <form noValidate onSubmit={handleSubmit(onSubmit, onFormError)} className="bg-white border-2 border-slate-200 rounded-xl sm:rounded-2xl shadow-card p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
           <div>
             <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1.5 sm:mb-2">Resort Name *</label>
             <input
@@ -411,29 +420,40 @@ export default function CreateResort() {
 
             {/* Advanced Pricing Configurator */}
             {pricingMode === 'advanced' && (
-              <Controller
-                name="pricing_config"
-                control={control}
-                render={({ field }) => (
-                  <PricingConfigurator
-                    value={field.value ?? null}
-                    onChange={(config) => field.onChange(config)}
-                    capacity={watch('capacity') || 50}
-                  />
+              <>
+                <Controller
+                  name="pricing_config"
+                  control={control}
+                  render={({ field }) => (
+                    <PricingConfigurator
+                      value={field.value ?? null}
+                      onChange={(config) => field.onChange(config)}
+                      capacity={watch('capacity') || 50}
+                    />
+                  )}
+                />
+                {errors.pricing_config && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {(errors.pricing_config as any)?.message || 'Please complete all pricing configuration fields'}
+                  </p>
                 )}
-              />
+              </>
             )}
 
             {/* Simple/Legacy Pricing Fields */}
             {pricingMode === 'simple' && (
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Base Price per Night (₱) *</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Base Price per Night (₱)</label>
                   <input
                     type="number"
                     min={0}
                     placeholder="e.g., 5000"
-                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors bg-white"
+                    onInput={(e) => {
+                      const input = e.target as HTMLInputElement
+                      input.value = input.value.replace(/[^0-9]/g, '') || ''
+                    }}
+                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 shadow-sm transition-colors bg-white ${errors.price ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-slate-200 focus:ring-resort-400 focus:border-resort-400 hover:border-slate-300'}`}
                     {...register('price', {
                       setValueAs: (value) => (value === '' ? undefined : Math.max(0, Number(value))),
                     })}
@@ -447,11 +467,16 @@ export default function CreateResort() {
                     type="number"
                     min={0}
                     placeholder="e.g., 4999"
-                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors bg-white"
+                    onInput={(e) => {
+                      const input = e.target as HTMLInputElement
+                      input.value = input.value.replace(/[^0-9]/g, '') || ''
+                    }}
+                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 shadow-sm transition-colors bg-white ${errors.day_tour_price ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-slate-200 focus:ring-resort-400 focus:border-resort-400 hover:border-slate-300'}`}
                     {...register('day_tour_price', {
                       setValueAs: (value) => (value === '' ? null : Math.max(0, Number(value))),
                     })}
                   />
+                  {errors.day_tour_price && <p className="text-xs text-red-500 mt-1">{errors.day_tour_price.message}</p>}
                 </div>
 
                 <div>
@@ -460,11 +485,16 @@ export default function CreateResort() {
                     type="number"
                     min={0}
                     placeholder="e.g., 5999"
-                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors bg-white"
+                    onInput={(e) => {
+                      const input = e.target as HTMLInputElement
+                      input.value = input.value.replace(/[^0-9]/g, '') || ''
+                    }}
+                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 shadow-sm transition-colors bg-white ${errors.night_tour_price ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-slate-200 focus:ring-resort-400 focus:border-resort-400 hover:border-slate-300'}`}
                     {...register('night_tour_price', {
                       setValueAs: (value) => (value === '' ? null : Math.max(0, Number(value))),
                     })}
                   />
+                  {errors.night_tour_price && <p className="text-xs text-red-500 mt-1">{errors.night_tour_price.message}</p>}
                 </div>
 
                 <div>
@@ -473,11 +503,16 @@ export default function CreateResort() {
                     type="number"
                     min={0}
                     placeholder="e.g., 7999"
-                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors bg-white"
+                    onInput={(e) => {
+                      const input = e.target as HTMLInputElement
+                      input.value = input.value.replace(/[^0-9]/g, '') || ''
+                    }}
+                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 shadow-sm transition-colors bg-white ${errors.overnight_price ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-slate-200 focus:ring-resort-400 focus:border-resort-400 hover:border-slate-300'}`}
                     {...register('overnight_price', {
                       setValueAs: (value) => (value === '' ? null : Math.max(0, Number(value))),
                     })}
                   />
+                  {errors.overnight_price && <p className="text-xs text-red-500 mt-1">{errors.overnight_price.message}</p>}
                 </div>
 
                 <div>
@@ -486,11 +521,16 @@ export default function CreateResort() {
                     type="number"
                     min={0}
                     placeholder="e.g., 350"
-                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors bg-white"
+                    onInput={(e) => {
+                      const input = e.target as HTMLInputElement
+                      input.value = input.value.replace(/[^0-9]/g, '') || ''
+                    }}
+                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 shadow-sm transition-colors bg-white ${errors.additional_guest_fee ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-slate-200 focus:ring-resort-400 focus:border-resort-400 hover:border-slate-300'}`}
                     {...register('additional_guest_fee', {
                       setValueAs: (value) => (value === '' ? null : Math.max(0, Number(value))),
                     })}
                   />
+                  {errors.additional_guest_fee && <p className="text-xs text-red-500 mt-1">{errors.additional_guest_fee.message}</p>}
                 </div>
               </div>
             )}
@@ -916,7 +956,7 @@ export default function CreateResort() {
 
           {/* Validation Errors Summary */}
           {Object.keys(errors).length > 0 && (
-            <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
+            <div id="validation-error-summary" className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
               <p className="text-sm font-bold text-red-700 mb-2">Please fix the following errors:</p>
               <ul className="text-xs text-red-600 list-disc list-inside space-y-1">
                 {Object.entries(errors).map(([field, err]) => (
