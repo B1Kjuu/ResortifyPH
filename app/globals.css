@@ -621,7 +621,7 @@ details.faq-item[open] {
 }
 .faq-summary::marker {
   display: none;
-  content: '';
+  content: "";
 }
 .faq-caret {
   @apply flex-shrink-0 ml-4;
