@@ -567,10 +567,17 @@ export default function CreateResort() {
 
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiUsers className="w-4 h-4" /> Guest Capacity *</label>
+              <label className="text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiUsers className="w-4 h-4" /> Guest Capacity *</label>
               <input
                 type="number"
+                min={1}
+                max={150}
                 placeholder="e.g., 10"
+                onInput={(e) => {
+                  const input = e.target as HTMLInputElement
+                  // Remove non-digits and leading zeros
+                  input.value = input.value.replace(/[^0-9]/g, '').replace(/^0+/, '') || ''
+                }}
                 className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 shadow-sm transition-colors ${errors.capacity ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-slate-200 focus:ring-resort-400 focus:border-resort-400 hover:border-slate-300'}`}
                 {...register('capacity', {
                   setValueAs: (value) => (value === '' ? undefined : Number(value)),
@@ -585,24 +592,38 @@ export default function CreateResort() {
               <label className="block text-sm font-bold text-slate-700 mb-2">Number of Bedrooms</label>
               <input
                 type="number"
+                min={0}
+                max={50}
                 placeholder="e.g., 3"
-                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors"
+                onInput={(e) => {
+                  const input = e.target as HTMLInputElement
+                  input.value = input.value.replace(/[^0-9]/g, '') || ''
+                }}
+                className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 shadow-sm transition-colors ${errors.bedrooms ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-slate-200 focus:ring-resort-400 focus:border-resort-400 hover:border-slate-300'}`}
                 {...register('bedrooms', {
                   setValueAs: (value) => (value === '' ? null : Number(value)),
                 })}
               />
+              {errors.bedrooms && <p className="text-xs text-red-500 mt-1">{errors.bedrooms.message}</p>}
             </div>
 
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">Number of Bathrooms</label>
               <input
                 type="number"
+                min={0}
+                max={50}
                 placeholder="e.g., 2"
-                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors"
+                onInput={(e) => {
+                  const input = e.target as HTMLInputElement
+                  input.value = input.value.replace(/[^0-9]/g, '') || ''
+                }}
+                className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 shadow-sm transition-colors ${errors.bathrooms ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-slate-200 focus:ring-resort-400 focus:border-resort-400 hover:border-slate-300'}`}
                 {...register('bathrooms', {
                   setValueAs: (value) => (value === '' ? null : Number(value)),
                 })}
               />
+              {errors.bathrooms && <p className="text-xs text-red-500 mt-1">{errors.bathrooms.message}</p>}
             </div>
           </div>
 
@@ -610,10 +631,18 @@ export default function CreateResort() {
             <label className="block text-sm font-bold text-slate-700 mb-2">Contact Number *</label>
             <input
               type="tel"
-              placeholder="e.g., +63 912 345 6789"
+              inputMode="numeric"
+              maxLength={13}
+              placeholder="e.g., 09171234567"
+              onInput={(e) => {
+                const input = e.target as HTMLInputElement
+                // Allow only digits and + at the start for +63 format
+                input.value = input.value.replace(/[^0-9+]/g, '').replace(/(?!^)\+/g, '')
+              }}
               className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 shadow-sm transition-colors ${errors.contact_number ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-slate-200 focus:ring-resort-400 focus:border-resort-400 hover:border-slate-300'}`}
               {...register('contact_number')}
             />
+            <p className="text-xs text-slate-500 mt-1">Format: 09XXXXXXXXX or +639XXXXXXXXX</p>
             {errors.contact_number && <p className="text-xs text-red-500 mt-1">{errors.contact_number.message}</p>}
           </div>
 
@@ -768,16 +797,23 @@ export default function CreateResort() {
               <label className="block text-sm font-bold text-slate-700 mb-2">Parking Slots</label>
               <input
                 type="number"
+                min={0}
+                max={50}
                 placeholder="e.g., 2"
-                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors"
+                onInput={(e) => {
+                  const input = e.target as HTMLInputElement
+                  input.value = input.value.replace(/[^0-9]/g, '') || ''
+                }}
+                className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 shadow-sm transition-colors ${errors.parking_slots ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-slate-200 focus:ring-resort-400 focus:border-resort-400 hover:border-slate-300'}`}
                 {...register('parking_slots', {
                   setValueAs: (value) => (value === '' ? null : Number(value)),
                 })}
               />
+              {errors.parking_slots && <p className="text-xs text-red-500 mt-1">{errors.parking_slots.message}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiMapPin className="w-4 h-4" /> Nearby Landmarks</label>
+              <label className="text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiMapPin className="w-4 h-4" /> Nearby Landmarks</label>
               <input
                 type="text"
                 placeholder="e.g., 5 mins from town center"
@@ -849,14 +885,19 @@ export default function CreateResort() {
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">Cancellation Policy</label>
-            <Select ariaLabel="Cancellation policy" className="w-full" {...register('cancellation_policy')}>
+            <label className="block text-sm font-bold text-slate-700 mb-2">Cancellation Policy *</label>
+            <Select 
+              ariaLabel="Cancellation policy" 
+              className={`w-full ${errors.cancellation_policy ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : ''}`}
+              {...register('cancellation_policy')}
+            >
               {CANCELLATION_POLICIES.map((policy) => (
                 <option key={policy.value} value={policy.value}>
                   {policy.label}
                 </option>
               ))}
             </Select>
+            {errors.cancellation_policy && <p className="text-xs text-red-500 mt-1">{errors.cancellation_policy.message}</p>}
           </div>
 
           <div className={`bg-slate-50 border-2 rounded-xl p-6 ${errors.images ? 'border-red-400' : 'border-slate-200'}`}>

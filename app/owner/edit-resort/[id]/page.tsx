@@ -357,7 +357,7 @@ export default function EditResort(){
         {pricingMode === 'simple' && (
         <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiDollarSign className="w-4 h-4" /> Price per Night (₱) *</label>
+            <label className="text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiDollarSign className="w-4 h-4" /> Price per Night (₱) *</label>
             <input 
               type="number"
               min={0}
@@ -396,13 +396,19 @@ export default function EditResort(){
         {/* Guest Capacity (shown in both modes) */}
         <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiUsers className="w-4 h-4" /> Guest Capacity *</label>
+            <label className="text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiUsers className="w-4 h-4" /> Guest Capacity *</label>
             <input 
               type="number"
+              min={1}
+              max={150}
               className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors" 
               placeholder="e.g., 10" 
               value={capacity as any} 
               onChange={e => setCapacity(e.target.value === '' ? '' : Number(e.target.value))}
+              onInput={(e) => {
+                const input = e.target as HTMLInputElement
+                input.value = input.value.replace(/[^0-9]/g, '').replace(/^0+/, '') || ''
+              }}
               required
             />
           </div>
@@ -413,10 +419,16 @@ export default function EditResort(){
             <label className="block text-sm font-bold text-slate-700 mb-2">Number of Bedrooms</label>
             <input 
               type="number"
+              min={0}
+              max={50}
               className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors" 
               placeholder="e.g., 3" 
               value={bedrooms as any} 
               onChange={e => setBedrooms(e.target.value === '' ? '' : Number(e.target.value))}
+              onInput={(e) => {
+                const input = e.target as HTMLInputElement
+                input.value = input.value.replace(/[^0-9]/g, '') || ''
+              }}
             />
           </div>
 
@@ -424,10 +436,16 @@ export default function EditResort(){
             <label className="block text-sm font-bold text-slate-700 mb-2">Number of Bathrooms</label>
             <input 
               type="number"
+              min={0}
+              max={50}
               className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors" 
               placeholder="e.g., 2" 
               value={bathrooms as any} 
               onChange={e => setBathrooms(e.target.value === '' ? '' : Number(e.target.value))}
+              onInput={(e) => {
+                const input = e.target as HTMLInputElement
+                input.value = input.value.replace(/[^0-9]/g, '') || ''
+              }}
             />
           </div>
         </div>
@@ -436,13 +454,19 @@ export default function EditResort(){
           <label className="block text-sm font-bold text-slate-700 mb-2">Contact Number *</label>
           <input 
             type="tel"
+            inputMode="numeric"
+            maxLength={13}
             className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors" 
-            placeholder="e.g., +63 912 345 6789" 
+            placeholder="e.g., 09171234567" 
             value={contactNumber} 
             onChange={e => setContactNumber(e.target.value)}
+            onInput={(e) => {
+              const input = e.target as HTMLInputElement
+              input.value = input.value.replace(/[^0-9+]/g, '').replace(/(?!^)\+/g, '')
+            }}
             required
           />
-          <p className="text-xs text-slate-500 mt-1">Guests will use this to contact you about bookings</p>
+          <p className="text-xs text-slate-500 mt-1">Format: 09XXXXXXXXX or +639XXXXXXXXX</p>
         </div>
 
         <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-6">

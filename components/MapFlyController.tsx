@@ -18,7 +18,10 @@ export default function MapFlyController({ userPosition, flyToUserTrigger }: Map
     if (flyToUserTrigger > lastTriggerRef.current) {
       console.log('[MapFlyController] Flying to user:', userPosition, 'trigger:', flyToUserTrigger)
       lastTriggerRef.current = flyToUserTrigger
-      map.flyTo([userPosition.latitude, userPosition.longitude], 14, { duration: 1.2 })
+      // Use a minimum zoom of 14, but don't zoom out if already more zoomed in
+      const currentZoom = map.getZoom()
+      const targetZoom = Math.max(14, currentZoom)
+      map.flyTo([userPosition.latitude, userPosition.longitude], targetZoom, { duration: 1.2 })
     }
   }, [map, userPosition, flyToUserTrigger])
 
