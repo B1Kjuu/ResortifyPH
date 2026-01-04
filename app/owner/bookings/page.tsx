@@ -573,7 +573,7 @@ export default function OwnerBookingsPage(){
   }
 
   // Add manual booking for dates booked before using the platform
-  async function addManualBooking(data: { resort_id: string; date_from: string; date_to: string; guest_name: string; guest_count: number; notes: string }){
+  async function addManualBooking(data: { resort_id: string; date_from: string; date_to: string; guest_name: string; guest_count: number; notes: string; booking_type: 'daytour' | 'overnight' | '22hrs' }){
     if (!userId) {
       setToast({ message: 'You must be logged in', type: 'error' })
       return
@@ -590,6 +590,7 @@ export default function OwnerBookingsPage(){
           date_from: data.date_from,
           date_to: data.date_to,
           guest_count: data.guest_count || 1,
+          booking_type: data.booking_type,
           status: 'confirmed',
           // Store guest name and notes in a notes field if available, or use verified_notes
           verified_notes: data.guest_name ? `External booking: ${data.guest_name}${data.notes ? ' - ' + data.notes : ''}` : (data.notes || 'External booking (made before platform)'),

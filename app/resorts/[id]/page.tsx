@@ -136,7 +136,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
         if (resortData.owner_id) {
           const { data: ownerData } = await supabase
             .from('profiles')
-            .select('id, email, full_name, role, is_admin')
+            .select('id, email, full_name, role, is_admin, avatar_url')
             .eq('id', resortData.owner_id)
             .maybeSingle()
           
@@ -900,6 +900,30 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
               {/* Mobile: Compact Check-in/Contact section */}
               <div className="lg:hidden space-y-3">
+                {owner && (
+                  <div className="flex items-center gap-3 bg-slate-50 rounded-xl p-3">
+                    {owner.avatar_url ? (
+                      <img 
+                        src={owner.avatar_url} 
+                        alt={owner.full_name || 'Host'} 
+                        className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-resort-100 flex items-center justify-center text-resort-600 font-semibold text-sm">
+                        {owner.full_name?.[0]?.toUpperCase() || 'H'}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-800 truncate">{owner.full_name || 'Host'}</p>
+                      <p className="text-xs text-slate-500">Resort Owner</p>
+                    </div>
+                    {latestBookingId ? (
+                      <ChatLink bookingId={latestBookingId} as="guest" label="Chat" title={resort.name} variant="primary" />
+                    ) : (
+                      <ChatLink resortId={params.id} as="guest" label="Chat" title={resort.name} variant="primary" />
+                    )}
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <div className="flex-1 bg-slate-50 rounded-xl p-3">
                     <p className="text-xs font-semibold text-slate-700 mb-1">Check-in / Check-out</p>
@@ -926,6 +950,25 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                 </div>
                 <div className="bg-slate-50 rounded-xl p-4 space-y-2">
                   <p className="text-sm font-semibold text-slate-700">Contact</p>
+                  {owner && (
+                    <div className="flex items-center gap-3 pb-2">
+                      {owner.avatar_url ? (
+                        <img 
+                          src={owner.avatar_url} 
+                          alt={owner.full_name || 'Host'} 
+                          className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-resort-100 flex items-center justify-center text-resort-600 font-semibold text-sm">
+                          {owner.full_name?.[0]?.toUpperCase() || 'H'}
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-sm font-medium text-slate-800">{owner.full_name || 'Host'}</p>
+                        <p className="text-xs text-slate-500">Resort Owner</p>
+                      </div>
+                    </div>
+                  )}
                   <p className="text-sm text-slate-600">{resort.contact_number || 'Owner will share after booking'}</p>
                   {resort.nearby_landmarks && <p className="text-sm text-slate-600">Nearby: {resort.nearby_landmarks}</p>}
                   {latestBookingId && (

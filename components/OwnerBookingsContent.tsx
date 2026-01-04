@@ -16,6 +16,7 @@ type ManualBookingData = {
   guest_name: string
   guest_count: number
   notes: string
+  booking_type: 'daytour' | 'overnight' | '22hrs'
 }
 
 type Props = {
@@ -84,7 +85,8 @@ export default function OwnerBookingsContent(props: Props){
     date_to: '',
     guest_name: '',
     guest_count: 1,
-    notes: ''
+    notes: '',
+    booking_type: 'overnight' as 'daytour' | 'overnight' | '22hrs'
   })
   const [manualBookingSubmitting, setManualBookingSubmitting] = React.useState(false)
 
@@ -112,7 +114,8 @@ export default function OwnerBookingsContent(props: Props){
         date_to: '',
         guest_name: '',
         guest_count: 1,
-        notes: ''
+        notes: '',
+        booking_type: 'overnight'
       })
     } finally {
       setManualBookingSubmitting(false)
@@ -296,6 +299,30 @@ export default function OwnerBookingsContent(props: Props){
                             <option key={r.id} value={r.id}>{r.name}</option>
                           ))}
                         </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">Stay Type *</label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { value: 'daytour', label: 'Day Tour', desc: '8AM-5PM' },
+                            { value: 'overnight', label: 'Overnight', desc: '7PM-6AM' },
+                            { value: '22hrs', label: '22 Hours', desc: '2PM-12PM' },
+                          ].map((type) => (
+                            <button
+                              key={type.value}
+                              type="button"
+                              onClick={() => setManualBookingForm(prev => ({ ...prev, booking_type: type.value as any }))}
+                              className={`p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${
+                                manualBookingForm.booking_type === type.value
+                                  ? 'border-resort-500 bg-resort-50 text-resort-700'
+                                  : 'border-slate-200 hover:border-slate-300'
+                              }`}
+                            >
+                              <div className="text-xs sm:text-sm font-semibold">{type.label}</div>
+                              <div className="text-[10px] text-slate-500">{type.desc}</div>
+                            </button>
+                          ))}
+                        </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
