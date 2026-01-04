@@ -325,6 +325,8 @@ export default function ResortMap({ resorts, userPosition, onResortClick, select
         zoom={zoom}
         style={{ height: '100%', width: '100%', minHeight: '400px' }}
         scrollWheelZoom={true}
+        wheelDebounceTime={80}
+        wheelPxPerZoomLevel={120}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -382,8 +384,8 @@ export default function ResortMap({ resorts, userPosition, onResortClick, select
                   </div>
                 )}
                 <h3 className="font-bold text-slate-900 text-base mb-1">{resort.name}</h3>
-                <p className="text-sm text-slate-600 mb-1">{resort.address || resort.location}</p>
-                {resort.address && (
+                <p className="text-sm text-slate-600 mb-1">{(resort.address && resort.address !== 'null') ? resort.address : resort.location}</p>
+                {resort.address && resort.address !== 'null' && (
                   <p className="text-xs text-slate-400 mb-2">{resort.location}</p>
                 )}
                 <div className="flex items-center justify-between">
