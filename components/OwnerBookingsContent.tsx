@@ -69,8 +69,8 @@ export default function OwnerBookingsContent(props: Props){
     allResorts, onAddManualBooking, initialTab,
   } = props
 
-  // Top-level owner nav tabs
-  const [tab, setTab] = React.useState<'requests' | 'calendar' | 'confirmed' | 'cancellations' | 'history'>(initialTab || 'requests')
+  // Top-level owner nav tabs - default to 'calendar' for better UX
+  const [tab, setTab] = React.useState<'requests' | 'calendar' | 'confirmed' | 'cancellations' | 'history'>(initialTab || 'calendar')
   const [showOnlyVerified, setShowOnlyVerified] = React.useState(false)
   const [showOnlyCancellations, setShowOnlyCancellations] = React.useState(false)
   const [verificationEdits, setVerificationEdits] = React.useState<Record<string, { method: string; reference: string; notes: string }>>({})
@@ -155,8 +155,8 @@ export default function OwnerBookingsContent(props: Props){
             <div className="mt-4 overflow-x-auto scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0">
               <div className="flex items-center gap-2 min-w-max pb-2 sm:pb-0 sm:flex-wrap">
               {([
-                { key: 'requests', label: `Requests (${pendingBookings.length})` },
                 { key: 'calendar', label: 'Calendar' },
+                { key: 'requests', label: `Requests (${pendingBookings.length})` },
                 { key: 'confirmed', label: `Confirmed (${upcomingConfirmed.length})` },
                 { key: 'cancellations', label: 'Cancellations' },
                 { key: 'history', label: `History (${pastConfirmed.length + rejectedBookings.length})` },

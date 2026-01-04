@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { sanitizeText } from '../../lib/sanitize'
 import { FiArrowLeft, FiMail, FiUser, FiTag, FiPhone, FiMapPin, FiEdit3, FiLock, FiClock, FiLink, FiCheckCircle } from 'react-icons/fi'
 import { FaUmbrellaBeach, FaHotel, FaTicketAlt, FaSuitcase, FaHeart, FaStar } from 'react-icons/fa'
+import LocationCombobox from '../../components/LocationCombobox'
 
 export default function ProfilePage(){
   const [profile, setProfile] = useState<any>(null)
@@ -112,8 +113,19 @@ export default function ProfilePage(){
     }
 
     setSaving(true)
-    toast.loading('Saving profile...')
     
+    // Optimistic update - immediately update local state
+    const updatedProfile = {
+      ...profile,
+      full_name: fullName,
+      phone: phone,
+      bio: bio,
+      location: locationText
+    }
+    setProfile(updatedProfile)
+    setEditing(false)
+    
+    // Then persist to database (background)
     const { error } = await supabase
       .from('profiles')
       .update({
@@ -125,14 +137,14 @@ export default function ProfilePage(){
       .eq('id', profile.id)
     
     setSaving(false)
-    toast.dismiss()
     
     if (error) {
+      // Revert optimistic update on error
+      setProfile(profile)
+      setEditing(true)
       toast.error(`Error: ${error.message}`)
     } else {
-      setProfile({ ...profile, full_name: fullName })
-      toast.success('Profile updated successfully!')
-      setEditing(false)
+      toast.success('Profile updated!')
     }
   }
 
@@ -186,8 +198,8 @@ export default function ProfilePage(){
                       toast.error('Please upload an image file')
                       return
                     }
-                    if (file.size > 2 * 1024 * 1024) { // 2MB limit
-                      toast.error('Image must be under 2MB')
+                    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                      toast.error('Image must be under 5MB')
                       return
                     }
                     
@@ -240,13 +252,7 @@ export default function ProfilePage(){
               </label>
             </div>
             <h1 className="text-2xl sm:text-4xl font-bold mb-2 sm:mb-3">{profile.full_name || 'User'}</h1>
-            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-              <span className={`inline-block px-4 sm:px-6 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold ${getRoleBadgeColor()} border-2 border-current`}>
-                {getRoleLabel()}
-              </span>
-              <span className="text-white/80 font-semibold hidden sm:inline">•</span>
-              <span className="text-white/90 font-medium text-xs sm:text-base">Member since {new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
-            </div>
+            <p className="text-white/90 font-medium text-xs sm:text-base">Member since {new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
           </div>
 
           {/* Message */}
@@ -388,7 +394,12 @@ export default function ProfilePage(){
                   <span>Location</span>
                 </label>
                 {editing ? (
-                  <input type="text" value={locationText} onChange={(e) => setLocationText(e.target.value)} placeholder="City, Province" className="w-full px-5 py-3 border-2 border-resort-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm" />
+                  <LocationCombobox
+                    value={locationText}
+                    onChange={(province) => setLocationText(province || '')}
+                    placeholder="Select your province"
+                    ariaLabel="User location"
+                  />
                 ) : (
                   <div className="w-full px-5 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-900">{locationText || 'Not set'}</div>
                 )}
@@ -689,18 +700,8 @@ export default function ProfilePage(){
           </div>
         </div>
 
-        {/* Quick Links */}
+        {/* Quick Links - Show only role-specific links */}
         <div className="mt-6 sm:mt-8 grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-          <Link href="/resorts" className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-lg shadow-sm hover:shadow-lg transition text-center border-2 border-transparent hover:border-resort-200">
-            <div className="text-2xl sm:text-3xl mb-1 sm:mb-2 text-resort-500"><FaUmbrellaBeach aria-hidden /></div>
-            <h3 className="font-semibold text-resort-900 text-sm sm:text-base">Browse Resorts</h3>
-          </Link>
-          {profile.role === 'guest' && (
-            <Link href="/guest/trips" className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-lg shadow-sm hover:shadow-lg transition text-center border-2 border-transparent hover:border-resort-200">
-              <div className="text-2xl sm:text-3xl mb-1 sm:mb-2 text-resort-500"><FaTicketAlt aria-hidden /></div>
-              <h3 className="font-semibold text-resort-900 text-sm sm:text-base">My Trips</h3>
-            </Link>
-          )}
           {profile.role === 'owner' && (
             <Link href="/owner/properties" className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-lg shadow-sm hover:shadow-lg transition text-center border-2 border-transparent hover:border-resort-200">
               <div className="text-2xl sm:text-3xl mb-1 sm:mb-2 text-resort-500"><FaHotel aria-hidden /></div>

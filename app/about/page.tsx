@@ -9,7 +9,7 @@ export default function AboutPage() {
       <div className="w-full px-4 sm:px-6 lg:px-8 py-16 sm:py-24 bg-gradient-to-br from-slate-50 to-white border-b border-slate-200">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl sm:text-5xl font-bold text-slate-900 mb-6">About ResortifyPH</h1>
-          <p className="text-xl text-slate-600">Connecting travelers with unforgettable resort experiences across the Philippines</p>
+          <p className="text-xl text-slate-600">Connecting travelers with unforgettable resort and staycation experiences across the Philippines</p>
         </div>
       </div>
 
@@ -21,7 +21,8 @@ export default function AboutPage() {
             <h2 className="text-3xl font-bold text-slate-900 mb-4">Our Mission</h2>
             <p className="text-lg text-slate-600 leading-relaxed">
               ResortifyPH is dedicated to making resort discovery and booking seamless for travelers across the Philippines. 
-              We believe everyone deserves access to beautiful, unique accommodations that create lasting memories.
+              Whether you're looking for a beachfront paradise, a mountain retreat, or a cozy staycation near the city, 
+              we help you find unique accommodations that create lasting memories.
             </p>
           </section>
 
@@ -30,11 +31,12 @@ export default function AboutPage() {
             <h2 className="text-3xl font-bold text-slate-900 mb-4">Our Story</h2>
             <p className="text-lg text-slate-600 leading-relaxed mb-4">
               Founded in 2025, ResortifyPH was born from a simple idea: make it easier for Filipinos and tourists 
-              to discover and book amazing resorts across our beautiful archipelago.
+              to discover and book amazing resorts and staycation spots across our beautiful archipelago.
             </p>
             <p className="text-lg text-slate-600 leading-relaxed">
               What started as a small platform has grown into a trusted marketplace connecting thousands of guests 
-              with resort owners nationwide, from pristine beaches to serene mountain retreats.
+              with resort and staycation property owners nationwide—from pristine beaches and serene mountain retreats 
+              to trendy urban getaways perfect for weekend escapes.
             </p>
           </section>
 

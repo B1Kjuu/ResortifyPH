@@ -1297,13 +1297,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                       bookingType={bookingType}
                       checkInTime={resort?.check_in_time}
                       checkOutTime={resort?.check_out_time}
-                      cutoffTime={
-                        // Use host's check-in time as cutoff, or default based on booking type
-                        bookingType === 'daytour' ? (resort?.check_in_time || '12:00') :
-                        bookingType === 'overnight' ? (resort?.check_in_time || '16:00') :
-                        bookingType === '22hrs' ? (resort?.check_in_time || '10:00') :
-                        undefined
-                      }
+                      cutoffTime={resort?.check_in_time}
                     />
                   )}
                 </div>

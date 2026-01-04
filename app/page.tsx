@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../lib/supabaseClient'
 import Reveal from '../components/Reveal'
-import { FiSearch, FiCalendar, FiShield, FiMapPin, FiHome, FiUsers, FiCheckCircle, FiCreditCard, FiStar, FiMessageCircle, FiHelpCircle, FiChevronDown, FiClock, FiPhoneCall, FiXCircle, FiFileText, FiDollarSign, FiRefreshCcw } from 'react-icons/fi'
+import { FiSearch, FiCalendar, FiShield, FiMapPin, FiHome, FiUsers, FiCheckCircle, FiCreditCard, FiStar, FiMessageCircle, FiHelpCircle, FiChevronDown, FiClock, FiPhoneCall, FiXCircle, FiFileText, FiDollarSign, FiRefreshCcw, FiArrowRight } from 'react-icons/fi'
 
 export default function Home(){
   const [user, setUser] = useState<any>(null)
@@ -65,13 +65,13 @@ export default function Home(){
       }
     }
 
-    // Safety timeout - if still loading after 5 seconds, show landing page
+    // Safety timeout - if still loading after 2 seconds, show landing page
     timeoutId = setTimeout(() => {
       if (mounted && loading) {
         console.warn('Auth taking too long, showing landing page')
         setLoading(false)
       }
-    }, 5000)
+    }, 2000)
 
     checkAuth()
 
@@ -153,206 +153,274 @@ export default function Home(){
       </section>
 
       {/* Features Section */}
-      <section className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 bg-gradient-to-br from-slate-900 via-resort-teal-dark to-slate-900">
+      <section className="w-full px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-10 sm:mb-12 lg:mb-16">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3 sm:mb-4">Built for Every User</h2>
-            <p className="text-base sm:text-lg lg:text-xl text-white/80">From browsing to booking to managing reservations</p>
+          <div className="text-center mb-12 sm:mb-16">
+            <span className="inline-block px-4 py-1.5 bg-resort-500/20 text-resort-300 rounded-full text-xs sm:text-sm font-semibold mb-4">WHY CHOOSE US</span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">The Complete Platform</h2>
+            <p className="text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto">Everything you need to discover, book, and enjoy the best resorts across the Philippines</p>
           </div>
 
-          <Reveal className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+          <Reveal className="grid sm:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto">
             {/* Guests */}
-            <div className="p-5 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200/10 hover:shadow-lg hover:shadow-resort-500/10 transition-all bg-white/95 backdrop-blur will-change-transform hover:-translate-y-1">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-resort-100 to-ocean-100 text-resort-700 flex items-center justify-center mb-3 sm:mb-4">
-                <FiSearch size={20} className="sm:w-[22px] sm:h-[22px]" />
+            <div className="group relative p-6 sm:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 hover:border-resort-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-resort-500/10">
+              <div className="absolute inset-0 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-resort-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="relative">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-resort-400 to-resort-600 text-white flex items-center justify-center mb-5 shadow-lg shadow-resort-500/30">
+                  <FiSearch size={24} className="sm:w-7 sm:h-7" />
+                </div>
+                <h3 className="text-xl sm:text-2xl font-bold text-white mb-4">For Guests</h3>
+                <ul className="space-y-3 text-slate-300">
+                  <li className="flex items-center gap-3"><span className="w-6 h-6 rounded-full bg-resort-500/20 flex items-center justify-center text-resort-400"><FiCheckCircle size={14} /></span><span>Browse resorts by location & amenities</span></li>
+                  <li className="flex items-center gap-3"><span className="w-6 h-6 rounded-full bg-resort-500/20 flex items-center justify-center text-resort-400"><FiCheckCircle size={14} /></span><span>Real-time availability calendar</span></li>
+                  <li className="flex items-center gap-3"><span className="w-6 h-6 rounded-full bg-resort-500/20 flex items-center justify-center text-resort-400"><FiCheckCircle size={14} /></span><span>Secure messaging with hosts</span></li>
+                  <li className="flex items-center gap-3"><span className="w-6 h-6 rounded-full bg-resort-500/20 flex items-center justify-center text-resort-400"><FiCheckCircle size={14} /></span><span>Manage bookings in one place</span></li>
+                </ul>
+                <Link href="/auth/signup" className="inline-flex items-center gap-2 mt-6 text-resort-400 font-semibold hover:text-resort-300 transition-colors">
+                  Start exploring <span className="group-hover:translate-x-1 transition-transform">→</span>
+                </Link>
               </div>
-              <h3 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2 sm:mb-3">For Guests</h3>
-              <ul className="space-y-2 text-slate-700 text-sm">
-                <li className="flex items-start gap-2"><FiHome className="mt-0.5 flex-shrink-0 text-resort-600" /><span>Discover resorts nationwide</span></li>
-                <li className="flex items-start gap-2"><FiCalendar className="mt-0.5 flex-shrink-0 text-resort-600" /><span>Instant booking confirmation</span></li>
-                <li className="flex items-start gap-2"><FiUsers className="mt-0.5 flex-shrink-0 text-resort-600" /><span>Manage all bookings</span></li>
-                <li className="flex items-start gap-2"><FiShield className="mt-0.5 flex-shrink-0 text-resort-600" /><span>Secure payments</span></li>
-              </ul>
             </div>
 
             {/* Owners */}
-            <div className="p-5 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200/10 hover:shadow-lg hover:shadow-resort-500/10 transition-all bg-white/95 backdrop-blur will-change-transform hover:-translate-y-1">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-resort-100 to-ocean-100 text-resort-700 flex items-center justify-center mb-3 sm:mb-4">
-                <FiHome size={20} className="sm:w-[22px] sm:h-[22px]" />
+            <div className="group relative p-6 sm:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 hover:border-ocean-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-ocean-500/10">
+              <div className="absolute inset-0 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-ocean-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="relative">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-ocean-400 to-ocean-600 text-white flex items-center justify-center mb-5 shadow-lg shadow-ocean-500/30">
+                  <FiHome size={24} className="sm:w-7 sm:h-7" />
+                </div>
+                <h3 className="text-xl sm:text-2xl font-bold text-white mb-4">For Hosts</h3>
+                <ul className="space-y-3 text-slate-300">
+                  <li className="flex items-center gap-3"><span className="w-6 h-6 rounded-full bg-ocean-500/20 flex items-center justify-center text-ocean-400"><FiCheckCircle size={14} /></span><span>List your resort in minutes</span></li>
+                  <li className="flex items-center gap-3"><span className="w-6 h-6 rounded-full bg-ocean-500/20 flex items-center justify-center text-ocean-400"><FiCheckCircle size={14} /></span><span>Flexible pricing & packages</span></li>
+                  <li className="flex items-center gap-3"><span className="w-6 h-6 rounded-full bg-ocean-500/20 flex items-center justify-center text-ocean-400"><FiCheckCircle size={14} /></span><span>Booking calendar & management</span></li>
+                  <li className="flex items-center gap-3"><span className="w-6 h-6 rounded-full bg-ocean-500/20 flex items-center justify-center text-ocean-400"><FiCheckCircle size={14} /></span><span>Reach guests nationwide</span></li>
+                </ul>
+                <Link href="/become-host" className="inline-flex items-center gap-2 mt-6 text-ocean-400 font-semibold hover:text-ocean-300 transition-colors">
+                  Become a host <span className="group-hover:translate-x-1 transition-transform">→</span>
+                </Link>
               </div>
-              <h3 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2 sm:mb-3">For Owners</h3>
-              <ul className="space-y-2 text-slate-700 text-sm">
-                <li className="flex items-start gap-2"><FiSearch className="mt-0.5 flex-shrink-0 text-resort-600" /><span>List your resort in minutes</span></li>
-                <li className="flex items-start gap-2"><FiMapPin className="mt-0.5 flex-shrink-0 text-resort-600" /><span>Showcase great locations</span></li>
-                <li className="flex items-start gap-2"><FiCalendar className="mt-0.5 flex-shrink-0 text-resort-600" /><span>Manage bookings</span></li>
-                <li className="flex items-start gap-2"><FiUsers className="mt-0.5 flex-shrink-0 text-resort-600" /><span>Reach more customers</span></li>
-              </ul>
-            </div>
-
-            {/* Admins */}
-            <div className="p-5 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200/10 hover:shadow-lg hover:shadow-resort-500/10 transition-all bg-white/95 backdrop-blur will-change-transform hover:-translate-y-1 sm:col-span-2 lg:col-span-1">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-resort-100 to-ocean-100 text-resort-700 flex items-center justify-center mb-3 sm:mb-4">
-                <FiShield size={20} className="sm:w-[22px] sm:h-[22px]" />
-              </div>
-              <h3 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2 sm:mb-3">For Admins</h3>
-              <ul className="space-y-2 text-slate-700 text-sm">
-                <li className="flex items-start gap-2"><FiSearch className="mt-0.5 flex-shrink-0 text-resort-600" /><span>Review listings</span></li>
-                <li className="flex items-start gap-2"><FiShield className="mt-0.5 flex-shrink-0 text-resort-600" /><span>Maintain platform quality</span></li>
-                <li className="flex items-start gap-2"><FiCalendar className="mt-0.5" /><span>Monitor bookings</span></li>
-                <li className="flex items-start gap-2"><FiUsers className="mt-0.5" /><span>Community management</span></li>
-              </ul>
             </div>
           </Reveal>
         </div>
       </section>
 
-      {/* Highlights Section */}
-      <section className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 bg-gradient-to-r from-resort-50/80 via-white to-ocean-50/50">
+      {/* Stats/Trust Section */}
+      <section className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 bg-white border-b border-slate-100">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
+            <div className="text-center">
+              <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-resort-600 mb-1">100+</div>
+              <div className="text-sm sm:text-base text-slate-600">Resorts Listed</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-resort-600 mb-1">50+</div>
+              <div className="text-sm sm:text-base text-slate-600">Provinces Covered</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-resort-600 mb-1">4.8★</div>
+              <div className="text-sm sm:text-base text-slate-600">Average Rating</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-resort-600 mb-1">24/7</div>
+              <div className="text-sm sm:text-base text-slate-600">Support Available</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works - Enhanced */}
+      <section className="w-full px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24 bg-gradient-to-b from-white to-resort-50/30">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-            <Reveal className="p-4 sm:p-6 bg-white rounded-xl sm:rounded-2xl border border-slate-100 hover:shadow-lg hover:shadow-resort-500/5 transition-all will-change-transform hover:-translate-y-1">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-resort-100 to-resort-200 text-resort-700 flex items-center justify-center mb-2 sm:mb-3"><FiCheckCircle className="w-4 h-4 sm:w-5 sm:h-5" /></div>
-              <h3 className="font-semibold text-slate-900 mb-1 text-sm sm:text-base">Transparent Pricing</h3>
-              <p className="text-xs sm:text-sm text-slate-600">Clear rates and no hidden fees when you book.</p>
+          <div className="text-center mb-12 sm:mb-16">
+            <span className="inline-block px-4 py-1.5 bg-resort-100 text-resort-700 rounded-full text-xs sm:text-sm font-semibold mb-4">SIMPLE PROCESS</span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-4">How It Works</h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">Book your dream resort in just three easy steps</p>
+          </div>
+          
+          <div className="relative">
+            {/* Connection line - hidden on mobile */}
+            <div className="hidden sm:block absolute top-24 left-1/2 -translate-x-1/2 w-2/3 h-0.5 bg-gradient-to-r from-resort-200 via-resort-400 to-ocean-400"></div>
+            
+            <div className="grid sm:grid-cols-3 gap-8 sm:gap-6">
+              <Reveal className="relative">
+                <div className="bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-resort-200/50 transition-all duration-300 text-center">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-resort-500 to-resort-600 text-white flex items-center justify-center mx-auto mb-5 shadow-lg shadow-resort-500/30 text-2xl sm:text-3xl font-bold">
+                    1
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-3">Discover</h3>
+                  <p className="text-slate-600">Browse resorts by location, type, amenities, and price. Use filters to find your perfect match.</p>
+                </div>
+              </Reveal>
+              
+              <Reveal className="relative">
+                <div className="bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-resort-200/50 transition-all duration-300 text-center">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-resort-600 to-ocean-500 text-white flex items-center justify-center mx-auto mb-5 shadow-lg shadow-resort-500/30 text-2xl sm:text-3xl font-bold">
+                    2
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-3">Book</h3>
+                  <p className="text-slate-600">Select your dates, choose your package, and submit your booking request to the host.</p>
+                </div>
+              </Reveal>
+              
+              <Reveal className="relative">
+                <div className="bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-ocean-200/50 transition-all duration-300 text-center">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-ocean-500 to-ocean-600 text-white flex items-center justify-center mx-auto mb-5 shadow-lg shadow-ocean-500/30 text-2xl sm:text-3xl font-bold">
+                    3
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-3">Enjoy</h3>
+                  <p className="text-slate-600">Get confirmed, coordinate with your host, and create unforgettable memories.</p>
+                </div>
+              </Reveal>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Locations Section - Redesigned */}
+      <section className="relative overflow-hidden w-full px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12 sm:mb-16">
+            <span className="inline-block px-4 py-1.5 bg-ocean-100 text-ocean-700 rounded-full text-xs sm:text-sm font-semibold mb-4">BROWSE RESORTS</span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-4">Explore by Type</h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">Find the perfect resort for your getaway</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6 sm:gap-8">
+            <Reveal>
+              <Link href="/resorts?type=beach" className="group block relative overflow-hidden rounded-2xl sm:rounded-3xl h-72 sm:h-80">
+                <div className="absolute inset-0 bg-gradient-to-br from-ocean-400 via-ocean-500 to-ocean-600"></div>
+                <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/40 to-transparent"></div>
+                <div className="relative h-full p-6 sm:p-8 flex flex-col justify-between text-white">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <svg className="w-7 h-7 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-2xl sm:text-3xl font-bold mb-2">Beach Resorts</h3>
+                    <p className="text-white/80 mb-3">Crystal waters & sandy shores</p>
+                    <span className="inline-flex items-center text-sm font-semibold group-hover:translate-x-2 transition-transform">
+                      Explore <FiArrowRight className="ml-2" />
+                    </span>
+                  </div>
+                </div>
+              </Link>
             </Reveal>
-            <Reveal className="p-4 sm:p-6 bg-white rounded-xl sm:rounded-2xl border border-slate-100 hover:shadow-lg hover:shadow-resort-500/5 transition-all will-change-transform hover:-translate-y-1">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-ocean-100 to-ocean-200 text-ocean-700 flex items-center justify-center mb-2 sm:mb-3"><FiShield className="w-4 h-4 sm:w-5 sm:h-5" /></div>
-              <h3 className="font-semibold text-slate-900 mb-1 text-sm sm:text-base">Verified Hosts</h3>
-              <p className="text-xs sm:text-sm text-slate-600">Quality-first listings with host verification checks.</p>
+
+            <Reveal>
+              <Link href="/resorts?type=mountain" className="group block relative overflow-hidden rounded-2xl sm:rounded-3xl h-72 sm:h-80">
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700"></div>
+                <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/40 to-transparent"></div>
+                <div className="relative h-full p-6 sm:p-8 flex flex-col justify-between text-white">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <svg className="w-7 h-7 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M5 21l7-14 7 14M12 7l5 10H7l5-10z" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-2xl sm:text-3xl font-bold mb-2">Mountain Resorts</h3>
+                    <p className="text-white/80 mb-3">Cool air & scenic views</p>
+                    <span className="inline-flex items-center text-sm font-semibold group-hover:translate-x-2 transition-transform">
+                      Explore <FiArrowRight className="ml-2" />
+                    </span>
+                  </div>
+                </div>
+              </Link>
             </Reveal>
-            <Reveal className="p-4 sm:p-6 bg-white rounded-xl sm:rounded-2xl border border-slate-100 hover:shadow-lg hover:shadow-resort-500/5 transition-all will-change-transform hover:-translate-y-1">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-sunset-100 to-sunset-200 text-sunset-600 flex items-center justify-center mb-2 sm:mb-3"><FiCalendar className="w-4 h-4 sm:w-5 sm:h-5" /></div>
-              <h3 className="font-semibold text-slate-900 mb-1 text-sm sm:text-base">Flexible Bookings</h3>
-              <p className="text-xs sm:text-sm text-slate-600">Instant confirmations and easy date management.</p>
-            </Reveal>
-            <Reveal className="p-4 sm:p-6 bg-white rounded-xl sm:rounded-2xl border border-slate-100 hover:shadow-lg hover:shadow-resort-500/5 transition-all will-change-transform hover:-translate-y-1">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-resort-100 to-ocean-100 text-resort-700 flex items-center justify-center mb-2 sm:mb-3"><FiMessageCircle className="w-4 h-4 sm:w-5 sm:h-5" /></div>
-              <h3 className="font-semibold text-slate-900 mb-1 text-sm sm:text-base">Responsive Support</h3>
-              <p className="text-xs sm:text-sm text-slate-600">Helpful assistance before, during, and after your stay.</p>
+
+            <Reveal>
+              <Link href="/resorts?type=nature" className="group block relative overflow-hidden rounded-2xl sm:rounded-3xl h-72 sm:h-80">
+                <div className="absolute inset-0 bg-gradient-to-br from-resort-500 via-resort-600 to-resort-700"></div>
+                <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/40 to-transparent"></div>
+                <div className="relative h-full p-6 sm:p-8 flex flex-col justify-between text-white">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <svg className="w-7 h-7 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M5 21c1.5-1.5 3.5-3 7-3s5.5 1.5 7 3M12 18c-4 0-6 3-6 3M9 10c0-1.657 1.343-3 3-3s3 1.343 3 3c0 2-3 4-3 4s-3-2-3-4z" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-2xl sm:text-3xl font-bold mb-2">Nature Retreats</h3>
+                    <p className="text-white/80 mb-3">Peaceful & eco-friendly</p>
+                    <span className="inline-flex items-center text-sm font-semibold group-hover:translate-x-2 transition-transform">
+                      Explore <FiArrowRight className="ml-2" />
+                    </span>
+                  </div>
+                </div>
+              </Link>
             </Reveal>
           </div>
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 bg-gradient-to-br from-resort-600 via-resort-500 to-ocean-600">
+      {/* Testimonials - Redesigned */}
+      <section className="relative overflow-hidden w-full px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24 bg-gradient-to-b from-slate-50 to-white">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-8 sm:mb-12">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">How It Works</h2>
-            <p className="text-white/80 mt-2 text-sm sm:text-base">Plan your trip in three simple steps</p>
+          <div className="text-center mb-12 sm:mb-16">
+            <span className="inline-block px-4 py-1.5 bg-sunset-100 text-sunset-700 rounded-full text-xs sm:text-sm font-semibold mb-4">TESTIMONIALS</span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-4">What Guests Say</h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">Real experiences from real travelers</p>
           </div>
-          <div className="grid sm:grid-cols-3 gap-4 sm:gap-6">
-            <Reveal className="p-5 sm:p-6 rounded-xl sm:rounded-2xl border border-white/10 bg-white/95 backdrop-blur hover:shadow-lg hover:shadow-resort-500/20 transition-all will-change-transform hover:-translate-y-1">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-resort-100 to-ocean-100 text-resort-700 flex items-center justify-center mb-3">
-                <span className="text-lg sm:text-xl font-bold">1</span>
+          <div className="grid md:grid-cols-3 gap-6 sm:gap-8">
+<Reveal>
+              <div className="relative p-6 sm:p-8 bg-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-lg shadow-slate-200/50 hover:shadow-xl transition-all duration-300">
+                <div className="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-br from-resort-500 to-ocean-500 rounded-full flex items-center justify-center text-white text-2xl shadow-lg">&quot;</div>
+                <div className="flex gap-1 text-amber-400 mb-4">
+                  <FiStar className="fill-current" /><FiStar className="fill-current" /><FiStar className="fill-current" /><FiStar className="fill-current" /><FiStar className="fill-current" />
+                </div>
+                <p className="text-slate-700 text-lg mb-6">&quot;Smooth booking and a beautiful place. The host was incredibly accommodating. Will definitely return!&quot;</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-resort-400 to-ocean-400 flex items-center justify-center text-white font-semibold">A</div>
+                  <div>
+                    <div className="font-semibold text-slate-900">Ana</div>
+                    <div className="text-sm text-slate-500">Cebu City</div>
+                  </div>
+                </div>
               </div>
-              <h3 className="font-semibold text-slate-900 mb-1 text-base sm:text-lg">Search</h3>
-              <p className="text-xs sm:text-sm text-slate-600">Filter by type, location, and availability.</p>
             </Reveal>
-            <Reveal className="p-5 sm:p-6 rounded-xl sm:rounded-2xl border border-white/10 bg-white/95 backdrop-blur hover:shadow-lg hover:shadow-resort-500/20 transition-all will-change-transform hover:-translate-y-1">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-resort-100 to-ocean-100 text-resort-700 flex items-center justify-center mb-3">
-                <span className="text-lg sm:text-xl font-bold">2</span>
+<Reveal>
+              <div className="relative p-6 sm:p-8 bg-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-lg shadow-slate-200/50 hover:shadow-xl transition-all duration-300">
+                <div className="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-br from-ocean-500 to-resort-500 rounded-full flex items-center justify-center text-white text-2xl shadow-lg">&quot;</div>
+                <div className="flex gap-1 text-amber-400 mb-4">
+                  <FiStar className="fill-current" /><FiStar className="fill-current" /><FiStar className="fill-current" /><FiStar className="fill-current" /><FiStar className="fill-current" />
+                </div>
+                <p className="text-slate-700 text-lg mb-6">&quot;Great host and clear communication from start to finish. The resort exceeded all expectations!&quot;</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-400 flex items-center justify-center text-white font-semibold">M</div>
+                  <div>
+                    <div className="font-semibold text-slate-900">Marco</div>
+                    <div className="text-sm text-slate-500">Baguio City</div>
+                  </div>
+                </div>
               </div>
-              <h3 className="font-semibold text-slate-900 mb-1 text-base sm:text-lg">Book</h3>
-              <p className="text-xs sm:text-sm text-slate-600">Secure checkout and instant confirmations.</p>
             </Reveal>
-            <Reveal className="p-5 sm:p-6 rounded-xl sm:rounded-2xl border border-white/10 bg-white/95 backdrop-blur hover:shadow-lg hover:shadow-resort-500/20 transition-all will-change-transform hover:-translate-y-1">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-resort-100 to-ocean-100 text-resort-700 flex items-center justify-center mb-3">
-                <span className="text-lg sm:text-xl font-bold">3</span>
+<Reveal>
+              <div className="relative p-6 sm:p-8 bg-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-lg shadow-slate-200/50 hover:shadow-xl transition-all duration-300">
+                <div className="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-br from-sunset-500 to-resort-500 rounded-full flex items-center justify-center text-white text-2xl shadow-lg">&quot;</div>
+                <div className="flex gap-1 text-amber-400 mb-4">
+                  <FiStar className="fill-current" /><FiStar className="fill-current" /><FiStar className="fill-current" /><FiStar className="fill-current" /><FiStar className="fill-current" />
+                </div>
+                <p className="text-slate-700 text-lg mb-6">&quot;Loved the variety of beach options. Easy to filter and find exactly what we were looking for!&quot;</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sunset-400 to-rose-400 flex items-center justify-center text-white font-semibold">J</div>
+                  <div>
+                    <div className="font-semibold text-slate-900">Jasmine</div>
+                    <div className="text-sm text-slate-500">La Union</div>
+                  </div>
+                </div>
               </div>
-              <h3 className="font-semibold text-slate-900 mb-1 text-base sm:text-lg">Enjoy</h3>
-              <p className="text-xs sm:text-sm text-slate-600">Relax and make memories at your resort.</p>
             </Reveal>
           </div>
         </div>
       </section>
 
-      {/* Locations Section */}
-      <section className="relative overflow-hidden w-full px-4 sm:px-6 lg:px-8 py-16 sm:py-20 bg-white">
-        {/* Soft radial accent */}
-        <div aria-hidden className="pointer-events-none absolute -top-10 left-1/4 w-[340px] h-[180px] rounded-full bg-gradient-to-r from-resort-100/60 to-resort-300/40 blur-2xl"></div>
-        <div aria-hidden className="pointer-events-none absolute bottom-0 right-1/5 w-[280px] h-[140px] rounded-full bg-gradient-to-br from-resort-200/50 to-resort-400/30 blur-2xl"></div>
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-bold mb-2"><span className="gradient-text">Explore by Type</span></h2>
-            <p className="text-xl text-slate-600">Find the perfect resort for your getaway</p>
-            <div className="mx-auto h-1 w-24 bg-gradient-to-r from-resort-500 to-resort-700 rounded-full mt-4"></div>
-          </div>
-
-          <Reveal className="grid md:grid-cols-3 gap-8">
-            <Link href="/resorts?type=beach" className="group cursor-pointer overflow-hidden rounded-2xl border border-slate-200 ring-1 ring-transparent hover:ring-resort-300 p-8 bg-white hover:shadow-lg transition-all h-64 flex flex-col justify-between will-change-transform hover:translate-y-1">
-              <div>
-                <div className="w-12 h-12 rounded-xl bg-resort-100 text-resort-700 flex items-center justify-center mb-4"><FiMapPin /></div>
-                <h3 className="text-2xl font-semibold mb-1 text-slate-900">Beach Resorts</h3>
-                <p className="text-slate-600">Crystal waters & sandy shores</p>
-              </div>
-              <span className="text-sm font-semibold text-resort-700 group-hover:translate-x-2 transition-transform inline-block">Explore →</span>
-            </Link>
-
-            <Link href="/resorts?type=mountain" className="group cursor-pointer overflow-hidden rounded-2xl border border-slate-200 ring-1 ring-transparent hover:ring-resort-300 p-8 bg-white hover:shadow-lg transition-all h-64 flex flex-col justify-between will-change-transform hover:translate-y-1">
-              <div>
-                <div className="w-12 h-12 rounded-xl bg-resort-100 text-resort-700 flex items-center justify-center mb-4"><FiMapPin /></div>
-                <h3 className="text-2xl font-semibold mb-1 text-slate-900">Mountain Resorts</h3>
-                <p className="text-slate-600">Cool air & scenic views</p>
-              </div>
-              <span className="text-sm font-semibold text-resort-700 group-hover:translate-x-2 transition-transform inline-block">Explore →</span>
-            </Link>
-
-            <Link href="/resorts?type=nature" className="group cursor-pointer overflow-hidden rounded-2xl border border-slate-200 ring-1 ring-transparent hover:ring-resort-300 p-8 bg-white hover:shadow-lg transition-all h-64 flex flex-col justify-between will-change-transform hover:translate-y-1">
-              <div>
-                <div className="w-12 h-12 rounded-xl bg-resort-100 text-resort-700 flex items-center justify-center mb-4"><FiMapPin /></div>
-                <h3 className="text-2xl font-semibold mb-1 text-slate-900">Nature Retreats</h3>
-                <p className="text-slate-600">Peaceful & eco-friendly</p>
-              </div>
-              <span className="text-sm font-semibold text-resort-700 group-hover:translate-x-2 transition-transform inline-block">Explore →</span>
-            </Link>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="relative overflow-hidden w-full px-4 sm:px-6 lg:px-8 py-16 sm:py-20 bg-gradient-to-r from-resort-50 to-white">
-        {/* Soft accents */}
-        <div aria-hidden className="pointer-events-none absolute -top-6 right-1/4 w-[300px] h-[160px] rounded-full bg-gradient-to-br from-resort-100/60 to-resort-300/40 blur-2xl"></div>
-        <div aria-hidden className="pointer-events-none absolute bottom-0 left-1/5 w-[260px] h-[140px] rounded-full bg-gradient-to-br from-resort-200/50 to-resort-400/30 blur-2xl"></div>
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900">What Guests Say</h2>
-            <p className="text-slate-700 mt-2">Real experiences from real travelers</p>
-            <div className="mx-auto h-1 w-24 bg-gradient-to-r from-resort-500 to-resort-700 rounded-full mt-4"></div>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            <Reveal className="p-6 bg-white rounded-2xl border border-slate-200 hover:shadow-lg transition-all will-change-transform hover:translate-y-1">
-              <div className="flex gap-1 text-resort-500 mb-2" aria-hidden>
-                <FiStar /><FiStar /><FiStar /><FiStar /><FiStar />
-              </div>
-              <p className="text-slate-700">“Smooth booking and a beautiful place. Will return!”</p>
-              <div className="mt-4 text-sm text-slate-500">Ana, Cebu</div>
-            </Reveal>
-            <Reveal className="p-6 bg-white rounded-2xl border border-slate-200 hover:shadow-lg transition-all will-change-transform hover:translate-y-1">
-              <div className="flex gap-1 text-resort-500 mb-2" aria-hidden>
-                <FiStar /><FiStar /><FiStar /><FiStar /><FiStar />
-              </div>
-              <p className="text-slate-700">“Great host and clear communication from start to finish.”</p>
-              <div className="mt-4 text-sm text-slate-500">Marco, Baguio</div>
-            </Reveal>
-            <Reveal className="p-6 bg-white rounded-2xl border border-slate-200 hover:shadow-lg transition-all will-change-transform hover:translate-y-1">
-              <div className="flex gap-1 text-resort-500 mb-2" aria-hidden>
-                <FiStar /><FiStar /><FiStar /><FiStar /><FiStar />
-              </div>
-              <p className="text-slate-700">“Loved the options by the beach; easy to sort.”</p>
-              <div className="mt-4 text-sm text-slate-500">Jasmine, La Union</div>
-            </Reveal>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="w-full px-4 sm:px-6 lg:px-8 py-16 bg-white">
+      {/* FAQ - Redesigned */}
+      <section className="w-full px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24 bg-white">
         <div className="max-w-5xl mx-auto">
-          <div className="flex items-center justify-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-resort-100 text-resort-700 flex items-center justify-center"><FiHelpCircle /></div>
-            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900">Frequently Asked Questions</h2>
+          <div className="text-center mb-12 sm:mb-16">
+            <span className="inline-block px-4 py-1.5 bg-resort-100 text-resort-700 rounded-full text-xs sm:text-sm font-semibold mb-4">FAQ</span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-4">Frequently Asked Questions</h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">Everything you need to know about booking on ResortifyPH</p>
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             <Reveal as="details" className="faq-item p-5">
@@ -430,18 +498,34 @@ export default function Home(){
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="w-full px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 bg-gradient-to-r from-resort-500 via-resort-600 to-ocean-600">
-        <div className="max-w-4xl mx-auto text-center text-white">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">Ready to Book Your Perfect Getaway?</h2>
-          <p className="text-base sm:text-lg lg:text-xl mb-6 sm:mb-8 text-white/90">Join travelers discovering amazing resorts across the Philippines</p>
+      {/* CTA Section - Redesigned */}
+      <section className="relative overflow-hidden w-full px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24">
+        <div className="absolute inset-0 bg-gradient-to-br from-resort-600 via-resort-700 to-ocean-700"></div>
+        <div className="absolute inset-0 bg-[url('/assets/pattern.svg')] opacity-5"></div>
+        
+        {/* Decorative elements */}
+        <div className="absolute top-0 left-0 w-72 h-72 bg-white/5 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/5 rounded-full translate-x-1/3 translate-y-1/3"></div>
+        
+        <div className="relative max-w-4xl mx-auto text-center text-white">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-sm font-medium mb-6">
+            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+            Over 100+ resorts available
+          </div>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+            Ready to Book Your<br />Perfect Getaway?
+          </h2>
+          <p className="text-lg sm:text-xl lg:text-2xl mb-8 sm:mb-10 text-white/80 max-w-2xl mx-auto">
+            Join thousands of travelers discovering amazing resorts across the Philippines
+          </p>
           {!user && (
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-              <Link href="/auth/signup" className="px-6 sm:px-8 py-3 sm:py-4 bg-white text-resort-700 rounded-xl font-semibold hover:shadow-lg hover:shadow-white/25 transition-all text-sm sm:text-base">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/auth/signup" className="group px-8 py-4 bg-white text-resort-700 rounded-2xl font-semibold hover:shadow-2xl hover:shadow-white/25 transition-all text-base sm:text-lg flex items-center justify-center gap-2">
                 Create Free Account
+                <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link href="/resorts" className="px-6 sm:px-8 py-3 sm:py-4 border-2 border-white text-white rounded-xl font-semibold hover:bg-white/10 transition-all text-sm sm:text-base">
-                Start Browsing
+              <Link href="/resorts" className="px-8 py-4 border-2 border-white/50 text-white rounded-2xl font-semibold hover:bg-white/10 hover:border-white transition-all text-base sm:text-lg backdrop-blur-sm">
+                Browse Resorts
               </Link>
             </div>
           )}

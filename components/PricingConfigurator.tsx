@@ -382,8 +382,8 @@ export default function PricingConfigurator({ value, onChange, capacity }: Prici
         
         <div className="space-y-3">
           {config.guestTiers.map((tier, index) => (
-            <div key={tier.id} className="flex items-center gap-3 bg-white p-3 rounded-lg border border-slate-200">
-              <div className="flex-1 grid grid-cols-3 gap-3">
+            <div key={tier.id} className="flex flex-col sm:flex-row sm:items-center gap-3 bg-white p-3 rounded-lg border border-slate-200">
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-slate-600 mb-1">Tier Name</label>
                   <input

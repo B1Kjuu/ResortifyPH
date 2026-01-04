@@ -501,9 +501,9 @@ export default function EditResort(){
               </button>
             </div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {['Pool', 'WiFi', 'Parking', 'Breakfast', 'Beachfront', 'Air Conditioning', 'Spa', 'Bar', 'Pet Friendly', 'Kitchen', 'BBQ Grill', 'Videoke', 'Netflix', 'Billiards', 'Game Room', 'Outdoor Seating'].map(amenity => (
-              <label key={amenity} className="flex items-center gap-3 cursor-pointer bg-white px-4 py-3 rounded-lg border-2 border-slate-200 hover:border-resort-400 transition-colors">
+              <label key={amenity} className="flex items-center gap-2 sm:gap-3 cursor-pointer bg-white px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border-2 border-slate-200 hover:border-resort-400 transition-colors">
                 <input
                   type="checkbox"
                   checked={amenities.includes(amenity)}
@@ -514,9 +514,9 @@ export default function EditResort(){
                       setAmenities(amenities.filter(a => a !== amenity))
                     }
                   }}
-                  className="w-5 h-5 text-resort-500 border-slate-300 rounded focus:ring-2 focus:ring-resort-400"
+                  className="w-4 h-4 sm:w-5 sm:h-5 text-resort-500 border-slate-300 rounded focus:ring-2 focus:ring-resort-400 flex-shrink-0"
                 />
-                <span className="text-sm font-medium text-slate-700">{amenity}</span>
+                <span className="text-xs sm:text-sm font-medium text-slate-700 break-words">{amenity}</span>
               </label>
             ))}
           </div>

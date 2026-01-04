@@ -194,7 +194,7 @@ export default function LocationCombobox({ value = '', onChange, placeholder = '
     ? 'w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-left focus:outline-none focus:ring-2 focus:ring-resort-400 transition text-sm'
     : 'w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-left focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors bg-white'
   const dropdownClasses = hero
-    ? 'fixed z-[1000] min-w-[360px] sm:min-w-[420px] bg-white border border-slate-100 rounded-2xl shadow-[0_25px_65px_rgba(15,23,42,0.15)]'
+    ? 'fixed z-[1000] bg-white border border-slate-100 rounded-2xl shadow-[0_25px_65px_rgba(15,23,42,0.15)]'
     : 'fixed z-[1000] bg-white border-2 border-slate-200 rounded-2xl shadow-xl'
   const searchInputClasses = hero
     ? 'w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 text-sm bg-slate-50'
@@ -238,8 +238,8 @@ export default function LocationCombobox({ value = '', onChange, placeholder = '
           className={dropdownClasses}
           style={{
             top: dropdownPos.top + 8,
-            left: dropdownPos.left,
-            width: hero ? Math.max(380, dropdownPos.width) : dropdownPos.width,
+            left: Math.max(8, Math.min(dropdownPos.left, (typeof window !== 'undefined' ? window.innerWidth : 400) - Math.min(dropdownPos.width, (typeof window !== 'undefined' ? window.innerWidth - 16 : 380)) - 8)),
+            width: Math.min(hero ? Math.max(340, dropdownPos.width) : dropdownPos.width, (typeof window !== 'undefined' ? window.innerWidth - 16 : 380)),
             maxHeight: Math.max(320, (typeof window !== 'undefined' ? window.innerHeight : 800) - (dropdownPos.top + 24)),
             overflowY: 'auto',
           }}

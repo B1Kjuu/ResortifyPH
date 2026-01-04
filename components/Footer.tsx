@@ -42,7 +42,16 @@ export default function Footer(){
               </p>
               {/* Social icons - Mobile visible */}
               <div className="flex items-center gap-3 mt-4 md:hidden">
-                <a href="mailto:resortifyph@gmail.com" aria-label="Email" className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-800 border border-slate-700 text-white hover:bg-resort-600 transition-colors">
+                <a 
+                  href="mailto:resortifyph@gmail.com" 
+                  onClick={(e) => {
+                    // Fallback for when mailto doesn't work
+                    e.preventDefault()
+                    window.location.href = 'mailto:resortifyph@gmail.com'
+                  }}
+                  aria-label="Email" 
+                  className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-800 border border-slate-700 text-white hover:bg-resort-600 transition-colors"
+                >
                   <FiMail className="w-5 h-5" />
                 </a>
                 <a href="https://www.facebook.com/people/Resortifyph/61584827603544/" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-800 border border-slate-700 text-white hover:bg-blue-600 transition-colors">
@@ -93,7 +102,15 @@ export default function Footer(){
               </div>
               {/* Social icons - Desktop */}
               <div className="hidden md:flex items-center gap-3">
-                <a href="mailto:resortifyph@gmail.com" aria-label="Email" className="flex items-center justify-center w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-white hover:bg-resort-600 hover:border-resort-600 transition-all">
+                <a 
+                  href="mailto:resortifyph@gmail.com" 
+                  onClick={(e) => {
+                    e.preventDefault()
+                    window.location.href = 'mailto:resortifyph@gmail.com'
+                  }}
+                  aria-label="Email" 
+                  className="flex items-center justify-center w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-white hover:bg-resort-600 hover:border-resort-600 transition-all"
+                >
                   <FiMail className="w-4 h-4" />
                 </a>
                 <a href="https://www.facebook.com/people/Resortifyph/61584827603544/" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="flex items-center justify-center w-9 h-9 rounded-full bg-slate-800 border border-slate-700 text-white hover:bg-blue-600 hover:border-blue-600 transition-all">
