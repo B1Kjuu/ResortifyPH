@@ -472,17 +472,17 @@ textarea:focus {
 
 @media (max-width: 640px) {
   .calendar-custom {
-    padding: 0.75rem;
+    padding: 0.5rem;
     border-radius: 0.875rem;
     max-width: 100%;
-    overflow-x: hidden;
+    overflow: hidden;
   }
 
   .calendar-custom .rdp-root {
-    --rdp-day-width: min(36px, calc((100vw - 64px) / 7));
-    --rdp-day-height: min(36px, calc((100vw - 64px) / 7));
-    --rdp-day_button-width: min(32px, calc((100vw - 80px) / 7));
-    --rdp-day_button-height: min(32px, calc((100vw - 80px) / 7));
+    --rdp-day-width: calc((100% - 12px) / 7);
+    --rdp-day-height: 40px;
+    --rdp-day_button-width: calc(100% - 4px);
+    --rdp-day_button-height: 36px;
     --rdp-day_button-border-radius: 8px;
     width: 100%;
     max-width: 100%;
@@ -491,14 +491,39 @@ textarea:focus {
   .calendar-custom .rdp-months {
     width: 100%;
     justify-content: center;
+    flex-direction: column;
+  }
+
+  .calendar-custom .rdp-month {
+    width: 100%;
+    max-width: 100%;
   }
 
   .calendar-custom .rdp-month_grid {
     width: 100%;
+    table-layout: fixed;
+  }
+
+  .calendar-custom .rdp-weekdays,
+  .calendar-custom .rdp-weeks,
+  .calendar-custom .rdp-week {
+    display: table-row;
+    width: 100%;
+  }
+
+  .calendar-custom .rdp-weekday,
+  .calendar-custom .rdp-day {
+    display: table-cell;
+    width: calc(100% / 7);
+    min-width: 0;
+    padding: 2px;
   }
 
   .calendar-custom .rdp-day_button {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
+    width: 100%;
+    max-width: 40px;
+    margin: 0 auto;
   }
 
   .calendar-custom .rdp-caption_label {
@@ -506,18 +531,13 @@ textarea:focus {
   }
 
   .calendar-custom .rdp-weekday {
-    font-size: 0.6rem;
-    padding: 0.5rem 0;
+    font-size: 0.65rem;
+    padding: 0.4rem 0;
   }
 
   .calendar-custom.two-months .rdp-months {
     flex-direction: column;
     gap: 1.5rem;
-  }
-
-  .calendar-custom .rdp-month {
-    max-width: 100%;
-    width: 100%;
   }
 
   .calendar-custom .rdp-button_previous,
@@ -530,18 +550,13 @@ textarea:focus {
 /* Extra small screens (under 360px) */
 @media (max-width: 360px) {
   .calendar-custom {
-    padding: 0.5rem;
-  }
-
-  .calendar-custom .rdp-root {
-    --rdp-day-width: calc((100vw - 48px) / 7);
-    --rdp-day-height: calc((100vw - 48px) / 7);
-    --rdp-day_button-width: calc((100vw - 64px) / 7);
-    --rdp-day_button-height: calc((100vw - 64px) / 7);
+    padding: 0.375rem;
   }
 
   .calendar-custom .rdp-day_button {
-    font-size: 0.65rem;
+    font-size: 0.7rem;
+    max-width: 34px;
+    height: 34px;
   }
 
   .calendar-custom .rdp-weekday {
