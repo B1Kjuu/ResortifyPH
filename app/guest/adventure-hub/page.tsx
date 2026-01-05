@@ -302,12 +302,14 @@ export default function AdventureHub(){
               {/* Right: Dates only */}
               <div className="lg:col-span-8 overflow-hidden">
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5">Dates</label>
-                <DateRangePicker
-                  bookedDates={[]}
-                  selectedRange={searchRange}
-                  onSelectRange={(range) => setSearchRange(range)}
-                  preferTwoMonthsOnDesktop
-                />
+                <div className="w-full max-w-full overflow-x-auto">
+                  <DateRangePicker
+                    bookedDates={[]}
+                    selectedRange={searchRange}
+                    onSelectRange={(range) => setSearchRange(range)}
+                    preferTwoMonthsOnDesktop
+                  />
+                </div>
               </div>
             </div>
           </div>

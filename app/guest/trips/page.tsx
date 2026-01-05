@@ -112,13 +112,15 @@ export default function TripsPage(){
 
         <section className="mb-10 fade-in-up">
           <h2 className="text-xl font-bold text-slate-900 mb-3">Bookings Calendar</h2>
-          <div className="bg-white border-2 border-slate-200 rounded-2xl p-4 overflow-hidden">
-            <DateRangePicker
-              bookedDates={bookedDates}
-              selectedRange={selectedRange}
-              onSelectRange={setSelectedRange}
-              preferTwoMonthsOnDesktop
-            />
+          <div className="bg-white border-2 border-slate-200 rounded-2xl p-3 sm:p-4 overflow-hidden">
+            <div className="w-full max-w-full overflow-x-auto">
+              <DateRangePicker
+                bookedDates={bookedDates}
+                selectedRange={selectedRange}
+                onSelectRange={setSelectedRange}
+                preferTwoMonthsOnDesktop
+              />
+            </div>
             <p className="text-sm text-slate-600 mt-2">Red-marked dates are your confirmed bookings.</p>
           </div>
         </section>

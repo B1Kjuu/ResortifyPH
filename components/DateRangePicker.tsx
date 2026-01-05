@@ -280,7 +280,7 @@ export default function DateRangePicker({
   // Single date mode (for daytour)
   if (singleDateMode) {
     return (
-      <div ref={wrapperRef} className="w-full">
+      <div ref={wrapperRef} className="w-full max-w-full overflow-hidden">
         <DayPicker
           mode="single"
           selected={selectedSingleDate}
@@ -295,8 +295,8 @@ export default function DateRangePicker({
             booked: 'day-booked',
           }}
           styles={{
-            root: { width: '100%' },
-            months: { display: 'flex', gap: '16px', justifyContent: 'flex-start', flexWrap: 'wrap' },
+            root: { width: '100%', maxWidth: '100%' },
+            months: { display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap', width: '100%' },
           }}
         />
         {selectedSingleDate && (
@@ -332,7 +332,7 @@ export default function DateRangePicker({
   }
 
   return (
-    <div ref={wrapperRef} className="w-full">
+    <div ref={wrapperRef} className="w-full max-w-full overflow-hidden">
       <DayPicker
         mode="range"
         selected={selectedRange}
@@ -347,8 +347,8 @@ export default function DateRangePicker({
           booked: 'day-booked',
         }}
         styles={{
-          root: { width: '100%' },
-          months: { display: 'flex', gap: '16px', justifyContent: 'flex-start', flexWrap: 'wrap' },
+          root: { width: '100%', maxWidth: '100%' },
+          months: { display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap', width: '100%' },
         }}
       />
       {selectedRange.from && selectedRange.to && (
