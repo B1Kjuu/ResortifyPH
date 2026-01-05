@@ -19,6 +19,8 @@ type Props = {
   nights?: number
   showTotalPrice?: boolean
   distance?: number | null  // Distance in km from user location
+  slotTypePrices?: { daytour: number | null; overnight: number | null; '22hrs': number | null } | null
+  selectedSlotType?: 'all' | 'daytour' | 'overnight' | '22hrs'
 }
 
 // Format distance for display
@@ -29,7 +31,7 @@ function formatDistanceDisplay(km: number): string {
   return `${km.toFixed(1)}km`
 }
 
-export default function ResortCard({ resort, compact = false, nights = 0, showTotalPrice = false, distance }: Props){
+export default function ResortCard({ resort, compact = false, nights = 0, showTotalPrice = false, distance, slotTypePrices, selectedSlotType = 'all' }: Props){
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isHovered, setIsHovered] = useState(false)
   const { ready, isFavorite, toggleFavorite } = useFavorites()
@@ -232,23 +234,44 @@ export default function ResortCard({ resort, compact = false, nights = 0, showTo
           )}
           
           {/* Price */}
-          {resort.price != null && resort.price > 0 ? (
-            <div className="pt-1 flex items-center gap-1.5 sm:gap-2">
-              <span className="font-bold text-slate-900 text-sm sm:text-base">₱{resort.price.toLocaleString()}</span>
-              <span className="text-slate-500 text-xs sm:text-sm">/ night</span>
-              {resort.instant_book && (
-                <span className="ml-auto" title="Instant Book">
-                  <svg className="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
-                  </svg>
-                </span>
-              )}
-            </div>
-          ) : (
-            <div className="pt-1 flex items-center gap-1.5 sm:gap-2">
-              <span className="text-slate-500 text-xs sm:text-sm italic">Contact for pricing</span>
-            </div>
-          )}
+          {(() => {
+            // Determine price based on advanced pricing or standard
+            const useAdvanced = resort.use_advanced_pricing && slotTypePrices
+            let displayPrice: number | null = null
+            let priceLabel = '/ night'
+            
+            if (useAdvanced) {
+              // For advanced pricing, show price based on selected slot type
+              if (selectedSlotType !== 'all' && slotTypePrices[selectedSlotType]) {
+                displayPrice = slotTypePrices[selectedSlotType]
+                priceLabel = selectedSlotType === 'daytour' ? '/ daytour' : selectedSlotType === 'overnight' ? '/ overnight' : '/ 22hrs'
+              } else {
+                // Default: show 22hrs, then overnight, then daytour
+                displayPrice = slotTypePrices['22hrs'] || slotTypePrices.overnight || slotTypePrices.daytour
+                priceLabel = slotTypePrices['22hrs'] ? '/ 22hrs' : slotTypePrices.overnight ? '/ overnight' : '/ daytour'
+              }
+            } else {
+              displayPrice = resort.price
+            }
+            
+            return displayPrice != null && displayPrice > 0 ? (
+              <div className="pt-1 flex items-center gap-1.5 sm:gap-2">
+                <span className="font-bold text-slate-900 text-sm sm:text-base">₱{displayPrice.toLocaleString()}</span>
+                <span className="text-slate-500 text-xs sm:text-sm">{priceLabel}</span>
+                {resort.instant_book && (
+                  <span className="ml-auto" title="Instant Book">
+                    <svg className="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+                    </svg>
+                  </span>
+                )}
+              </div>
+            ) : (
+              <div className="pt-1 flex items-center gap-1.5 sm:gap-2">
+                <span className="text-slate-500 text-xs sm:text-sm italic">Contact for pricing</span>
+              </div>
+            )
+          })()}
           {showTotalPrice && nights > 0 && resort.price ? (
             <div className="mt-0.5 text-[10px] sm:text-xs text-slate-600 bg-slate-50 rounded-md px-2 py-1 inline-block">
               Total for {nights} night{nights > 1 ? 's' : ''}: <span className="font-semibold text-slate-900">₱{(nights * (resort.price || 0)).toLocaleString()}</span>

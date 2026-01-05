@@ -122,10 +122,11 @@ export default function ResortsPage(){
   const [guestCount, setGuestCount] = useState(searchParams.get('guests') || 'all')
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>(searchParams.get('amenities')?.split(',').filter(Boolean) || [])
   const [sortBy, setSortBy] = useState<'newest' | 'price-asc' | 'price-desc' | 'nearest'>((searchParams.get('sort') as any) || 'newest')
-  const [stayTypeFilter, setStayTypeFilter] = useState<'all' | 'daytour' | 'overnight'>(searchParams.get('stayType') as any || 'all')
+  const [stayTypeFilter, setStayTypeFilter] = useState<'all' | 'daytour' | 'overnight' | '22hrs'>(searchParams.get('stayType') as any || 'all')
   const [dateFrom, setDateFrom] = useState<Date | null>(searchParams.get('dateFrom') ? new Date(searchParams.get('dateFrom')!) : null)
   const [dateTo, setDateTo] = useState<Date | null>(searchParams.get('dateTo') ? new Date(searchParams.get('dateTo')!) : null)
   const [availableResortIds, setAvailableResortIds] = useState<string[] | null>(null)
+  const [resortSlotPrices, setResortSlotPrices] = useState<Record<string, { daytour: number | null; overnight: number | null; '22hrs': number | null }>>({})
 
   const amenityOptions = ['Pool', 'WiFi', 'Parking', 'Breakfast', 'Beachfront', 'Air Conditioning', 'Spa', 'Bar', 'Pet Friendly', 'Kitchen']
 
@@ -239,6 +240,50 @@ export default function ResortsPage(){
       clearTimeout(timeoutId)
     }
   }, [])
+
+  // Fetch slot type prices for resorts with advanced pricing
+  useEffect(() => {
+    if (resorts.length === 0) return
+    
+    const advancedResortIds = resorts.filter(r => r.use_advanced_pricing).map(r => r.id)
+    if (advancedResortIds.length === 0) return
+    
+    async function fetchSlotPrices() {
+      try {
+        const { data: slotsData } = await supabase
+          .from('resort_time_slots')
+          .select('id, resort_id, slot_type, resort_pricing_matrix(price)')
+          .in('resort_id', advancedResortIds)
+          .eq('is_active', true)
+        
+        if (slotsData) {
+          const pricesMap: Record<string, { daytour: number | null; overnight: number | null; '22hrs': number | null }> = {}
+          
+          slotsData.forEach((slot: any) => {
+            const resortId = slot.resort_id
+            if (!pricesMap[resortId]) {
+              pricesMap[resortId] = { daytour: null, overnight: null, '22hrs': null }
+            }
+            
+            const slotType = slot.slot_type as 'daytour' | 'overnight' | '22hrs'
+            const slotPrices = slot.resort_pricing_matrix || []
+            if (slotPrices.length > 0) {
+              const minPrice = Math.min(...slotPrices.map((p: any) => Number(p.price)))
+              if (pricesMap[resortId][slotType] === null || minPrice < pricesMap[resortId][slotType]!) {
+                pricesMap[resortId][slotType] = minPrice
+              }
+            }
+          })
+          
+          setResortSlotPrices(pricesMap)
+        }
+      } catch (err) {
+        console.error('Error fetching slot prices:', err)
+      }
+    }
+    
+    fetchSlotPrices()
+  }, [resorts])
 
   // Keep price range aligned with detected bounds
   useEffect(() => {
@@ -577,6 +622,17 @@ export default function ResortsPage(){
                   <span>🌙</span>
                   <span className="hidden sm:inline">Night</span>
                 </button>
+                <button
+                  onClick={() => setStayTypeFilter('22hrs')}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
+                    stayTypeFilter === '22hrs' 
+                      ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-sm' 
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <span>⏰</span>
+                  <span className="hidden sm:inline">22hrs</span>
+                </button>
               </div>
               {/* Guests - with icon */}
               <div className="relative">
@@ -669,7 +725,7 @@ export default function ResortsPage(){
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
             {filteredResorts.map((resort) => (
               <div key={resort.id} className="relative">
-                <ResortCard resort={resort} nights={(dateFrom && dateTo) ? Math.ceil((dateTo.getTime() - dateFrom.getTime())/(1000*60*60*24)) : 0} showTotalPrice={showTotalPrice} distance={showNearby && position ? resort.distance : null} />
+                <ResortCard resort={resort} nights={(dateFrom && dateTo) ? Math.ceil((dateTo.getTime() - dateFrom.getTime())/(1000*60*60*24)) : 0} showTotalPrice={showTotalPrice} distance={showNearby && position ? resort.distance : null} slotTypePrices={resortSlotPrices[resort.id] || null} selectedSlotType={stayTypeFilter} />
               </div>
             ))}
           </div>
@@ -691,7 +747,7 @@ export default function ResortsPage(){
                       className={`relative transition-all cursor-pointer ${selectedMapResort === resort.id ? 'ring-2 ring-cyan-500 rounded-2xl scale-[1.02] shadow-lg' : 'hover:shadow-md'}`} 
                       onClick={() => setSelectedMapResort(resort.id)}
                     >
-                      <ResortCard resort={resort} distance={showNearby && position ? resort.distance : null} />
+                      <ResortCard resort={resort} distance={showNearby && position ? resort.distance : null} slotTypePrices={resortSlotPrices[resort.id] || null} selectedSlotType={stayTypeFilter} />
                     </div>
                   ))}
                 </div>

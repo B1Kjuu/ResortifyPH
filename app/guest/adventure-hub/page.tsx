@@ -300,7 +300,7 @@ export default function AdventureHub(){
                 </div>
               </div>
               {/* Right: Dates only */}
-              <div className="lg:col-span-8">
+              <div className="lg:col-span-8 overflow-hidden">
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5">Dates</label>
                 <DateRangePicker
                   bookedDates={[]}

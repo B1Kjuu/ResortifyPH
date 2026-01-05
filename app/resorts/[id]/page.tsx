@@ -70,6 +70,8 @@ export default function ResortDetail({ params }: { params: { id: string } }){
   const [dynamicPriceLoading, setDynamicPriceLoading] = useState(false)
   const [selectedDbSlotId, setSelectedDbSlotId] = useState<string | null>(null)
   const [resortTimeSlots, setResortTimeSlots] = useState<Array<{ slot_type: string; start_time: string; end_time: string }>>([])
+  const [minAdvancedPrice, setMinAdvancedPrice] = useState<number | null>(null)
+  const [slotTypePrices, setSlotTypePrices] = useState<{ daytour: number | null; overnight: number | null; '22hrs': number | null }>({ daytour: null, overnight: null, '22hrs': null })
   const bookingCardRef = useRef<HTMLDivElement | null>(null)
   const router = useRouter()
 
@@ -119,6 +121,32 @@ export default function ResortDetail({ params }: { params: { id: string } }){
         // Check if resort uses advanced pricing (database-backed time slots)
         if (resortData.use_advanced_pricing) {
           setUseTimeSlotCalendar(true)
+          
+          // Fetch minimum prices per slot type from pricing matrix
+          const { data: slotPricesData } = await supabase
+            .from('resort_time_slots')
+            .select('id, slot_type, resort_pricing_matrix(price)')
+            .eq('resort_id', params.id)
+            .eq('is_active', true)
+          
+          if (slotPricesData && mounted) {
+            const prices: { daytour: number | null; overnight: number | null; '22hrs': number | null } = { daytour: null, overnight: null, '22hrs': null }
+            
+            slotPricesData.forEach((slot: any) => {
+              const slotType = slot.slot_type as 'daytour' | 'overnight' | '22hrs'
+              const slotPrices = slot.resort_pricing_matrix || []
+              if (slotPrices.length > 0) {
+                const minPrice = Math.min(...slotPrices.map((p: any) => Number(p.price)))
+                if (prices[slotType] === null || minPrice < prices[slotType]!) {
+                  prices[slotType] = minPrice
+                }
+              }
+            })
+            
+            setSlotTypePrices(prices)
+            // Set default minAdvancedPrice to 22hrs, then overnight, then daytour
+            setMinAdvancedPrice(prices['22hrs'] || prices.overnight || prices.daytour || null)
+          }
         }
 
         // Fetch time slots for this resort (for cutoff times)
@@ -874,8 +902,10 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                 <div className="flex-shrink-0 flex items-center gap-2 bg-resort-50 px-3 py-2 rounded-xl">
                   <FiDollarSign aria-hidden className="text-resort-600 w-4 h-4" />
                   <div>
-                    <p className="text-xs text-slate-600">Per night</p>
-                    <p className="text-sm font-bold text-resort-900">₱{resort.price?.toLocaleString()}</p>
+                    <p className="text-xs text-slate-600">{resort.use_advanced_pricing ? (bookingType === 'daytour' ? 'Daytour' : bookingType === 'overnight' ? 'Overnight' : '22hrs') : 'Per night'}</p>
+                    <p className="text-sm font-bold text-resort-900">
+                      ₱{(resort.use_advanced_pricing ? (slotTypePrices[bookingType] || minAdvancedPrice) : resort.price || 0).toLocaleString()}
+                    </p>
                   </div>
                 </div>
                 <div className="flex-shrink-0 flex items-center gap-2 bg-resort-50 px-3 py-2 rounded-xl">
@@ -899,8 +929,10 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                 <div className="flex flex-col items-center gap-1 bg-resort-50 p-2.5 sm:p-4 rounded-xl text-center">
                   <FiDollarSign aria-hidden className="text-lg sm:text-xl text-resort-600" />
                   <div>
-                    <p className="text-[10px] sm:text-xs text-slate-600">Per night</p>
-                    <p className="text-sm sm:text-lg font-bold text-resort-900">₱{resort.price?.toLocaleString()}</p>
+                    <p className="text-[10px] sm:text-xs text-slate-600">{resort.use_advanced_pricing ? (bookingType === 'daytour' ? 'Daytour' : bookingType === 'overnight' ? 'Overnight' : '22hrs') : 'Per night'}</p>
+                    <p className="text-sm sm:text-lg font-bold text-resort-900">
+                      ₱{(resort.use_advanced_pricing ? (slotTypePrices[bookingType] || minAdvancedPrice) : resort.price || 0).toLocaleString()}
+                    </p>
                   </div>
                 </div>
                 <div className="flex flex-col items-center gap-1 bg-resort-50 p-2.5 sm:p-4 rounded-xl text-center">

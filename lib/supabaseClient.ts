@@ -154,4 +154,62 @@ export function clearQueryCache(table?: string): void {
 	}
 }
 
+/**
+ * Initialize session persistence handling
+ * Refreshes session when page becomes visible and on initial load
+ */
+function initSessionPersistence() {
+	if (typeof window === 'undefined') return
+
+	// Refresh session when page becomes visible (e.g., switching tabs, reopening browser)
+	const handleVisibilityChange = async () => {
+		if (document.visibilityState === 'visible') {
+			try {
+				const { data: { session }, error } = await supabase.auth.getSession()
+				if (error) {
+					console.error('Session refresh error:', error)
+					return
+				}
+				// If we have a session, try to refresh the token
+				if (session) {
+					const { error: refreshError } = await supabase.auth.refreshSession()
+					if (refreshError) {
+						console.error('Token refresh error:', refreshError)
+					}
+				}
+			} catch (err) {
+				console.error('Session persistence error:', err)
+			}
+		}
+	}
+
+	document.addEventListener('visibilitychange', handleVisibilityChange)
+
+	// Also refresh on window focus (for older browsers or PWA scenarios)
+	window.addEventListener('focus', async () => {
+		try {
+			const { data: { session } } = await supabase.auth.getSession()
+			if (session) {
+				await supabase.auth.refreshSession()
+			}
+		} catch (err) {
+			console.error('Focus session refresh error:', err)
+		}
+	})
+
+	// Refresh session on initial page load
+	supabase.auth.getSession().then(({ data: { session } }) => {
+		if (session) {
+			supabase.auth.refreshSession().catch((err) => {
+				console.error('Initial session refresh error:', err)
+			})
+		}
+	})
+}
+
+// Initialize session persistence on client-side
+if (typeof window !== 'undefined') {
+	initSessionPersistence()
+}
+
 export default supabase

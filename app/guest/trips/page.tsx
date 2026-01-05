@@ -112,7 +112,7 @@ export default function TripsPage(){
 
         <section className="mb-10 fade-in-up">
           <h2 className="text-xl font-bold text-slate-900 mb-3">Bookings Calendar</h2>
-          <div className="bg-white border-2 border-slate-200 rounded-2xl p-4">
+          <div className="bg-white border-2 border-slate-200 rounded-2xl p-4 overflow-hidden">
             <DateRangePicker
               bookedDates={bookedDates}
               selectedRange={selectedRange}
