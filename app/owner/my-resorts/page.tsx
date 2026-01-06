@@ -42,7 +42,29 @@ export default function MyResorts(){
       let query = supabase.from('resorts').select('*').eq('owner_id', session.user.id)
       if (typeFilter !== 'all') query = query.eq('type', typeFilter as any)
       const { data } = await query.order('created_at', { ascending: false })
-      setResorts(data || [])
+      const enriched = (data || []).map((resort) => {
+        // Derive slot-level prices from pricing_config or legacy fields
+        let config: any = resort.pricing_config
+        if (typeof config === 'string') {
+          try { config = JSON.parse(config) } catch { config = null }
+        }
+        const slotPrices: { daytour: number | null; overnight: number | null; '22hrs': number | null } = { daytour: null, overnight: null, '22hrs': null }
+        if (config?.pricing && Array.isArray(config.pricing)) {
+          config.pricing.forEach((p: any) => {
+            if (p?.bookingType && typeof p.price === 'number' && p.price > 0 && slotPrices[p.bookingType as 'daytour' | 'overnight' | '22hrs'] !== undefined) {
+              const key = p.bookingType as 'daytour' | 'overnight' | '22hrs'
+              if (slotPrices[key] === null || p.price < slotPrices[key]!) {
+                slotPrices[key] = p.price
+              }
+            }
+          })
+        }
+        if (slotPrices.daytour == null && resort.day_tour_price) slotPrices.daytour = resort.day_tour_price
+        if (slotPrices.overnight == null && (resort.overnight_price || resort.night_tour_price)) slotPrices.overnight = resort.overnight_price || resort.night_tour_price
+        if (slotPrices['22hrs'] == null && (resort.overnight_price || resort.night_tour_price)) slotPrices['22hrs'] = resort.overnight_price || resort.night_tour_price
+        return { ...resort, slotTypePrices: slotPrices }
+      })
+      setResorts(enriched)
       setLoading(false)
     }
     load()
@@ -155,7 +177,38 @@ export default function MyResorts(){
                 </div>
 
                 <div className="space-y-1 text-sm text-slate-700 mb-4 pb-4 border-b border-slate-100">
-                  <p>₱{resort.price}/night · <span className="inline-flex items-center gap-1"><FiUsers className="w-4 h-4" /> {resort.capacity} {resort.capacity === 1 ? 'guest' : 'guests'}</span></p>
+                  <p>
+                    {(() => {
+                      const slot = (resort as any).slotTypePrices as { daytour: number | null; overnight: number | null; '22hrs': number | null } | undefined
+                      let display: number | null = null
+                      let label = '/ night'
+
+                      if (slot) {
+                        // Prefer overnight, then 22hrs, then daytour
+                        if (slot.overnight) { display = slot.overnight; label = '/ overnight' }
+                        else if (slot['22hrs']) { display = slot['22hrs']; label = '/ 22hrs' }
+                        else if (slot.daytour) { display = slot.daytour; label = '/ daytour' }
+                      }
+
+                      if (display == null || display <= 0) {
+                        // Legacy fallback
+                        if (resort.overnight_price || resort.night_tour_price) {
+                          display = resort.overnight_price || resort.night_tour_price
+                          label = '/ overnight'
+                        } else if (resort.day_tour_price) {
+                          display = resort.day_tour_price
+                          label = '/ daytour'
+                        } else if (resort.price) {
+                          display = resort.price
+                          label = '/ night'
+                        }
+                      }
+
+                      return display ? `₱${Number(display).toLocaleString()}${label}` : 'Add pricing to show rate'
+                    })()}
+                    {' '}
+                    · <span className="inline-flex items-center gap-1"><FiUsers className="w-4 h-4" /> {resort.capacity} {resort.capacity === 1 ? 'guest' : 'guests'}</span>
+                  </p>
                   {resort.type && (
                     <p className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-slate-700 text-[11px] font-medium">
                       {getResortTypeLabel(resort.type)}
