@@ -246,12 +246,26 @@ export default function ResortCard({ resort, compact = false, nights = 0, showTo
                 displayPrice = slotTypePrices[selectedSlotType]
                 priceLabel = selectedSlotType === 'daytour' ? '/ daytour' : selectedSlotType === 'overnight' ? '/ overnight' : '/ 22hrs'
               } else {
-                // Default: show 22hrs, then overnight, then daytour
-                displayPrice = slotTypePrices['22hrs'] || slotTypePrices.overnight || slotTypePrices.daytour
-                priceLabel = slotTypePrices['22hrs'] ? '/ 22hrs' : slotTypePrices.overnight ? '/ overnight' : '/ daytour'
+                // Default: show overnight, then 22hrs, then daytour
+                displayPrice = slotTypePrices.overnight || slotTypePrices['22hrs'] || slotTypePrices.daytour
+                priceLabel = slotTypePrices.overnight ? '/ overnight' : slotTypePrices['22hrs'] ? '/ 22hrs' : '/ daytour'
               }
             } else {
-              displayPrice = resort.price
+              // Standard pricing - use legacy price fields based on filter
+              if (selectedSlotType === 'daytour' && resort.day_tour_price) {
+                displayPrice = resort.day_tour_price
+                priceLabel = '/ daytour'
+              } else if (selectedSlotType === 'overnight' && (resort.overnight_price || resort.night_tour_price)) {
+                displayPrice = resort.overnight_price || resort.night_tour_price
+                priceLabel = '/ overnight'
+              } else if (selectedSlotType === '22hrs' && resort.overnight_price) {
+                displayPrice = resort.overnight_price
+                priceLabel = '/ 22hrs'
+              } else {
+                // Default to standard price
+                displayPrice = resort.price || resort.overnight_price || resort.day_tour_price || resort.night_tour_price
+                priceLabel = '/ night'
+              }
             }
             
             return displayPrice != null && displayPrice > 0 ? (
