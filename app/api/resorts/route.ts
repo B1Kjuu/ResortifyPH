@@ -97,8 +97,12 @@ export async function GET(request: Request) {
     // Process resorts to ensure display price is available
     const processedResorts = (resorts || []).map(resort => ({
       ...resort,
-      // Ensure price field has a display value for map/cards
-      price: getDisplayPrice(resort),
+      // Ensure price field has a display value for map/cards and price filtering
+      price: resort.price ?? getDisplayPrice(resort),
+      // Keep legacy pricing fields for ResortCard display
+      day_tour_price: resort.day_tour_price,
+      night_tour_price: resort.night_tour_price,
+      overnight_price: resort.overnight_price,
       // Remove pricing_config from response to reduce payload size
       pricing_config: undefined,
     }))

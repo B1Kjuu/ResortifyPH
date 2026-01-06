@@ -286,8 +286,8 @@ export default function ResortCard({ resort, compact = false, nights = 0, showTo
                 priceLabel = '/ 22hrs'
               } else {
                 // "All" filter: show overnight as default, fallback to lowest available
-                if (resort.overnight_price) {
-                  displayPrice = resort.overnight_price
+                if (resort.overnight_price || resort.night_tour_price) {
+                  displayPrice = resort.overnight_price || resort.night_tour_price
                   priceLabel = '/ overnight'
                 } else {
                   // Show lowest available price
