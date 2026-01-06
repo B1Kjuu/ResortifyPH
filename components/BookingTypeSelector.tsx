@@ -88,14 +88,16 @@ export default function BookingTypeSelector({
       return priceEntry?.price ?? null
     }
     
-    // Legacy fallback
+    // Legacy fallback - match DB fields to booking types correctly
     switch (type) {
       case 'daytour':
         return legacyPricing?.day_tour_price ?? null
       case 'overnight':
-        return legacyPricing?.night_tour_price ?? null
+        // overnight uses overnight_price, fallback to night_tour_price for backwards compatibility
+        return legacyPricing?.overnight_price ?? legacyPricing?.night_tour_price ?? null
       case '22hrs':
-        return legacyPricing?.overnight_price ?? null
+        // 22hrs is also an overnight variant
+        return legacyPricing?.overnight_price ?? legacyPricing?.night_tour_price ?? null
       default:
         return null
     }

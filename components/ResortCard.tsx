@@ -235,7 +235,7 @@ export default function ResortCard({ resort, compact = false, nights = 0, showTo
           
           {/* Price */}
           {(() => {
-            // Always use advanced pricing (slot prices)
+            // Use advanced pricing (slot prices) with fallback to legacy pricing
             let displayPrice: number | null = null
             let priceLabel = '/ night'
             
@@ -274,6 +274,45 @@ export default function ResortCard({ resort, compact = false, nights = 0, showTo
                   } else {
                     // Specific filter but no price - show lowest available
                     const lowest = availablePrices.reduce((a, b) => a.price < b.price ? a : b)
+                    displayPrice = lowest.price
+                    priceLabel = lowest.label
+                  }
+                }
+              }
+            }
+            
+            // Fallback to legacy pricing if no slot prices available
+            if (displayPrice == null || displayPrice <= 0) {
+              if (selectedSlotType === 'daytour' && resort.day_tour_price) {
+                displayPrice = resort.day_tour_price
+                priceLabel = '/ daytour'
+              } else if (selectedSlotType === 'overnight' && (resort.overnight_price || resort.night_tour_price)) {
+                displayPrice = resort.overnight_price || resort.night_tour_price
+                priceLabel = '/ overnight'
+              } else if (selectedSlotType === '22hrs' && (resort.overnight_price || resort.price)) {
+                displayPrice = resort.overnight_price || resort.price
+                priceLabel = '/ 22hrs'
+              } else {
+                // Show best available legacy price
+                const legacyPrices = [
+                  { price: resort.day_tour_price, label: '/ daytour' },
+                  { price: resort.overnight_price || resort.night_tour_price, label: '/ overnight' },
+                  { price: resort.price, label: '/ night' }
+                ].filter((p): p is { price: number; label: string } => p.price != null && p.price > 0)
+                
+                if (legacyPrices.length > 0) {
+                  if (selectedSlotType === 'all') {
+                    const overnight = legacyPrices.find(p => p.label === '/ overnight')
+                    if (overnight) {
+                      displayPrice = overnight.price
+                      priceLabel = overnight.label
+                    } else {
+                      const lowest = legacyPrices.reduce((a, b) => a.price < b.price ? a : b)
+                      displayPrice = lowest.price
+                      priceLabel = lowest.label
+                    }
+                  } else {
+                    const lowest = legacyPrices.reduce((a, b) => a.price < b.price ? a : b)
                     displayPrice = lowest.price
                     priceLabel = lowest.label
                   }
