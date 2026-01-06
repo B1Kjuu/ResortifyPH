@@ -250,33 +250,61 @@ export default function ResortsPage(){
     
     async function fetchSlotPrices() {
       try {
-        const { data: slotsData } = await supabase
+        // First get all time slots for these resorts
+        const { data: slotsData, error: slotsError } = await supabase
           .from('resort_time_slots')
-          .select('id, resort_id, slot_type, resort_pricing_matrix(price)')
+          .select('id, resort_id, slot_type')
           .in('resort_id', advancedResortIds)
           .eq('is_active', true)
         
-        if (slotsData) {
-          const pricesMap: Record<string, { daytour: number | null; overnight: number | null; '22hrs': number | null }> = {}
-          
-          slotsData.forEach((slot: any) => {
-            const resortId = slot.resort_id
-            if (!pricesMap[resortId]) {
-              pricesMap[resortId] = { daytour: null, overnight: null, '22hrs': null }
-            }
-            
-            const slotType = slot.slot_type as 'daytour' | 'overnight' | '22hrs'
-            const slotPrices = slot.resort_pricing_matrix || []
-            if (slotPrices.length > 0) {
-              const minPrice = Math.min(...slotPrices.map((p: any) => Number(p.price)))
-              if (pricesMap[resortId][slotType] === null || minPrice < pricesMap[resortId][slotType]!) {
-                pricesMap[resortId][slotType] = minPrice
-              }
-            }
-          })
-          
-          setResortSlotPrices(pricesMap)
+        if (slotsError) {
+          console.error('Error fetching time slots:', slotsError)
+          return
         }
+        
+        if (!slotsData || slotsData.length === 0) return
+        
+        const slotIds = slotsData.map(s => s.id)
+        
+        // Then get all pricing matrix entries for these slots
+        const { data: pricingData, error: pricingError } = await supabase
+          .from('resort_pricing_matrix')
+          .select('time_slot_id, price')
+          .in('time_slot_id', slotIds)
+        
+        if (pricingError) {
+          console.error('Error fetching pricing matrix:', pricingError)
+          return
+        }
+        
+        // Build a map of slot_id -> min price
+        const slotMinPrices: Record<string, number> = {}
+        pricingData?.forEach((p: any) => {
+          const price = Number(p.price)
+          if (!slotMinPrices[p.time_slot_id] || price < slotMinPrices[p.time_slot_id]) {
+            slotMinPrices[p.time_slot_id] = price
+          }
+        })
+        
+        // Build final prices map per resort
+        const pricesMap: Record<string, { daytour: number | null; overnight: number | null; '22hrs': number | null }> = {}
+        
+        slotsData.forEach((slot: any) => {
+          const resortId = slot.resort_id
+          if (!pricesMap[resortId]) {
+            pricesMap[resortId] = { daytour: null, overnight: null, '22hrs': null }
+          }
+          
+          const slotType = slot.slot_type as 'daytour' | 'overnight' | '22hrs'
+          const minPrice = slotMinPrices[slot.id]
+          if (minPrice != null) {
+            if (pricesMap[resortId][slotType] === null || minPrice < pricesMap[resortId][slotType]!) {
+              pricesMap[resortId][slotType] = minPrice
+            }
+          }
+        })
+        
+        setResortSlotPrices(pricesMap)
       } catch (err) {
         console.error('Error fetching slot prices:', err)
       }
