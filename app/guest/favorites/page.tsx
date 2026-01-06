@@ -11,19 +11,18 @@ type Resort = {
   rating?: number
   location?: string
   type?: string
-  price?: number
-  day_tour_price?: number
-  night_tour_price?: number
-  overnight_price?: number
   instant_book?: boolean
   created_at?: string
 }
+
+type SlotTypePrices = { daytour: number | null; overnight: number | null; '22hrs': number | null }
 
 export default function FavoritesPage(){
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [resorts, setResorts] = useState<Resort[]>([])
+  const [slotPrices, setSlotPrices] = useState<Record<string, SlotTypePrices>>({})
 
   useEffect(() => {
     let mounted = true
@@ -56,11 +55,51 @@ export default function FavoritesPage(){
 
         const { data: resortsData, error: resortsErr } = await supabase
           .from('resorts')
-          .select('id, name, images, location, type, price, day_tour_price, night_tour_price, overnight_price, created_at')
+          .select('id, name, images, location, type, created_at')
           .in('id', ids)
 
         if (resortsErr) throw resortsErr
         setResorts((resortsData || []) as Resort[])
+
+        // Fetch slot prices for advanced pricing
+        const { data: slotsData } = await supabase
+          .from('resort_time_slots')
+          .select('id, resort_id, slot_type')
+          .in('resort_id', ids)
+          .eq('is_active', true)
+
+        if (slotsData && slotsData.length > 0) {
+          const slotIds = slotsData.map(s => s.id)
+          const { data: pricingData } = await supabase
+            .from('resort_pricing_matrix')
+            .select('time_slot_id, price')
+            .in('time_slot_id', slotIds)
+
+          const slotMinPrices: Record<string, number> = {}
+          pricingData?.forEach((p: any) => {
+            const price = Number(p.price)
+            if (!slotMinPrices[p.time_slot_id] || price < slotMinPrices[p.time_slot_id]) {
+              slotMinPrices[p.time_slot_id] = price
+            }
+          })
+
+          const pricesMap: Record<string, SlotTypePrices> = {}
+          slotsData.forEach((slot: any) => {
+            const resortId = slot.resort_id
+            if (!pricesMap[resortId]) {
+              pricesMap[resortId] = { daytour: null, overnight: null, '22hrs': null }
+            }
+            const slotType = slot.slot_type as 'daytour' | 'overnight' | '22hrs'
+            const minPrice = slotMinPrices[slot.id]
+            if (minPrice != null) {
+              if (pricesMap[resortId][slotType] === null || minPrice < pricesMap[resortId][slotType]!) {
+                pricesMap[resortId][slotType] = minPrice
+              }
+            }
+          })
+          setSlotPrices(pricesMap)
+        }
+
         setLoading(false)
       } catch (err: any) {
         if (!mounted) return
@@ -142,7 +181,7 @@ export default function FavoritesPage(){
       {header}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
         {resorts.map(r => (
-          <ResortCard key={r.id} resort={r} />
+          <ResortCard key={r.id} resort={r} slotTypePrices={slotPrices[r.id]} />
         ))}
       </div>
     </div>

@@ -92,7 +92,8 @@ export default function CreateResort() {
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [isAuthorized, setIsAuthorized] = useState(false)
-  const [pricingMode, setPricingMode] = useState<'simple' | 'advanced'>('advanced')
+  // Always use advanced pricing
+  const pricingMode = 'advanced'
 
   const {
     register,
@@ -199,13 +200,8 @@ export default function CreateResort() {
       region_code: provinceInfo?.regionCode ?? null,
       region_name: provinceInfo?.regionName ?? null,
       type: values.type,
-      price: values.price ?? null,
-      day_tour_price: values.day_tour_price ?? null,
-      night_tour_price: values.night_tour_price ?? null,
-      overnight_price: values.overnight_price ?? null,
-      additional_guest_fee: values.additional_guest_fee ?? null,
       pricing_config: values.pricing_config ?? null,
-      use_advanced_pricing: values.pricing_config?.pricing?.length ? true : false,
+      use_advanced_pricing: true, // Always use advanced pricing
       capacity: values.capacity,
       bedrooms: values.bedrooms ?? null,
       bathrooms: values.bathrooms ?? null,
@@ -371,170 +367,36 @@ export default function CreateResort() {
           </div>
 
           <div className="bg-gradient-to-br from-resort-50 to-blue-50 border-2 border-resort-200 rounded-xl p-6 space-y-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <FiDollarSign className="w-5 h-5" />
-                <h3 className="text-lg font-bold text-slate-900">Pricing Options</h3>
-              </div>
-              <div className="flex bg-white rounded-lg border border-slate-300 p-1">
-                <button
-                  type="button"
-                  onClick={() => setPricingMode('simple')}
-                  className={`px-3 py-1.5 rounded text-sm font-medium transition ${
-                    pricingMode === 'simple' 
-                      ? 'bg-resort-500 text-white' 
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  Simple
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPricingMode('advanced')}
-                  className={`px-3 py-1.5 rounded text-sm font-medium transition ${
-                    pricingMode === 'advanced' 
-                      ? 'bg-resort-500 text-white' 
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  Advanced
-                </button>
-              </div>
+            <div className="flex items-center gap-2 mb-2">
+              <FiDollarSign className="w-5 h-5" />
+              <h3 className="text-lg font-bold text-slate-900">Pricing Configuration</h3>
             </div>
 
-            {pricingMode === 'simple' && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                <p className="text-sm text-blue-800">
-                  <strong>Simple Mode:</strong> Set flat rates for day tour, overnight, and 22-hour stays. Good for resorts with fixed pricing.
-                </p>
-              </div>
-            )}
-
-            {pricingMode === 'advanced' && (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mb-4">
-                <p className="text-sm text-emerald-800">
-                  <strong>Advanced Mode:</strong> Set different prices for weekdays vs weekends, and create guest count tiers (e.g., 20 pax vs 30 pax). 
-                  Perfect for Philippine resorts with tiered pricing.
-                </p>
-              </div>
-            )}
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mb-4">
+              <p className="text-sm text-emerald-800">
+                <strong>Advanced Pricing:</strong> Set different prices for weekdays vs weekends, and create guest count tiers (e.g., 20 pax vs 30 pax). 
+                Perfect for Philippine resorts with tiered pricing.
+              </p>
+            </div>
 
             {/* Advanced Pricing Configurator */}
-            {pricingMode === 'advanced' && (
-              <>
-                <Controller
-                  name="pricing_config"
-                  control={control}
-                  render={({ field }) => (
-                    <PricingConfigurator
-                      value={field.value ?? null}
-                      onChange={(config) => field.onChange(config)}
-                      capacity={watch('capacity') || 50}
-                    />
-                  )}
+            <Controller
+              name="pricing_config"
+              control={control}
+              render={({ field }) => (
+                <PricingConfigurator
+                  value={field.value ?? null}
+                  onChange={(config) => field.onChange(config)}
+                  capacity={watch('capacity') || 50}
                 />
-                {errors.pricing_config && (
-                  <p className="text-xs text-red-500 mt-1">
-                    {(errors.pricing_config as any)?.message || 'Please complete all pricing configuration fields'}
-                  </p>
-                )}
-              </>
+              )}
+            />
+            {errors.pricing_config && (
+              <p className="text-xs text-red-500 mt-1">
+                {(errors.pricing_config as any)?.message || 'Please complete all pricing configuration fields'}
+              </p>
             )}
-
-            {/* Simple/Legacy Pricing Fields */}
-            {pricingMode === 'simple' && (
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Base Price per Night (₱)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    placeholder="e.g., 5000"
-                    onInput={(e) => {
-                      const input = e.target as HTMLInputElement
-                      input.value = input.value.replace(/[^0-9]/g, '') || ''
-                    }}
-                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 shadow-sm transition-colors bg-white ${errors.price ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-slate-200 focus:ring-resort-400 focus:border-resort-400 hover:border-slate-300'}`}
-                    {...register('price', {
-                      setValueAs: (value) => (value === '' ? undefined : Math.max(0, Number(value))),
-                    })}
-                  />
-                  {errors.price && <p className="text-xs text-red-500 mt-1">{errors.price.message}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Day Tour Price (₱)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    placeholder="e.g., 4999"
-                    onInput={(e) => {
-                      const input = e.target as HTMLInputElement
-                      input.value = input.value.replace(/[^0-9]/g, '') || ''
-                    }}
-                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 shadow-sm transition-colors bg-white ${errors.day_tour_price ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-slate-200 focus:ring-resort-400 focus:border-resort-400 hover:border-slate-300'}`}
-                    {...register('day_tour_price', {
-                      setValueAs: (value) => (value === '' ? null : Math.max(0, Number(value))),
-                    })}
-                  />
-                  {errors.day_tour_price && <p className="text-xs text-red-500 mt-1">{errors.day_tour_price.message}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Night Tour Price (₱)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    placeholder="e.g., 5999"
-                    onInput={(e) => {
-                      const input = e.target as HTMLInputElement
-                      input.value = input.value.replace(/[^0-9]/g, '') || ''
-                    }}
-                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 shadow-sm transition-colors bg-white ${errors.night_tour_price ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-slate-200 focus:ring-resort-400 focus:border-resort-400 hover:border-slate-300'}`}
-                    {...register('night_tour_price', {
-                      setValueAs: (value) => (value === '' ? null : Math.max(0, Number(value))),
-                    })}
-                  />
-                  {errors.night_tour_price && <p className="text-xs text-red-500 mt-1">{errors.night_tour_price.message}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Overnight Stay (₱)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    placeholder="e.g., 7999"
-                    onInput={(e) => {
-                      const input = e.target as HTMLInputElement
-                      input.value = input.value.replace(/[^0-9]/g, '') || ''
-                    }}
-                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 shadow-sm transition-colors bg-white ${errors.overnight_price ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-slate-200 focus:ring-resort-400 focus:border-resort-400 hover:border-slate-300'}`}
-                    {...register('overnight_price', {
-                      setValueAs: (value) => (value === '' ? null : Math.max(0, Number(value))),
-                    })}
-                  />
-                  {errors.overnight_price && <p className="text-xs text-red-500 mt-1">{errors.overnight_price.message}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Additional Guest Fee (₱)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    placeholder="e.g., 350"
-                    onInput={(e) => {
-                      const input = e.target as HTMLInputElement
-                      input.value = input.value.replace(/[^0-9]/g, '') || ''
-                    }}
-                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 shadow-sm transition-colors bg-white ${errors.additional_guest_fee ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : 'border-slate-200 focus:ring-resort-400 focus:border-resort-400 hover:border-slate-300'}`}
-                    {...register('additional_guest_fee', {
-                      setValueAs: (value) => (value === '' ? null : Math.max(0, Number(value))),
-                    })}
-                  />
-                  {errors.additional_guest_fee && <p className="text-xs text-red-500 mt-1">{errors.additional_guest_fee.message}</p>}
-                </div>
-              </div>
-            )}
+          </div>
 
             {/* Verification details (optional) */}
             <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-xl p-6 space-y-4">

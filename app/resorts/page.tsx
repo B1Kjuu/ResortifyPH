@@ -241,12 +241,12 @@ export default function ResortsPage(){
     }
   }, [])
 
-  // Fetch slot type prices for resorts with advanced pricing
+  // Fetch slot type prices for all resorts (advanced pricing is now required)
   useEffect(() => {
     if (resorts.length === 0) return
     
-    const advancedResortIds = resorts.filter(r => r.use_advanced_pricing).map(r => r.id)
-    if (advancedResortIds.length === 0) return
+    const allResortIds = resorts.map(r => r.id)
+    if (allResortIds.length === 0) return
     
     async function fetchSlotPrices() {
       try {
@@ -254,7 +254,7 @@ export default function ResortsPage(){
         const { data: slotsData, error: slotsError } = await supabase
           .from('resort_time_slots')
           .select('id, resort_id, slot_type')
-          .in('resort_id', advancedResortIds)
+          .in('resort_id', allResortIds)
           .eq('is_active', true)
         
         if (slotsError) {

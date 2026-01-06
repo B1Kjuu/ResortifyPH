@@ -4,11 +4,14 @@ import DisclaimerBanner from '../../../components/DisclaimerBanner'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
+import { FiAlertTriangle, FiX } from 'react-icons/fi'
 
 export default function OwnerDashboard(){
   const [profile, setProfile] = useState<any>(null)
   const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 })
   const [loading, setLoading] = useState(true)
+  const [resortsNeedingPricing, setResortsNeedingPricing] = useState<{id: string, name: string}[]>([])
+  const [showPricingToast, setShowPricingToast] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
@@ -30,7 +33,11 @@ export default function OwnerDashboard(){
       setProfile(userProfile)
 
       // Get resort stats
-      const { data: resorts } = await supabase.from('resorts').select('status').eq('owner_id', session.user.id)
+      const { data: resorts } = await supabase
+        .from('resorts')
+        .select('id, name, status, pricing_config, use_advanced_pricing')
+        .eq('owner_id', session.user.id)
+      
       const stats = {
         total: resorts?.length || 0,
         pending: resorts?.filter(r => r.status === 'pending').length || 0,
@@ -38,6 +45,14 @@ export default function OwnerDashboard(){
         rejected: resorts?.filter(r => r.status === 'rejected').length || 0,
       }
       setStats(stats)
+
+      // Check for approved resorts without advanced pricing
+      const needsPricing = (resorts || []).filter(r => 
+        r.status === 'approved' && 
+        (!r.use_advanced_pricing || !r.pricing_config?.pricing?.length)
+      ).map(r => ({ id: r.id, name: r.name }))
+      
+      setResortsNeedingPricing(needsPricing)
       setLoading(false)
     }
     load()
@@ -47,6 +62,54 @@ export default function OwnerDashboard(){
 
   return (
     <div className="w-full px-4 sm:px-6 lg:px-8 py-10 max-w-6xl mx-auto">
+      {/* Pricing Update Required Toast */}
+      {showPricingToast && resortsNeedingPricing.length > 0 && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 w-full max-w-lg px-4 animate-slide-down">
+          <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl shadow-2xl p-4 border border-amber-400">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 bg-white/20 rounded-full p-2">
+                <FiAlertTriangle className="w-6 h-6" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-bold text-lg mb-1">⚠️ Pricing Update Required</h4>
+                <p className="text-sm opacity-95 mb-3">
+                  {resortsNeedingPricing.length === 1 
+                    ? `Your resort "${resortsNeedingPricing[0].name}" needs pricing configuration. Without it, guests cannot see prices.`
+                    : `${resortsNeedingPricing.length} of your approved resorts need pricing configuration. Without it, guests cannot see prices.`
+                  }
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {resortsNeedingPricing.slice(0, 3).map(resort => (
+                    <Link
+                      key={resort.id}
+                      href={`/owner/edit-resort/${resort.id}`}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-white text-amber-700 rounded-lg text-sm font-semibold hover:bg-amber-50 transition-colors"
+                    >
+                      Update {resort.name.length > 15 ? resort.name.slice(0, 15) + '...' : resort.name}
+                    </Link>
+                  ))}
+                  {resortsNeedingPricing.length > 3 && (
+                    <Link
+                      href="/owner/my-resorts"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-white/20 rounded-lg text-sm font-semibold hover:bg-white/30 transition-colors"
+                    >
+                      +{resortsNeedingPricing.length - 3} more
+                    </Link>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => setShowPricingToast(false)}
+                className="flex-shrink-0 p-1 hover:bg-white/20 rounded-lg transition-colors"
+                aria-label="Dismiss"
+              >
+                <FiX className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mb-8">
         <p className="text-sm text-resort-500 font-semibold mb-2">Resort Management</p>
         <h1 className="text-4xl font-bold text-resort-900 mb-2">Your Resort Empire</h1>

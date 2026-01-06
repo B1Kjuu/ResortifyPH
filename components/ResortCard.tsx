@@ -235,13 +235,12 @@ export default function ResortCard({ resort, compact = false, nights = 0, showTo
           
           {/* Price */}
           {(() => {
-            // Determine price based on advanced pricing or standard
-            const useAdvanced = resort.use_advanced_pricing && slotTypePrices
+            // Always use advanced pricing (slot prices)
             let displayPrice: number | null = null
             let priceLabel = '/ night'
             
-            if (useAdvanced) {
-              // For advanced pricing, show price based on selected slot type
+            if (slotTypePrices) {
+              // Show price based on selected slot type filter
               if (selectedSlotType === 'daytour' && slotTypePrices.daytour) {
                 displayPrice = slotTypePrices.daytour
                 priceLabel = '/ daytour'
@@ -258,46 +257,6 @@ export default function ResortCard({ resort, compact = false, nights = 0, showTo
                   { price: slotTypePrices.daytour, label: '/ daytour' },
                   { price: slotTypePrices.overnight, label: '/ overnight' },
                   { price: slotTypePrices['22hrs'], label: '/ 22hrs' }
-                ].filter((p): p is { price: number; label: string } => p.price != null && p.price > 0)
-                
-                if (availablePrices.length > 0) {
-                  // For "all" filter, prefer overnight; otherwise show lowest
-                  if (selectedSlotType === 'all') {
-                    const overnight = availablePrices.find(p => p.label === '/ overnight')
-                    if (overnight) {
-                      displayPrice = overnight.price
-                      priceLabel = overnight.label
-                    } else {
-                      const lowest = availablePrices.reduce((a, b) => a.price < b.price ? a : b)
-                      displayPrice = lowest.price
-                      priceLabel = lowest.label
-                    }
-                  } else {
-                    // Specific filter but no price - show lowest available
-                    const lowest = availablePrices.reduce((a, b) => a.price < b.price ? a : b)
-                    displayPrice = lowest.price
-                    priceLabel = lowest.label
-                  }
-                }
-              }
-            } else {
-              // Standard/legacy pricing - use price fields based on filter
-              if (selectedSlotType === 'daytour' && resort.day_tour_price) {
-                displayPrice = resort.day_tour_price
-                priceLabel = '/ daytour'
-              } else if (selectedSlotType === 'overnight' && (resort.overnight_price || resort.night_tour_price)) {
-                displayPrice = resort.overnight_price || resort.night_tour_price
-                priceLabel = '/ overnight'
-              } else if (selectedSlotType === '22hrs' && (resort.overnight_price || resort.price)) {
-                displayPrice = resort.overnight_price || resort.price
-                priceLabel = '/ 22hrs'
-              } else {
-                // Filter selected but no matching price, OR "All" filter
-                // Show lowest available with correct label
-                const availablePrices = [
-                  { price: resort.day_tour_price, label: '/ daytour' },
-                  { price: resort.overnight_price || resort.night_tour_price, label: '/ overnight' },
-                  { price: resort.price, label: '/ night' }
                 ].filter((p): p is { price: number; label: string } => p.price != null && p.price > 0)
                 
                 if (availablePrices.length > 0) {
@@ -340,9 +299,9 @@ export default function ResortCard({ resort, compact = false, nights = 0, showTo
               </div>
             )
           })()}
-          {showTotalPrice && nights > 0 && resort.price ? (
+          {showTotalPrice && nights > 0 && slotTypePrices?.overnight ? (
             <div className="mt-0.5 text-[10px] sm:text-xs text-slate-600 bg-slate-50 rounded-md px-2 py-1 inline-block">
-              Total for {nights} night{nights > 1 ? 's' : ''}: <span className="font-semibold text-slate-900">₱{(nights * (resort.price || 0)).toLocaleString()}</span>
+              Total for {nights} night{nights > 1 ? 's' : ''}: <span className="font-semibold text-slate-900">₱{(nights * slotTypePrices.overnight).toLocaleString()}</span>
             </div>
           ) : null}
         </div>

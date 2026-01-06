@@ -661,7 +661,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
   // Get selected date for pricing calculation
   const selectedDate = bookingType === 'daytour' ? selectedSingleDate : selectedRange.from
   
-  // Calculate price based on new or legacy pricing
+  // Calculate price based on advanced pricing only
   const calculatePrice = (): number => {
     if (hasAdvancedPricing && selectedDate && bookingType) {
       const dayType = getDayType(selectedDate)
@@ -674,13 +674,8 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       }
     }
     
-    // Legacy pricing fallback - use specific price if set, otherwise fall back to base price
-    if (bookingType === 'daytour') return resort.day_tour_price || resort.price || 0
-    if (bookingType === 'overnight') return resort.night_tour_price || resort.overnight_price || resort.price || 0
-    if (bookingType === '22hrs') return resort.overnight_price || resort.price || 0
-    
-    // Fallback to stayType for backwards compatibility
-    return stayType === 'day_12h' ? (resort.day_tour_price || resort.price || 0) : (resort.overnight_price || resort.price || 0)
+    // No advanced pricing configured - return 0 and show "Contact for pricing"
+    return 0
   }
   
   const baseRate = calculatePrice() || 0

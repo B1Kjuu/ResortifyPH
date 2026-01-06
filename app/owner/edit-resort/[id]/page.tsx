@@ -26,11 +26,6 @@ export default function EditResort(){
   const [description, setDescription] = useState('')
   const [location, setLocation] = useState('')
   const [type, setType] = useState('city')
-  const [price, setPrice] = useState<number | ''>('')
-  const [dayTourPrice, setDayTourPrice] = useState<number | ''>('')
-  const [nightTourPrice, setNightTourPrice] = useState<number | ''>('')
-  const [overnightPrice, setOvernightPrice] = useState<number | ''>('')
-  const [additionalGuestFee, setAdditionalGuestFee] = useState<number | ''>('')
   const [capacity, setCapacity] = useState<number | ''>('')
   const [bedrooms, setBedrooms] = useState<number | ''>('')
   const [bathrooms, setBathrooms] = useState<number | ''>('')
@@ -49,7 +44,8 @@ export default function EditResort(){
   const [nearbyLandmarks, setNearbyLandmarks] = useState('')
   const [bringOwnItems, setBringOwnItems] = useState('')
   const [pricingConfig, setPricingConfig] = useState<ResortPricingConfig | null>(null)
-  const [pricingMode, setPricingMode] = useState<'simple' | 'advanced'>('advanced')
+  // Always use advanced pricing
+  const pricingMode = 'advanced'
   // Exact location fields
   const [latitude, setLatitude] = useState<number | null>(null)
   const [longitude, setLongitude] = useState<number | null>(null)
@@ -107,11 +103,6 @@ export default function EditResort(){
       setDescription(resort.description || '')
       setLocation(resort.location || '')
       setType(resort.type || 'city')
-      setPrice(resort.price || '')
-      setDayTourPrice(resort.day_tour_price || '')
-      setNightTourPrice(resort.night_tour_price || '')
-      setOvernightPrice(resort.overnight_price || '')
-      setAdditionalGuestFee(resort.additional_guest_fee || '')
       setCapacity(resort.capacity || '')
       setBedrooms(resort.bedrooms || '')
       setBathrooms(resort.bathrooms || '')
@@ -130,8 +121,6 @@ export default function EditResort(){
       setNearbyLandmarks(resort.nearby_landmarks || '')
       setBringOwnItems(resort.bring_own_items || '')
       setPricingConfig(resort.pricing_config || null)
-      // Use use_advanced_pricing flag if set, otherwise check if pricing_config exists
-      setPricingMode(resort.use_advanced_pricing || resort.pricing_config ? 'advanced' : 'simple')
       // Load exact location data
       setLatitude(resort.latitude || null)
       setLongitude(resort.longitude || null)
@@ -149,15 +138,14 @@ export default function EditResort(){
 
   async function handleUpdate(e: React.FormEvent){
     e.preventDefault()
-    // For advanced pricing, base price is optional (comes from pricing config)
-    const isAdvancedPricing = pricingMode === 'advanced' && pricingConfig?.pricing?.length
+    // Always use advanced pricing
     if (!userId || !name || !location || !capacity || !contactNumber) { 
       alert('Please fill all required fields'); 
       return 
     }
-    // Require price only for simple pricing mode
-    if (!isAdvancedPricing && !price) {
-      alert('Please set a base price'); 
+    // Require pricing config for advanced pricing
+    if (!pricingConfig?.pricing?.length) {
+      alert('Please configure pricing in the Advanced Pricing Settings'); 
       return 
     }
     if (images.length === 0) {
@@ -180,11 +168,6 @@ export default function EditResort(){
         region_code: provinceInfo?.regionCode ?? null,
         region_name: provinceInfo?.regionName ?? null,
         type,
-        price: price ? Number(price) : null,
-        day_tour_price: dayTourPrice ? Number(dayTourPrice) : null,
-        night_tour_price: nightTourPrice ? Number(nightTourPrice) : null,
-        overnight_price: overnightPrice ? Number(overnightPrice) : null,
-        additional_guest_fee: additionalGuestFee ? Number(additionalGuestFee) : null,
         capacity: Number(capacity),
         bedrooms: bedrooms ? Number(bedrooms) : null,
         bathrooms: bathrooms ? Number(bathrooms) : null,
@@ -202,8 +185,8 @@ export default function EditResort(){
         parking_slots: parkingSlots ? Number(parkingSlots) : null,
         nearby_landmarks: nearbyLandmarks,
         bring_own_items: bringOwnItems,
-        pricing_config: pricingMode === 'advanced' ? pricingConfig : null,
-        use_advanced_pricing: pricingMode === 'advanced' && pricingConfig?.pricing?.length ? true : false,
+        pricing_config: pricingConfig,
+        use_advanced_pricing: true, // Always use advanced pricing
         updated_at: new Date() 
       })
       .eq('id', resortId)
@@ -325,101 +308,16 @@ export default function EditResort(){
           </Select>
         </div>
 
-        {/* Pricing Mode Toggle */}
-        <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <FiDollarSign className="w-5 h-5 text-slate-700" />
-            <label className="text-sm font-bold text-slate-700">Pricing Mode</label>
-          </div>
-          <div className="flex gap-3 mb-4">
-            <button
-              type="button"
-              onClick={() => setPricingMode('simple')}
-              className={`flex-1 px-4 py-3 rounded-xl font-semibold transition-all ${
-                pricingMode === 'simple'
-                  ? 'bg-resort-500 text-white shadow-md'
-                  : 'bg-white border-2 border-slate-200 text-slate-600 hover:border-resort-300'
-              }`}
-            >
-              Simple Pricing
-            </button>
-            <button
-              type="button"
-              onClick={() => setPricingMode('advanced')}
-              className={`flex-1 px-4 py-3 rounded-xl font-semibold transition-all ${
-                pricingMode === 'advanced'
-                  ? 'bg-resort-500 text-white shadow-md'
-                  : 'bg-white border-2 border-slate-200 text-slate-600 hover:border-resort-300'
-              }`}
-            >
-              Advanced Pricing
-            </button>
-          </div>
-          <p className="text-xs text-slate-500">
-            {pricingMode === 'simple'
-              ? 'Set pricing for different stay types.'
-              : 'Configure tiered pricing with daytour, overnight, and 22-hour options, plus weekday/weekend rates.'}
-          </p>
-        </div>
-
-        {/* Simple Pricing Mode */}
-        {pricingMode === 'simple' && (
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <label className="text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiDollarSign className="w-4 h-4" /> Base Price per Night (₱) *</label>
-            <input 
-              type="number"
-              min={0}
-              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors" 
-              placeholder="e.g., 5000" 
-              value={price as any} 
-              onChange={e => setPrice(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))}
-              required={pricingMode === 'simple'}
-            />
-            <p className="text-xs text-slate-500 mt-1">Default price if specific types are not set</p>
-          </div>
-          <div>
-            <label className="text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiDollarSign className="w-4 h-4" /> Day Tour Price (₱)</label>
-            <input 
-              type="number"
-              min={0}
-              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors" 
-              placeholder="e.g., 4000" 
-              value={dayTourPrice as any} 
-              onChange={e => setDayTourPrice(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))}
-            />
-            <p className="text-xs text-slate-500 mt-1">Leave empty to use base price</p>
-          </div>
-          <div>
-            <label className="text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiDollarSign className="w-4 h-4" /> Night Tour Price (₱)</label>
-            <input 
-              type="number"
-              min={0}
-              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors" 
-              placeholder="e.g., 5000" 
-              value={nightTourPrice as any} 
-              onChange={e => setNightTourPrice(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))}
-            />
-            <p className="text-xs text-slate-500 mt-1">Leave empty to use base price</p>
-          </div>
-          <div>
-            <label className="text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiDollarSign className="w-4 h-4" /> Overnight/22hrs Price (₱)</label>
-            <input 
-              type="number"
-              min={0}
-              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors" 
-              placeholder="e.g., 7000" 
-              value={overnightPrice as any} 
-              onChange={e => setOvernightPrice(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))}
-            />
-            <p className="text-xs text-slate-500 mt-1">Leave empty to use base price</p>
-          </div>
-        </div>
-        )}
-
-        {/* Advanced Pricing Mode */}
-        {pricingMode === 'advanced' && (
-          <div className="space-y-4">
+        {/* Advanced Pricing Section */}
+        <div className="space-y-4">
+          <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <FiDollarSign className="w-5 h-5 text-slate-700" />
+              <label className="text-sm font-bold text-slate-700">Pricing Settings</label>
+            </div>
+            <p className="text-xs text-slate-500 mb-4">
+              Configure tiered pricing with daytour, overnight, and 22-hour options, plus weekday/weekend rates.
+            </p>
             <Link
               href={`/owner/pricing-settings/${resortId}`}
               className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-resort-500 to-blue-500 text-white rounded-xl font-semibold hover:from-resort-600 hover:to-blue-600 transition-all shadow-lg hover:shadow-xl"
@@ -428,16 +326,13 @@ export default function EditResort(){
               Open Advanced Pricing Settings
               <span className="text-sm opacity-80">(Time Slots, Guest Tiers, Pricing Matrix)</span>
             </Link>
-            <p className="text-sm text-center text-slate-500">
-              Configure custom time slots, guest tiers, and set prices for each combination.
-            </p>
-            <PricingConfigurator
-              value={pricingConfig}
-              onChange={setPricingConfig}
-              capacity={typeof capacity === 'number' ? capacity : undefined}
-            />
           </div>
-        )}
+          <PricingConfigurator
+            value={pricingConfig}
+            onChange={setPricingConfig}
+            capacity={typeof capacity === 'number' ? capacity : undefined}
+          />
+        </div>
 
         {/* Guest Capacity (shown in both modes) */}
         <div className="grid md:grid-cols-2 gap-4">

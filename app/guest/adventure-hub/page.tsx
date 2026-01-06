@@ -33,6 +33,7 @@ export default function AdventureHub(){
   ]
   const [trendingResorts, setTrendingResorts] = useState<any[]>([])
   const [trendLoading, setTrendLoading] = useState(true)
+  const [slotPrices, setSlotPrices] = useState<Record<string, { daytour: number | null; overnight: number | null; '22hrs': number | null }>>({})
 
   // Favorites & Reviews
   const [favorites, setFavorites] = useState<any[]>([])
@@ -124,7 +125,7 @@ export default function AdventureHub(){
         // Favorites joined to resorts
         const { data: favs, error: favError } = await supabase
           .from('favorites')
-          .select('resort:resorts(id, name, location, price, day_tour_price, night_tour_price, overnight_price, images)')
+          .select('resort:resorts(id, name, location, images)')
           .eq('user_id', session.user.id)
         if (!mounted) return
         if (favError) {
@@ -160,14 +161,14 @@ export default function AdventureHub(){
     return () => { mounted = false }
   }, [])
 
-  // Fetch trending resorts (approved)
+  // Fetch trending resorts (approved) with slot prices
   useEffect(() => {
     let mounted = true
     async function fetchTrending(){
       try {
         const { data, error } = await supabase
           .from('resorts')
-          .select('id, name, location, price, day_tour_price, night_tour_price, overnight_price, images, type, created_at, latitude, longitude, address')
+          .select('id, name, location, images, type, created_at, latitude, longitude, address')
           .eq('status', 'approved')
           .order('created_at', { ascending: false })
           .limit(8)
@@ -179,6 +180,49 @@ export default function AdventureHub(){
           return
         }
         setTrendingResorts(data || [])
+        
+        // Fetch slot prices for trending resorts
+        if (data && data.length > 0) {
+          const resortIds = data.map(r => r.id)
+          const { data: slotsData } = await supabase
+            .from('resort_time_slots')
+            .select('id, resort_id, slot_type')
+            .in('resort_id', resortIds)
+            .eq('is_active', true)
+
+          if (slotsData && slotsData.length > 0) {
+            const slotIds = slotsData.map(s => s.id)
+            const { data: pricingData } = await supabase
+              .from('resort_pricing_matrix')
+              .select('time_slot_id, price')
+              .in('time_slot_id', slotIds)
+
+            const slotMinPrices: Record<string, number> = {}
+            pricingData?.forEach((p: any) => {
+              const price = Number(p.price)
+              if (!slotMinPrices[p.time_slot_id] || price < slotMinPrices[p.time_slot_id]) {
+                slotMinPrices[p.time_slot_id] = price
+              }
+            })
+
+            const pricesMap: Record<string, { daytour: number | null; overnight: number | null; '22hrs': number | null }> = {}
+            slotsData.forEach((slot: any) => {
+              const resortId = slot.resort_id
+              if (!pricesMap[resortId]) {
+                pricesMap[resortId] = { daytour: null, overnight: null, '22hrs': null }
+              }
+              const slotType = slot.slot_type as 'daytour' | 'overnight' | '22hrs'
+              const minPrice = slotMinPrices[slot.id]
+              if (minPrice != null) {
+                if (pricesMap[resortId][slotType] === null || minPrice < pricesMap[resortId][slotType]!) {
+                  pricesMap[resortId][slotType] = minPrice
+                }
+              }
+            })
+            if (mounted) setSlotPrices(pricesMap)
+          }
+        }
+        
         setTrendLoading(false)
       } catch (e) {
         console.error('Trending error:', e)
@@ -384,7 +428,7 @@ export default function AdventureHub(){
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {trendingResorts.map((resort) => (
-                <ResortCard key={resort.id} resort={resort} compact />
+                <ResortCard key={resort.id} resort={resort} slotTypePrices={slotPrices[resort.id]} compact />
               ))}
             </div>
           )}

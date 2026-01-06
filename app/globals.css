@@ -740,6 +740,17 @@ details.faq-item p {
   }
 }
 
+@keyframes slide-down {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-100%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
 @keyframes blur-in {
   0% {
     opacity: 0;
@@ -767,6 +778,10 @@ details.faq-item p {
 
 .fade-in-up {
   animation: fade-in-up 700ms ease-out both;
+}
+
+.animate-slide-down {
+  animation: slide-down 400ms ease-out both;
 }
 
 .blur-in {
