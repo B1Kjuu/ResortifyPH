@@ -654,9 +654,17 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       ? [resort.image_url]
       : []
 
-  // Pricing configuration
-  const pricingConfig: ResortPricingConfig | null = resort.pricing_config || null
-  const hasAdvancedPricing = pricingConfig?.pricing && pricingConfig.pricing.length > 0
+  // Pricing configuration - handle both parsed and string formats
+  let parsedPricingConfig = resort.pricing_config
+  if (typeof parsedPricingConfig === 'string') {
+    try {
+      parsedPricingConfig = JSON.parse(parsedPricingConfig)
+    } catch {
+      parsedPricingConfig = null
+    }
+  }
+  const pricingConfig: ResortPricingConfig | null = parsedPricingConfig || null
+  const hasAdvancedPricing = pricingConfig?.pricing && Array.isArray(pricingConfig.pricing) && pricingConfig.pricing.length > 0
   
   // Get selected date for pricing calculation
   const selectedDate = bookingType === 'daytour' ? selectedSingleDate : selectedRange.from

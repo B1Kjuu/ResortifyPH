@@ -156,6 +156,22 @@ export default function EditResort(){
     setSubmitting(true)
     const provinceInfo = getProvinceInfo(location)
 
+    // Extract minimum legacy prices from advanced pricing config for backward compatibility
+    let day_tour_price: number | null = null
+    let overnight_price: number | null = null
+    let night_tour_price: number | null = null
+    
+    if (pricingConfig?.pricing && Array.isArray(pricingConfig.pricing)) {
+      // Get minimum prices for each booking type (for display on cards/filters)
+      const daytourPrices = pricingConfig.pricing.filter((p: any) => p.bookingType === 'daytour').map((p: any) => p.price).filter((p: number) => p > 0)
+      const overnightPrices = pricingConfig.pricing.filter((p: any) => p.bookingType === 'overnight').map((p: any) => p.price).filter((p: number) => p > 0)
+      const hrs22Prices = pricingConfig.pricing.filter((p: any) => p.bookingType === '22hrs').map((p: any) => p.price).filter((p: number) => p > 0)
+      
+      if (daytourPrices.length > 0) day_tour_price = Math.min(...daytourPrices)
+      if (overnightPrices.length > 0) overnight_price = Math.min(...overnightPrices)
+      if (hrs22Prices.length > 0) night_tour_price = Math.min(...hrs22Prices) // Use night_tour_price for 22hrs
+    }
+
     const { error } = await supabase
       .from('resorts')
       .update({ 
@@ -187,6 +203,11 @@ export default function EditResort(){
         bring_own_items: bringOwnItems,
         pricing_config: pricingConfig,
         use_advanced_pricing: true, // Always use advanced pricing
+        // Sync legacy prices for backward compatibility with ResortCard/filters
+        day_tour_price,
+        overnight_price,
+        night_tour_price,
+        price: day_tour_price || overnight_price || night_tour_price, // General display price
         updated_at: new Date() 
       })
       .eq('id', resortId)

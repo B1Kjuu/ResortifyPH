@@ -189,6 +189,24 @@ export default function CreateResort() {
 
     toast.loading('Creating resort...')
     const provinceInfo = getProvinceInfo(values.location)
+    
+    // Extract minimum legacy prices from advanced pricing config for backward compatibility
+    const pricingConfig = values.pricing_config
+    let day_tour_price: number | null = null
+    let overnight_price: number | null = null
+    let night_tour_price: number | null = null
+    
+    if (pricingConfig?.pricing && Array.isArray(pricingConfig.pricing)) {
+      // Get minimum prices for each booking type (for display on cards/filters)
+      const daytourPrices = pricingConfig.pricing.filter(p => p.bookingType === 'daytour').map(p => p.price).filter(p => p > 0)
+      const overnightPrices = pricingConfig.pricing.filter(p => p.bookingType === 'overnight').map(p => p.price).filter(p => p > 0)
+      const hrs22Prices = pricingConfig.pricing.filter(p => p.bookingType === '22hrs').map(p => p.price).filter(p => p > 0)
+      
+      if (daytourPrices.length > 0) day_tour_price = Math.min(...daytourPrices)
+      if (overnightPrices.length > 0) overnight_price = Math.min(...overnightPrices)
+      if (hrs22Prices.length > 0) night_tour_price = Math.min(...hrs22Prices) // Use night_tour_price for 22hrs
+    }
+    
     const payload = {
       owner_id: userId,
       name: values.name,
@@ -202,6 +220,11 @@ export default function CreateResort() {
       type: values.type,
       pricing_config: values.pricing_config ?? null,
       use_advanced_pricing: true, // Always use advanced pricing
+      // Sync legacy prices for backward compatibility with ResortCard/filters
+      day_tour_price,
+      overnight_price,
+      night_tour_price,
+      price: day_tour_price || overnight_price || night_tour_price, // General display price
       capacity: values.capacity,
       bedrooms: values.bedrooms ?? null,
       bathrooms: values.bathrooms ?? null,
