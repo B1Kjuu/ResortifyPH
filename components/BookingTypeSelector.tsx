@@ -30,6 +30,7 @@ interface BookingTypeSelectorProps {
     night_tour_price?: number | null
     overnight_price?: number | null
   }
+  slotTypePrices?: { daytour: number | null; overnight: number | null; '22hrs': number | null }
 }
 
 export default function BookingTypeSelector({
@@ -41,6 +42,7 @@ export default function BookingTypeSelector({
   onBookingTypeChange,
   onTimeSlotChange,
   legacyPricing,
+  slotTypePrices,
 }: BookingTypeSelectorProps) {
   // Get enabled booking types - always show all 3 types for unified UI
   const enabledTypes = useMemo(() => {
@@ -77,6 +79,10 @@ export default function BookingTypeSelector({
 
   // Calculate price for a booking type
   const getPriceForType = (type: BookingType): number | null => {
+    // Prefer precomputed slot-level prices so we can show amounts without a selected date
+    const slotPrice = slotTypePrices?.[type]
+    if (slotPrice != null) return slotPrice
+
     // Try advanced pricing first (requires date for accurate pricing)
     if (pricingConfig?.pricing?.length && selectedDate) {
       const dayType = getDayType(selectedDate)

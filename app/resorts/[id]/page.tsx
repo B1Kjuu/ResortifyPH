@@ -1302,6 +1302,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                 selectedTimeSlot={selectedTimeSlot}
                 selectedDate={selectedDate ?? null}
                 guestCount={guests}
+                slotTypePrices={slotTypePrices}
                 onBookingTypeChange={(type) => {
                   setBookingType(type)
                   setSelectedTimeSlot(null)
