@@ -904,7 +904,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                   <div>
                     <p className="text-xs text-slate-600">{resort.use_advanced_pricing ? (bookingType === 'daytour' ? 'Daytour' : bookingType === 'overnight' ? 'Overnight' : '22hrs') : 'Per night'}</p>
                     <p className="text-sm font-bold text-resort-900">
-                      ₱{(resort.use_advanced_pricing ? (slotTypePrices[bookingType] || minAdvancedPrice) : resort.price || 0).toLocaleString()}
+                      ₱{(resort.use_advanced_pricing ? (slotTypePrices[bookingType] || minAdvancedPrice || 0) : resort.price || 0).toLocaleString()}
                     </p>
                   </div>
                 </div>
@@ -931,7 +931,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                   <div>
                     <p className="text-[10px] sm:text-xs text-slate-600">{resort.use_advanced_pricing ? (bookingType === 'daytour' ? 'Daytour' : bookingType === 'overnight' ? 'Overnight' : '22hrs') : 'Per night'}</p>
                     <p className="text-sm sm:text-lg font-bold text-resort-900">
-                      ₱{(resort.use_advanced_pricing ? (slotTypePrices[bookingType] || minAdvancedPrice) : resort.price || 0).toLocaleString()}
+                      ₱{(resort.use_advanced_pricing ? (slotTypePrices[bookingType] || minAdvancedPrice || 0) : resort.price || 0).toLocaleString()}
                     </p>
                   </div>
                 </div>
