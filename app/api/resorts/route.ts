@@ -98,8 +98,18 @@ export async function GET(request: Request) {
     const processedResorts = (resorts || [])
       .filter(resort => {
         // Check if resort has any pricing configured
-        const hasAdvancedPricing = resort.pricing_config?.pricing?.length > 0
-        const hasLegacyPricing = resort.day_tour_price || resort.night_tour_price || resort.overnight_price || resort.price
+        // Handle pricing_config which may be parsed JSON or a string
+        let pricingConfig = resort.pricing_config
+        if (typeof pricingConfig === 'string') {
+          try {
+            pricingConfig = JSON.parse(pricingConfig)
+          } catch {
+            pricingConfig = null
+          }
+        }
+        
+        const hasAdvancedPricing = pricingConfig?.pricing && Array.isArray(pricingConfig.pricing) && pricingConfig.pricing.length > 0
+        const hasLegacyPricing = !!(resort.day_tour_price || resort.night_tour_price || resort.overnight_price || resort.price)
         
         // Only include resorts that have at least some pricing
         return hasAdvancedPricing || hasLegacyPricing

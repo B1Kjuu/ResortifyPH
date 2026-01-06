@@ -77,18 +77,21 @@ export default function BookingTypeSelector({
 
   // Calculate price for a booking type
   const getPriceForType = (type: BookingType): number | null => {
+    // Try advanced pricing first (requires date for accurate pricing)
     if (pricingConfig?.pricing?.length && selectedDate) {
       const dayType = getDayType(selectedDate)
       const tier = getGuestTier(guestCount, pricingConfig.guestTiers)
-      if (!tier) return null
-      
-      const priceEntry = pricingConfig.pricing.find(p =>
-        p.bookingType === type && p.dayType === dayType && p.guestTierId === tier.id
-      )
-      return priceEntry?.price ?? null
+      if (tier) {
+        const priceEntry = pricingConfig.pricing.find(p =>
+          p.bookingType === type && p.dayType === dayType && p.guestTierId === tier.id
+        )
+        if (priceEntry?.price != null) {
+          return priceEntry.price
+        }
+      }
     }
     
-    // Legacy fallback - match DB fields to booking types correctly
+    // Legacy fallback - always try this if advanced pricing didn't return a price
     switch (type) {
       case 'daytour':
         return legacyPricing?.day_tour_price ?? null
