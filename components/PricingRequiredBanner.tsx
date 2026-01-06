@@ -28,8 +28,13 @@ export default function PricingRequiredBanner({ className = '' }: PricingRequire
         .eq('status', 'approved')
 
       const needsPricing = (resorts || []).filter(r => {
-        const hasAdvancedPricing = r.pricing_config?.pricing?.length > 0
-        const hasLegacyPricing = r.day_tour_price || r.night_tour_price || r.overnight_price || r.price
+        // Parse pricing_config if it's a string
+        let pricingConfig = r.pricing_config
+        if (typeof pricingConfig === 'string') {
+          try { pricingConfig = JSON.parse(pricingConfig) } catch { pricingConfig = null }
+        }
+        const hasAdvancedPricing = pricingConfig?.pricing && Array.isArray(pricingConfig.pricing) && pricingConfig.pricing.length > 0
+        const hasLegacyPricing = !!(r.day_tour_price || r.night_tour_price || r.overnight_price || r.price)
         return !hasAdvancedPricing && !hasLegacyPricing
       }).map(r => ({ id: r.id, name: r.name }))
 
