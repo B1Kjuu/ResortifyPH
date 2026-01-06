@@ -12,6 +12,9 @@ type Resort = {
   location?: string
   type?: string
   price?: number
+  day_tour_price?: number
+  night_tour_price?: number
+  overnight_price?: number
   instant_book?: boolean
   created_at?: string
 }
@@ -53,7 +56,7 @@ export default function FavoritesPage(){
 
         const { data: resortsData, error: resortsErr } = await supabase
           .from('resorts')
-          .select('id, name, images, location, type, price, created_at')
+          .select('id, name, images, location, type, price, day_tour_price, night_tour_price, overnight_price, created_at')
           .in('id', ids)
 
         if (resortsErr) throw resortsErr

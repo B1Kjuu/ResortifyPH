@@ -124,7 +124,7 @@ export default function AdventureHub(){
         // Favorites joined to resorts
         const { data: favs, error: favError } = await supabase
           .from('favorites')
-          .select('resort:resorts(id, name, location, price, images)')
+          .select('resort:resorts(id, name, location, price, day_tour_price, night_tour_price, overnight_price, images)')
           .eq('user_id', session.user.id)
         if (!mounted) return
         if (favError) {
@@ -167,7 +167,7 @@ export default function AdventureHub(){
       try {
         const { data, error } = await supabase
           .from('resorts')
-          .select('id, name, location, price, images, type, created_at, latitude, longitude, address')
+          .select('id, name, location, price, day_tour_price, night_tour_price, overnight_price, images, type, created_at, latitude, longitude, address')
           .eq('status', 'approved')
           .order('created_at', { ascending: false })
           .limit(8)

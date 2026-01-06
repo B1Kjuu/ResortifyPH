@@ -32,6 +32,7 @@ export default function TimeSlotCalendar({
   const [availabilityCache, setAvailabilityCache] = useState<Record<string, SlotAvailability>>({})
   const [slotsForDate, setSlotsForDate] = useState<AvailableTimeSlot[]>([])
   const [loading, setLoading] = useState(false)
+  const [slotsLoading, setSlotsLoading] = useState(false)
 
   // Fetch availability for visible month
   useEffect(() => {
@@ -113,6 +114,7 @@ export default function TimeSlotCalendar({
         return
       }
       
+      setSlotsLoading(true)
       try {
         const dateStr = format(selectedDate, 'yyyy-MM-dd')
         const response = await fetch(`/api/resorts/${resortId}/availability?date=${dateStr}`)
@@ -124,6 +126,8 @@ export default function TimeSlotCalendar({
       } catch (err) {
         console.error('Failed to fetch slots:', err)
         setSlotsForDate([])
+      } finally {
+        setSlotsLoading(false)
       }
     }
     
@@ -268,8 +272,13 @@ export default function TimeSlotCalendar({
             Available Time Slots for {format(selectedDate, 'MMMM d, yyyy')}
           </h4>
           
-          {slotsForDate.length === 0 ? (
-            <p className="text-sm text-slate-500">Loading slots...</p>
+          {slotsLoading ? (
+            <div className="flex items-center gap-2 text-sm text-slate-500">
+              <div className="animate-spin h-4 w-4 border-2 border-slate-400 border-t-transparent rounded-full"></div>
+              Loading slots...
+            </div>
+          ) : slotsForDate.length === 0 ? (
+            <p className="text-sm text-slate-500">No time slots configured for this resort. Please contact the owner or try the Date Range option.</p>
           ) : (
             <div className="space-y-2">
               {slotsForDate.map(slot => (

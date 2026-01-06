@@ -11,7 +11,6 @@ import { toast } from 'sonner'
 import DateRangePicker from '../../../components/DateRangePicker'
 import LocationCombobox from '../../../components/LocationCombobox'
 import BookingTypeSelector from '../../../components/BookingTypeSelector'
-import TimeSlotCalendar from '../../../components/TimeSlotCalendar'
 import { format } from 'date-fns'
 import ChatLink from '../../../components/ChatLink'
 import DisclaimerBanner from '../../../components/DisclaimerBanner'
@@ -64,11 +63,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
   const [latestBookingId, setLatestBookingId] = useState<string | null>(null)
   const [reviews, setReviews] = useState<any[]>([])
   const [eligibleReviewBookingId, setEligibleReviewBookingId] = useState<string | null>(null)
-  // New state for advanced time-slot calendar
-  const [useTimeSlotCalendar, setUseTimeSlotCalendar] = useState(false)
-  const [dynamicPrice, setDynamicPrice] = useState<number | null>(null)
-  const [dynamicPriceLoading, setDynamicPriceLoading] = useState(false)
-  const [selectedDbSlotId, setSelectedDbSlotId] = useState<string | null>(null)
+  // State for time slots and pricing display (even with legacy calendar)
   const [resortTimeSlots, setResortTimeSlots] = useState<Array<{ slot_type: string; start_time: string; end_time: string }>>([])
   const [minAdvancedPrice, setMinAdvancedPrice] = useState<number | null>(null)
   const [slotTypePrices, setSlotTypePrices] = useState<{ daytour: number | null; overnight: number | null; '22hrs': number | null }>({ daytour: null, overnight: null, '22hrs': null })
@@ -118,11 +113,8 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
         setResort(resortData)
         
-        // Check if resort uses advanced pricing (database-backed time slots)
+        // Fetch minimum prices per slot type from pricing matrix if available
         if (resortData.use_advanced_pricing) {
-          setUseTimeSlotCalendar(true)
-          
-          // Fetch minimum prices per slot type from pricing matrix
           const { data: slotPricesData } = await supabase
             .from('resort_time_slots')
             .select('id, slot_type, resort_pricing_matrix(price)')
@@ -290,38 +282,6 @@ export default function ResortDetail({ params }: { params: { id: string } }){
     return () => { sub.unsubscribe(); if (timer) clearTimeout(timer) }
   }, [params.id])
 
-  // Fetch dynamic price when using TimeSlotCalendar and a slot is selected
-  useEffect(() => {
-    async function fetchDynamicPrice() {
-      if (!useTimeSlotCalendar || !selectedSingleDate || !selectedDbSlotId || !params.id) {
-        setDynamicPrice(null)
-        return
-      }
-      
-      setDynamicPriceLoading(true)
-      try {
-        const dateStr = format(selectedSingleDate, 'yyyy-MM-dd')
-        const response = await fetch(
-          `/api/resorts/${params.id}/calculate-price?date=${dateStr}&slot_id=${selectedDbSlotId}&guest_count=${guests}`
-        )
-        
-        if (response.ok) {
-          const data = await response.json()
-          setDynamicPrice(data.totalPrice)
-        } else {
-          setDynamicPrice(null)
-        }
-      } catch (err) {
-        console.error('Failed to fetch price:', err)
-        setDynamicPrice(null)
-      } finally {
-        setDynamicPriceLoading(false)
-      }
-    }
-    
-    fetchDynamicPrice()
-  }, [useTimeSlotCalendar, selectedSingleDate, selectedDbSlotId, guests, params.id])
-
   // Compute slot-aware booked dates based on selected booking type
   // - Daytour bookings only block other daytour bookings on the same date
   // - Overnight bookings only block other overnight bookings (can span 2 days)
@@ -487,9 +447,9 @@ export default function ResortDetail({ params }: { params: { id: string } }){
     const defaultTimes = getDefaultTimes(bookingType)
     
     // Determine which pricing mode to use
-    const isAdvancedPricing = useTimeSlotCalendar && selectedDbSlotId && dynamicPrice
-    const finalPrice = isAdvancedPricing ? dynamicPrice : totalCost
-    const finalSlotId = isAdvancedPricing ? selectedDbSlotId : selectedTimeSlot
+    // Use legacy pricing (totalCost calculated from baseRate)
+    const finalPrice = totalCost
+    const finalSlotId = selectedTimeSlot
     
     // Use time slot times if available, otherwise use defaults based on booking type
     const checkInTime = timeSlotDetails?.startTime ?? defaultTimes.start
@@ -1332,73 +1292,23 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                 <div>
                   <label className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
                     <FiCalendar className="w-4 h-4" />
-                    {useTimeSlotCalendar ? 'Select Date & Time Slot' : (bookingType === 'daytour' ? 'Select Date' : 'Select Dates')}
+                    {bookingType === 'daytour' ? 'Select Date' : 'Select Dates'}
                   </label>
                   
-                  {/* Toggle between calendar modes if resort has advanced pricing */}
-                  {resort?.use_advanced_pricing && (
-                    <div className="flex gap-2 mb-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setUseTimeSlotCalendar(true)
-                          setSelectedRange({ from: undefined, to: undefined })
-                        }}
-                        className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${
-                          useTimeSlotCalendar 
-                            ? 'bg-resort-500 text-white border-resort-500' 
-                            : 'bg-white text-slate-600 border-slate-200 hover:border-resort-300'
-                        }`}
-                      >
-                        Time Slot Booking
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setUseTimeSlotCalendar(false)
-                          setSelectedDbSlotId(null)
-                          setDynamicPrice(null)
-                        }}
-                        className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${
-                          !useTimeSlotCalendar 
-                            ? 'bg-resort-500 text-white border-resort-500' 
-                            : 'bg-white text-slate-600 border-slate-200 hover:border-resort-300'
-                        }`}
-                      >
-                        Date Range
-                      </button>
-                    </div>
-                  )}
-                  
-                  {/* TimeSlotCalendar for advanced pricing */}
-                  {useTimeSlotCalendar ? (
-                    <TimeSlotCalendar
-                      resortId={params.id}
-                      selectedDate={selectedSingleDate ?? null}
-                      onSelectDate={(date) => {
-                        setSelectedSingleDate(date)
-                        setSelectedDbSlotId(null) // Reset slot when date changes
-                      }}
-                      selectedSlotId={selectedDbSlotId}
-                      onSelectSlot={(slotId) => setSelectedDbSlotId(slotId)}
-                      showSlotSelector={true}
-                    />
-                  ) : (
-                    <DateRangePicker 
-                      bookedDates={slotAwareBookedDates}
-                      onSelectRange={setSelectedRange}
-                      selectedRange={selectedRange}
-                      singleDateMode={bookingType === 'daytour'}
-                      onSelectSingleDate={setSelectedSingleDate}
-                      selectedSingleDate={selectedSingleDate}
-                      bookingType={bookingType}
-                      checkInTime={resort?.check_in_time}
-                      checkOutTime={resort?.check_out_time}
-                      cutoffTime={resort?.check_in_time}
-                      overnightStartTime={resortTimeSlots.find(s => s.slot_type === 'overnight')?.start_time}
-                      twentyTwoHrsStartTime={resortTimeSlots.find(s => s.slot_type === '22hrs')?.start_time}
-                    />
-                  )}
+                  <DateRangePicker 
+                    bookedDates={slotAwareBookedDates}
+                    onSelectRange={setSelectedRange}
+                    selectedRange={selectedRange}
+                    singleDateMode={bookingType === 'daytour'}
+                    onSelectSingleDate={setSelectedSingleDate}
+                    selectedSingleDate={selectedSingleDate}
+                    bookingType={bookingType}
+                    checkInTime={resort?.check_in_time}
+                    checkOutTime={resort?.check_out_time}
+                    cutoffTime={resort?.check_in_time}
+                    overnightStartTime={resortTimeSlots.find(s => s.slot_type === 'overnight')?.start_time}
+                    twentyTwoHrsStartTime={resortTimeSlots.find(s => s.slot_type === '22hrs')?.start_time}
+                  />
                 </div>
 
                 {/* Guests, Children, Pets - All in one row */}
@@ -1489,38 +1399,8 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                 </div>
               </div>
 
-              {/* Pricing display - Dynamic for TimeSlotCalendar, calculated for legacy */}
-              {useTimeSlotCalendar && selectedSingleDate && selectedDbSlotId ? (
-                <div className="bg-resort-50 rounded-lg p-3 space-y-2">
-                  {dynamicPriceLoading ? (
-                    <div className="flex items-center justify-center py-2">
-                      <div className="animate-spin h-5 w-5 border-2 border-resort-500 border-t-transparent rounded-full" />
-                      <span className="ml-2 text-sm text-slate-600">Calculating price...</span>
-                    </div>
-                  ) : dynamicPrice ? (
-                    <>
-                      <div className="flex justify-between text-sm text-slate-700">
-                        <span>Selected time slot</span>
-                        <span>₱{dynamicPrice.toLocaleString()}</span>
-                      </div>
-                      <div className="border-t border-resort-200 pt-2 flex justify-between font-bold text-resort-900">
-                        <span>Total</span>
-                        <span>₱{dynamicPrice.toLocaleString()}</span>
-                      </div>
-                      {downpaymentPercentage > 0 && downpaymentPercentage < 100 && (
-                        <div className="border-t border-resort-200 pt-2 flex justify-between text-sm text-resort-700">
-                          <span>Downpayment ({downpaymentPercentage}%)</span>
-                          <span className="font-semibold">₱{Math.round(dynamicPrice * downpaymentPercentage / 100).toLocaleString()}</span>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-sm text-slate-500 text-center py-2">
-                      Price not available for this combination
-                    </p>
-                  )}
-                </div>
-              ) : nights > 0 && baseRate > 0 && (
+              {/* Pricing display */}
+              {nights > 0 && baseRate > 0 && (
                 <div className="bg-resort-50 rounded-lg p-3 space-y-2">
                   <div className="flex justify-between text-sm text-slate-700">
                     <span>₱{baseRate.toLocaleString()} × {nights} {bookingType === 'daytour' ? 'day' : `night${nights > 1 ? 's' : ''}`}</span>
