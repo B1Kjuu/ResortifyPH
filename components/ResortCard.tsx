@@ -252,24 +252,31 @@ export default function ResortCard({ resort, compact = false, nights = 0, showTo
                 displayPrice = slotTypePrices['22hrs']
                 priceLabel = '/ 22hrs'
               } else {
-                // "All" filter: show overnight as default, fallback to lowest available
-                if (slotTypePrices.overnight) {
-                  displayPrice = slotTypePrices.overnight
-                  priceLabel = '/ overnight'
-                } else {
-                  // Show lowest available
-                  const availablePrices = [
-                    slotTypePrices.daytour,
-                    slotTypePrices.overnight,
-                    slotTypePrices['22hrs']
-                  ].filter((p): p is number => p != null && p > 0)
-                  
-                  if (availablePrices.length > 0) {
-                    displayPrice = Math.min(...availablePrices)
-                    // Determine label based on which price it is
-                    if (displayPrice === slotTypePrices.daytour) priceLabel = '/ daytour'
-                    else if (displayPrice === slotTypePrices['22hrs']) priceLabel = '/ 22hrs'
-                    else priceLabel = '/ overnight'
+                // Filter selected but no matching price, OR "All" filter
+                // Show lowest available with correct label
+                const availablePrices = [
+                  { price: slotTypePrices.daytour, label: '/ daytour' },
+                  { price: slotTypePrices.overnight, label: '/ overnight' },
+                  { price: slotTypePrices['22hrs'], label: '/ 22hrs' }
+                ].filter((p): p is { price: number; label: string } => p.price != null && p.price > 0)
+                
+                if (availablePrices.length > 0) {
+                  // For "all" filter, prefer overnight; otherwise show lowest
+                  if (selectedSlotType === 'all') {
+                    const overnight = availablePrices.find(p => p.label === '/ overnight')
+                    if (overnight) {
+                      displayPrice = overnight.price
+                      priceLabel = overnight.label
+                    } else {
+                      const lowest = availablePrices.reduce((a, b) => a.price < b.price ? a : b)
+                      displayPrice = lowest.price
+                      priceLabel = lowest.label
+                    }
+                  } else {
+                    // Specific filter but no price - show lowest available
+                    const lowest = availablePrices.reduce((a, b) => a.price < b.price ? a : b)
+                    displayPrice = lowest.price
+                    priceLabel = lowest.label
                   }
                 }
               }
@@ -285,25 +292,31 @@ export default function ResortCard({ resort, compact = false, nights = 0, showTo
                 displayPrice = resort.overnight_price || resort.price
                 priceLabel = '/ 22hrs'
               } else {
-                // "All" filter: show overnight as default, fallback to lowest available
-                if (resort.overnight_price || resort.night_tour_price) {
-                  displayPrice = resort.overnight_price || resort.night_tour_price
-                  priceLabel = '/ overnight'
-                } else {
-                  // Show lowest available price
-                  const availablePrices = [
-                    resort.price,
-                    resort.day_tour_price,
-                    resort.night_tour_price,
-                    resort.overnight_price
-                  ].filter((p): p is number => p != null && p > 0)
-                  
-                  if (availablePrices.length > 0) {
-                    displayPrice = Math.min(...availablePrices)
-                    // Determine label based on which price it is
-                    if (displayPrice === resort.day_tour_price) priceLabel = '/ daytour'
-                    else if (displayPrice === resort.overnight_price || displayPrice === resort.night_tour_price) priceLabel = '/ overnight'
-                    else priceLabel = '/ night'
+                // Filter selected but no matching price, OR "All" filter
+                // Show lowest available with correct label
+                const availablePrices = [
+                  { price: resort.day_tour_price, label: '/ daytour' },
+                  { price: resort.overnight_price || resort.night_tour_price, label: '/ overnight' },
+                  { price: resort.price, label: '/ night' }
+                ].filter((p): p is { price: number; label: string } => p.price != null && p.price > 0)
+                
+                if (availablePrices.length > 0) {
+                  // For "all" filter, prefer overnight; otherwise show lowest
+                  if (selectedSlotType === 'all') {
+                    const overnight = availablePrices.find(p => p.label === '/ overnight')
+                    if (overnight) {
+                      displayPrice = overnight.price
+                      priceLabel = overnight.label
+                    } else {
+                      const lowest = availablePrices.reduce((a, b) => a.price < b.price ? a : b)
+                      displayPrice = lowest.price
+                      priceLabel = lowest.label
+                    }
+                  } else {
+                    // Specific filter but no price - show lowest available
+                    const lowest = availablePrices.reduce((a, b) => a.price < b.price ? a : b)
+                    displayPrice = lowest.price
+                    priceLabel = lowest.label
                   }
                 }
               }
