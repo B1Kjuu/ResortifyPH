@@ -68,6 +68,42 @@ function getDisplayPrice(resort: any): number | null {
   return null
 }
 
+// Derive per-slot minimum prices from pricing_config or legacy fields
+function getSlotPrices(resort: any): { daytour: number | null; overnight: number | null; '22hrs': number | null } {
+  const slotPrices: { daytour: number | null; overnight: number | null; '22hrs': number | null } = {
+    daytour: null,
+    overnight: null,
+    '22hrs': null,
+  }
+
+  // Try pricing_config first
+  let pricingConfig = resort.pricing_config
+  if (pricingConfig) {
+    try {
+      const cfg = typeof pricingConfig === 'string' ? JSON.parse(pricingConfig) : pricingConfig
+      if (cfg?.pricing && Array.isArray(cfg.pricing)) {
+        cfg.pricing.forEach((p: any) => {
+          if (typeof p?.price === 'number' && p.price > 0 && slotPrices[p.bookingType as 'daytour' | 'overnight' | '22hrs'] !== undefined) {
+            const key = p.bookingType as 'daytour' | 'overnight' | '22hrs'
+            if (slotPrices[key] === null || p.price < slotPrices[key]!) {
+              slotPrices[key] = p.price
+            }
+          }
+        })
+      }
+    } catch (e) {
+      console.error('Error parsing pricing_config for slot prices:', e)
+    }
+  }
+
+  // Legacy fallback if missing
+  if (slotPrices.daytour == null && resort.day_tour_price) slotPrices.daytour = resort.day_tour_price
+  if (slotPrices.overnight == null && (resort.overnight_price || resort.night_tour_price)) slotPrices.overnight = resort.overnight_price || resort.night_tour_price
+  if (slotPrices['22hrs'] == null && (resort.overnight_price || resort.night_tour_price)) slotPrices['22hrs'] = resort.overnight_price || resort.night_tour_price
+
+  return slotPrices
+}
+
 // GET /api/resorts - Get paginated resorts with caching
 export async function GET(request: Request) {
   try {
@@ -118,6 +154,7 @@ export async function GET(request: Request) {
         ...resort,
         // Ensure price field has a display value for map/cards and price filtering
         price: resort.price ?? getDisplayPrice(resort),
+        slot_prices: getSlotPrices(resort),
         // Keep legacy pricing fields for ResortCard display
         day_tour_price: resort.day_tour_price,
         night_tour_price: resort.night_tour_price,

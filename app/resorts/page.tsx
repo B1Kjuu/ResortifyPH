@@ -209,6 +209,20 @@ export default function ResortsPage(){
         if (mounted) {
           setResorts(data || [])
           setRatingsMap(ratings || {})
+          // Pre-seed slot prices from API response (derived from pricing_config/legacy)
+          const apiSlotPrices: Record<string, { daytour: number | null; overnight: number | null; '22hrs': number | null }> = {}
+          ;(data || []).forEach((r: any) => {
+            if (r.slot_prices) {
+              apiSlotPrices[r.id] = r.slot_prices
+            } else {
+              apiSlotPrices[r.id] = {
+                daytour: r.day_tour_price ?? null,
+                overnight: r.overnight_price ?? r.night_tour_price ?? null,
+                '22hrs': r.overnight_price ?? r.night_tour_price ?? null,
+              }
+            }
+          })
+          setResortSlotPrices(apiSlotPrices)
           if (data && data.length > 0) {
             const prices = data.map((r: any) => r.price || 0).filter((p: number) => Number.isFinite(p))
             const minPrice = Math.min(...prices)
@@ -304,7 +318,7 @@ export default function ResortsPage(){
           }
         })
         
-        setResortSlotPrices(pricesMap)
+        setResortSlotPrices(prev => ({ ...prev, ...pricesMap }))
       } catch (err) {
         console.error('Error fetching slot prices:', err)
       }

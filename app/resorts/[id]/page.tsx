@@ -112,6 +112,28 @@ export default function ResortDetail({ params }: { params: { id: string } }){
         }
 
         setResort(resortData)
+
+        // Derive slot prices from pricing_config or legacy as a fallback for display
+        let derivedPricingConfig: any = resortData.pricing_config
+        if (typeof derivedPricingConfig === 'string') {
+          try { derivedPricingConfig = JSON.parse(derivedPricingConfig) } catch { derivedPricingConfig = null }
+        }
+        const derivedSlotPrices: { daytour: number | null; overnight: number | null; '22hrs': number | null } = { daytour: null, overnight: null, '22hrs': null }
+        if (derivedPricingConfig?.pricing && Array.isArray(derivedPricingConfig.pricing)) {
+          derivedPricingConfig.pricing.forEach((p: any) => {
+            if (typeof p?.price === 'number' && p.price > 0 && derivedSlotPrices[p.bookingType as 'daytour' | 'overnight' | '22hrs'] !== undefined) {
+              const key = p.bookingType as 'daytour' | 'overnight' | '22hrs'
+              if (derivedSlotPrices[key] === null || p.price < derivedSlotPrices[key]!) {
+                derivedSlotPrices[key] = p.price
+              }
+            }
+          })
+        }
+        if (derivedSlotPrices.daytour == null && resortData.day_tour_price) derivedSlotPrices.daytour = resortData.day_tour_price
+        if (derivedSlotPrices.overnight == null && (resortData.overnight_price || resortData.night_tour_price)) derivedSlotPrices.overnight = resortData.overnight_price || resortData.night_tour_price
+        if (derivedSlotPrices['22hrs'] == null && (resortData.overnight_price || resortData.night_tour_price)) derivedSlotPrices['22hrs'] = resortData.overnight_price || resortData.night_tour_price
+        setSlotTypePrices(derivedSlotPrices)
+        setMinAdvancedPrice(derivedSlotPrices['22hrs'] || derivedSlotPrices.overnight || derivedSlotPrices.daytour || null)
         
         // Fetch minimum prices per slot type from pricing matrix if available
         if (resortData.use_advanced_pricing) {
