@@ -144,19 +144,19 @@ export default function ResortDetail({ params }: { params: { id: string } }){
             .eq('is_active', true)
           
           if (slotPricesData && mounted) {
-            const prices: { daytour: number | null; overnight: number | null; '22hrs': number | null } = { daytour: null, overnight: null, '22hrs': null }
-            
+            // Start with derived prices (pricing_config or legacy) then override with matrix mins when available
+            const prices: { daytour: number | null; overnight: number | null; '22hrs': number | null } = { ...derivedSlotPrices }
+
             slotPricesData.forEach((slot: any) => {
               const slotType = slot.slot_type as 'daytour' | 'overnight' | '22hrs'
               const slotPrices = slot.resort_pricing_matrix || []
               if (slotPrices.length > 0) {
                 const minPrice = Math.min(...slotPrices.map((p: any) => Number(p.price)))
-                if (prices[slotType] === null || minPrice < prices[slotType]!) {
-                  prices[slotType] = minPrice
-                }
+                const current = prices[slotType]
+                prices[slotType] = current == null ? minPrice : Math.min(current, minPrice)
               }
             })
-            
+
             setSlotTypePrices(prices)
             // Set default minAdvancedPrice to 22hrs, then overnight, then daytour
             setMinAdvancedPrice(prices['22hrs'] || prices.overnight || prices.daytour || null)
@@ -693,6 +693,10 @@ export default function ResortDetail({ params }: { params: { id: string } }){
   
   // Calculate price - try advanced pricing first, fallback to legacy
   const calculatePrice = (): number => {
+    // Prefer precomputed slot-level prices so we can show a base rate even before date selection
+    const slotPrice = slotTypePrices[bookingType]
+    if (slotPrice != null) return slotPrice
+
     // Try advanced pricing first
     if (hasAdvancedPricing && selectedDate && bookingType) {
       const dayType = getDayType(selectedDate)
