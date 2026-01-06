@@ -720,10 +720,10 @@ export default function ResortDetail({ params }: { params: { id: string } }){
     if (bookingType === '22hrs') return resort.overnight_price ?? resort.price ?? 0
     
     // Fallback to stayType for backwards compatibility
-    return stayType === 'day_12h' ? (resort.day_tour_price ?? resort.price) : (resort.overnight_price ?? resort.price)
+    return stayType === 'day_12h' ? (resort.day_tour_price ?? resort.price ?? 0) : (resort.overnight_price ?? resort.price ?? 0)
   }
   
-  const baseRate = calculatePrice()
+  const baseRate = calculatePrice() || 0
   
   // Calculate nights/days count
   const nights = bookingType === 'daytour' 
@@ -1520,7 +1520,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                     </p>
                   )}
                 </div>
-              ) : nights > 0 && (
+              ) : nights > 0 && baseRate > 0 && (
                 <div className="bg-resort-50 rounded-lg p-3 space-y-2">
                   <div className="flex justify-between text-sm text-slate-700">
                     <span>₱{baseRate.toLocaleString()} × {nights} {bookingType === 'daytour' ? 'day' : `night${nights > 1 ? 's' : ''}`}</span>
@@ -1576,7 +1576,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
           {/* Price info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline gap-1">
-              <span className="text-base font-bold text-resort-900">₱{baseRate?.toLocaleString()}</span>
+              <span className="text-base font-bold text-resort-900">₱{baseRate.toLocaleString()}</span>
               <span className="text-[10px] text-slate-500">{bookingType === 'daytour' ? '/day' : '/night'}</span>
             </div>
             {nights > 0 && totalCost > 0 && (

@@ -50,15 +50,23 @@ export default function NotificationsBell(){
       }
     }
     function handleScroll() {
-      // Close on scroll (especially for mobile)
-      if (open) setOpen(false)
+      // Close on any scroll (especially for mobile)
+      setOpen(false)
+    }
+    function handleTouchMove() {
+      // Also close on touch move for mobile
+      setOpen(false)
     }
     if (open) {
       document.addEventListener('mousedown', handleClickOutside)
       window.addEventListener('scroll', handleScroll, true) // Capture phase for scroll
+      document.addEventListener('scroll', handleScroll, true) // Also listen on document
+      document.addEventListener('touchmove', handleTouchMove, { passive: true })
       return () => {
         document.removeEventListener('mousedown', handleClickOutside)
         window.removeEventListener('scroll', handleScroll, true)
+        document.removeEventListener('scroll', handleScroll, true)
+        document.removeEventListener('touchmove', handleTouchMove)
       }
     }
   }, [open])
@@ -161,7 +169,14 @@ export default function NotificationsBell(){
         )}
       </button>
       {open && (
-        <div className="fixed sm:absolute inset-x-4 sm:inset-x-auto sm:right-0 top-16 sm:top-auto sm:mt-2 w-auto sm:w-80 bg-white border border-slate-200 rounded-xl shadow-xl z-50">
+        <>
+          {/* Mobile backdrop */}
+          <div 
+            className="sm:hidden fixed inset-0 bg-black/20 z-[55]" 
+            onClick={() => setOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="fixed sm:absolute inset-x-4 sm:inset-x-auto sm:right-0 top-16 sm:top-auto sm:mt-2 w-auto sm:w-80 bg-white border border-slate-200 rounded-xl shadow-xl z-[56] sm:z-50">
           <div className="px-3 sm:px-4 py-2 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <p className="text-sm font-semibold text-slate-900">Notifications</p>
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
@@ -190,6 +205,7 @@ export default function NotificationsBell(){
             ))}
           </div>
         </div>
+        </>
       )}
       {toast && (
         <div className="fixed top-16 sm:top-20 left-4 right-4 sm:left-auto sm:right-4 z-[70] bg-white border border-slate-200 shadow-2xl rounded-xl p-3 sm:p-4 sm:w-80 max-w-[calc(100vw-2rem)] animate-in slide-in-from-top-2 duration-200">

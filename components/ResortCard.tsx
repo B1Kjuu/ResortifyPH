@@ -242,29 +242,70 @@ export default function ResortCard({ resort, compact = false, nights = 0, showTo
             
             if (useAdvanced) {
               // For advanced pricing, show price based on selected slot type
-              if (selectedSlotType !== 'all' && slotTypePrices[selectedSlotType]) {
-                displayPrice = slotTypePrices[selectedSlotType]
-                priceLabel = selectedSlotType === 'daytour' ? '/ daytour' : selectedSlotType === 'overnight' ? '/ overnight' : '/ 22hrs'
+              if (selectedSlotType === 'daytour' && slotTypePrices.daytour) {
+                displayPrice = slotTypePrices.daytour
+                priceLabel = '/ daytour'
+              } else if (selectedSlotType === 'overnight' && slotTypePrices.overnight) {
+                displayPrice = slotTypePrices.overnight
+                priceLabel = '/ overnight'
+              } else if (selectedSlotType === '22hrs' && slotTypePrices['22hrs']) {
+                displayPrice = slotTypePrices['22hrs']
+                priceLabel = '/ 22hrs'
               } else {
-                // Default: show overnight, then 22hrs, then daytour
-                displayPrice = slotTypePrices.overnight || slotTypePrices['22hrs'] || slotTypePrices.daytour
-                priceLabel = slotTypePrices.overnight ? '/ overnight' : slotTypePrices['22hrs'] ? '/ 22hrs' : '/ daytour'
+                // "All" filter: show overnight as default, fallback to lowest available
+                if (slotTypePrices.overnight) {
+                  displayPrice = slotTypePrices.overnight
+                  priceLabel = '/ overnight'
+                } else {
+                  // Show lowest available
+                  const availablePrices = [
+                    slotTypePrices.daytour,
+                    slotTypePrices.overnight,
+                    slotTypePrices['22hrs']
+                  ].filter((p): p is number => p != null && p > 0)
+                  
+                  if (availablePrices.length > 0) {
+                    displayPrice = Math.min(...availablePrices)
+                    // Determine label based on which price it is
+                    if (displayPrice === slotTypePrices.daytour) priceLabel = '/ daytour'
+                    else if (displayPrice === slotTypePrices['22hrs']) priceLabel = '/ 22hrs'
+                    else priceLabel = '/ overnight'
+                  }
+                }
               }
             } else {
-              // Standard pricing - use legacy price fields based on filter
+              // Standard/legacy pricing - use price fields based on filter
               if (selectedSlotType === 'daytour' && resort.day_tour_price) {
                 displayPrice = resort.day_tour_price
                 priceLabel = '/ daytour'
               } else if (selectedSlotType === 'overnight' && (resort.overnight_price || resort.night_tour_price)) {
                 displayPrice = resort.overnight_price || resort.night_tour_price
                 priceLabel = '/ overnight'
-              } else if (selectedSlotType === '22hrs' && resort.overnight_price) {
-                displayPrice = resort.overnight_price
+              } else if (selectedSlotType === '22hrs' && (resort.overnight_price || resort.price)) {
+                displayPrice = resort.overnight_price || resort.price
                 priceLabel = '/ 22hrs'
               } else {
-                // Default to standard price
-                displayPrice = resort.price || resort.overnight_price || resort.day_tour_price || resort.night_tour_price
-                priceLabel = '/ night'
+                // "All" filter: show overnight as default, fallback to lowest available
+                if (resort.overnight_price) {
+                  displayPrice = resort.overnight_price
+                  priceLabel = '/ overnight'
+                } else {
+                  // Show lowest available price
+                  const availablePrices = [
+                    resort.price,
+                    resort.day_tour_price,
+                    resort.night_tour_price,
+                    resort.overnight_price
+                  ].filter((p): p is number => p != null && p > 0)
+                  
+                  if (availablePrices.length > 0) {
+                    displayPrice = Math.min(...availablePrices)
+                    // Determine label based on which price it is
+                    if (displayPrice === resort.day_tour_price) priceLabel = '/ daytour'
+                    else if (displayPrice === resort.overnight_price || displayPrice === resort.night_tour_price) priceLabel = '/ overnight'
+                    else priceLabel = '/ night'
+                  }
+                }
               }
             }
             
