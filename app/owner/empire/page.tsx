@@ -7,6 +7,7 @@ import { DayPicker } from 'react-day-picker'
 import 'react-day-picker/dist/style.css'
 import { eachDayOfInterval } from 'date-fns'
 import DisclaimerBanner from '../../../components/DisclaimerBanner'
+import PricingRequiredBanner from '../../../components/PricingRequiredBanner'
 
 export default function Empire(){
   const [profile, setProfile] = useState<any>(null)
@@ -242,6 +243,9 @@ export default function Empire(){
   return (
     <div className="w-full min-h-screen bg-gradient-to-b from-slate-50 to-white">
       <div className="w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 max-w-7xl mx-auto">
+        {/* Persistent Pricing Required Banner */}
+        <PricingRequiredBanner className="mb-6" />
+        
         <div className="mb-8 sm:mb-12 fade-in-up">
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-resort-600 to-ocean-500 bg-clip-text text-transparent">Your Resort Empire</h1>
           <p className="text-base sm:text-lg text-slate-600 mt-2">Manage listings, track submissions, and grow your business</p>

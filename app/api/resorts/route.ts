@@ -94,18 +94,27 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch resorts' }, { status: 500 })
     }
 
-    // Process resorts to ensure display price is available
-    const processedResorts = (resorts || []).map(resort => ({
-      ...resort,
-      // Ensure price field has a display value for map/cards and price filtering
-      price: resort.price ?? getDisplayPrice(resort),
-      // Keep legacy pricing fields for ResortCard display
-      day_tour_price: resort.day_tour_price,
-      night_tour_price: resort.night_tour_price,
-      overnight_price: resort.overnight_price,
-      // Remove pricing_config from response to reduce payload size
-      pricing_config: undefined,
-    }))
+    // Process resorts - filter out those without any pricing configured
+    const processedResorts = (resorts || [])
+      .filter(resort => {
+        // Check if resort has any pricing configured
+        const hasAdvancedPricing = resort.pricing_config?.pricing?.length > 0
+        const hasLegacyPricing = resort.day_tour_price || resort.night_tour_price || resort.overnight_price || resort.price
+        
+        // Only include resorts that have at least some pricing
+        return hasAdvancedPricing || hasLegacyPricing
+      })
+      .map(resort => ({
+        ...resort,
+        // Ensure price field has a display value for map/cards and price filtering
+        price: resort.price ?? getDisplayPrice(resort),
+        // Keep legacy pricing fields for ResortCard display
+        day_tour_price: resort.day_tour_price,
+        night_tour_price: resort.night_tour_price,
+        overnight_price: resort.overnight_price,
+        // Remove pricing_config from response to reduce payload size
+        pricing_config: undefined,
+      }))
 
     // Get aggregated ratings efficiently using RPC if available, else simple query
     const resortIds = processedResorts.map(r => r.id)

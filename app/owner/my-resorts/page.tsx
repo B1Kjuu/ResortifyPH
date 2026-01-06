@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import DisclaimerBanner from '../../../components/DisclaimerBanner'
+import PricingRequiredBanner from '../../../components/PricingRequiredBanner'
 import { RESORT_TYPES, getResortTypeLabel } from '../../../lib/resortTypes'
 import { FiMapPin, FiClock, FiCheck, FiX, FiUsers, FiEdit, FiEye, FiTrash2 } from 'react-icons/fi'
 import { FaHotel } from 'react-icons/fa'
@@ -83,6 +84,9 @@ export default function MyResorts(){
   return (
     <div className="w-full min-h-screen bg-gradient-to-b from-slate-50 to-white">
       <div className="w-full px-4 sm:px-6 lg:px-8 py-12 max-w-7xl mx-auto">
+        {/* Persistent Pricing Required Banner */}
+        <PricingRequiredBanner className="mb-6" />
+        
         <Link href="/owner/empire" className="text-sm text-resort-500 font-semibold mb-8 inline-flex items-center gap-2 hover:gap-3 transition-all">← Back to Dashboard</Link>
         
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-10 gap-4 sm:gap-6">
