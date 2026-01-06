@@ -674,13 +674,13 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       }
     }
     
-    // Legacy pricing fallback
-    if (bookingType === 'daytour') return resort.day_tour_price ?? resort.price ?? 0
-    if (bookingType === 'overnight') return resort.night_tour_price ?? resort.price ?? 0
-    if (bookingType === '22hrs') return resort.overnight_price ?? resort.price ?? 0
+    // Legacy pricing fallback - use specific price if set, otherwise fall back to base price
+    if (bookingType === 'daytour') return resort.day_tour_price || resort.price || 0
+    if (bookingType === 'overnight') return resort.night_tour_price || resort.overnight_price || resort.price || 0
+    if (bookingType === '22hrs') return resort.overnight_price || resort.price || 0
     
     // Fallback to stayType for backwards compatibility
-    return stayType === 'day_12h' ? (resort.day_tour_price ?? resort.price ?? 0) : (resort.overnight_price ?? resort.price ?? 0)
+    return stayType === 'day_12h' ? (resort.day_tour_price || resort.price || 0) : (resort.overnight_price || resort.price || 0)
   }
   
   const baseRate = calculatePrice() || 0
@@ -862,9 +862,9 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                 <div className="flex-shrink-0 flex items-center gap-2 bg-resort-50 px-3 py-2 rounded-xl">
                   <FiDollarSign aria-hidden className="text-resort-600 w-4 h-4" />
                   <div>
-                    <p className="text-xs text-slate-600">{resort.use_advanced_pricing ? (bookingType === 'daytour' ? 'Daytour' : bookingType === 'overnight' ? 'Overnight' : '22hrs') : 'Per night'}</p>
+                    <p className="text-xs text-slate-600">{bookingType === 'daytour' ? 'Per day' : bookingType === '22hrs' ? 'Per 22hrs' : 'Per night'}</p>
                     <p className="text-sm font-bold text-resort-900">
-                      ₱{(resort.use_advanced_pricing ? (slotTypePrices[bookingType] || minAdvancedPrice || 0) : resort.price || 0).toLocaleString()}
+                      ₱{baseRate.toLocaleString()}
                     </p>
                   </div>
                 </div>
@@ -889,9 +889,9 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                 <div className="flex flex-col items-center gap-1 bg-resort-50 p-2.5 sm:p-4 rounded-xl text-center">
                   <FiDollarSign aria-hidden className="text-lg sm:text-xl text-resort-600" />
                   <div>
-                    <p className="text-[10px] sm:text-xs text-slate-600">{resort.use_advanced_pricing ? (bookingType === 'daytour' ? 'Daytour' : bookingType === 'overnight' ? 'Overnight' : '22hrs') : 'Per night'}</p>
+                    <p className="text-[10px] sm:text-xs text-slate-600">{bookingType === 'daytour' ? 'Per day' : bookingType === '22hrs' ? 'Per 22hrs' : 'Per night'}</p>
                     <p className="text-sm sm:text-lg font-bold text-resort-900">
-                      ₱{(resort.use_advanced_pricing ? (slotTypePrices[bookingType] || minAdvancedPrice || 0) : resort.price || 0).toLocaleString()}
+                      ₱{baseRate.toLocaleString()}
                     </p>
                   </div>
                 </div>

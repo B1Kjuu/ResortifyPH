@@ -357,7 +357,7 @@ export default function EditResort(){
           </div>
           <p className="text-xs text-slate-500">
             {pricingMode === 'simple'
-              ? 'Set a single price per night for your resort.'
+              ? 'Set pricing for different stay types.'
               : 'Configure tiered pricing with daytour, overnight, and 22-hour options, plus weekday/weekend rates.'}
           </p>
         </div>
@@ -366,7 +366,7 @@ export default function EditResort(){
         {pricingMode === 'simple' && (
         <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <label className="text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiDollarSign className="w-4 h-4" /> Price per Night (₱) *</label>
+            <label className="text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiDollarSign className="w-4 h-4" /> Base Price per Night (₱) *</label>
             <input 
               type="number"
               min={0}
@@ -376,6 +376,43 @@ export default function EditResort(){
               onChange={e => setPrice(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))}
               required={pricingMode === 'simple'}
             />
+            <p className="text-xs text-slate-500 mt-1">Default price if specific types are not set</p>
+          </div>
+          <div>
+            <label className="text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiDollarSign className="w-4 h-4" /> Day Tour Price (₱)</label>
+            <input 
+              type="number"
+              min={0}
+              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors" 
+              placeholder="e.g., 4000" 
+              value={dayTourPrice as any} 
+              onChange={e => setDayTourPrice(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))}
+            />
+            <p className="text-xs text-slate-500 mt-1">Leave empty to use base price</p>
+          </div>
+          <div>
+            <label className="text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiDollarSign className="w-4 h-4" /> Night Tour Price (₱)</label>
+            <input 
+              type="number"
+              min={0}
+              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors" 
+              placeholder="e.g., 5000" 
+              value={nightTourPrice as any} 
+              onChange={e => setNightTourPrice(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))}
+            />
+            <p className="text-xs text-slate-500 mt-1">Leave empty to use base price</p>
+          </div>
+          <div>
+            <label className="text-sm font-bold text-slate-700 mb-2 inline-flex items-center gap-1"><FiDollarSign className="w-4 h-4" /> Overnight/22hrs Price (₱)</label>
+            <input 
+              type="number"
+              min={0}
+              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-resort-400 focus:border-resort-400 shadow-sm hover:border-slate-300 transition-colors" 
+              placeholder="e.g., 7000" 
+              value={overnightPrice as any} 
+              onChange={e => setOvernightPrice(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))}
+            />
+            <p className="text-xs text-slate-500 mt-1">Leave empty to use base price</p>
           </div>
         </div>
         )}
