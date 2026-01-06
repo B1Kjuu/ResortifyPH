@@ -398,19 +398,19 @@ export default function CreateResort() {
             )}
           </div>
 
-            {/* Verification details (optional) */}
-            <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-xl p-6 space-y-4">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="w-5 h-5 inline-block">🔒</span>
-                <h3 className="text-lg font-bold text-slate-900">Verification Details (Optional)</h3>
-              </div>
-              <div className="bg-amber-100 border border-amber-300 rounded-lg p-3 mb-4">
-                <p className="text-sm text-amber-800 font-medium">
-                  💡 <strong>Tip:</strong> The more verification details you provide, the better your chances of getting approved quickly. 
-                  Business documents and social media links help build trust with guests.
-                </p>
-              </div>
-              <div className="grid md:grid-cols-2 gap-4">
+          {/* Verification details (optional) */}
+          <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-xl p-6 space-y-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-5 h-5 inline-block">🔒</span>
+              <h3 className="text-lg font-bold text-slate-900">Verification Details (Optional)</h3>
+            </div>
+            <div className="bg-amber-100 border border-amber-300 rounded-lg p-3 mb-4">
+              <p className="text-sm text-amber-800 font-medium">
+                💡 <strong>Tip:</strong> The more verification details you provide, the better your chances of getting approved quickly. 
+                Business documents and social media links help build trust with guests.
+              </p>
+            </div>
+            <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">Business Registration Number</label>
                   <input className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl" placeholder="Optional" {...register('registration_number')} />
@@ -465,7 +465,6 @@ export default function CreateResort() {
                   <input className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl" placeholder="https://instagram.com/..." {...register('instagram_url')} />
                 </div>
               </div>
-            </div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">
