@@ -5,10 +5,14 @@ import { cookies } from 'next/headers'
 
 // Create admin client with service role key for user management
 function getAdminSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    || (process.env as any).SUPABASE_SERVICE_ROLE
+    || (process.env as any).SUPABASE_SERVICE_KEY
+    || (process.env as any).SUPABASE_SERVICE_API_KEY
   
   if (!url || !serviceRoleKey) {
+    console.error('Supabase admin client missing config', { hasUrl: Boolean(url), hasServiceRole: Boolean(serviceRoleKey) })
     return null
   }
   
