@@ -7,6 +7,7 @@ import AnnouncementBanner from '../components/AnnouncementBanner'
 import { Toaster } from 'sonner'
 import RouteLoadNudger from '../components/RouteLoadNudger'
 import AuthHashHandler from '../components/AuthHashHandler'
+import FirstTimeRoleCheck from '../components/FirstTimeRoleCheck'
 
 export const metadata = {
   title: {
@@ -107,6 +108,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <RouteLoadNudger />
         {/* Handle Supabase auth link hashes (expired, recovery, signup) */}
         <AuthHashHandler />
+        {/* First-time user role selection modal */}
+        <FirstTimeRoleCheck />
         <Toaster position="top-right" richColors />
         {/* Ensure a 'load' event fires promptly after DOM is ready for tests */}
         <Script

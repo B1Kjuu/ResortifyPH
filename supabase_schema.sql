@@ -9,6 +9,7 @@ create table if not exists profiles (
   full_name text,
   role text check (role in ('guest','owner')) default 'guest',
   is_admin boolean not null default false,
+  initial_role_selected boolean not null default false,
   phone text,
   bio text,
   location text,
