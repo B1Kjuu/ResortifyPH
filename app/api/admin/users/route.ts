@@ -20,9 +20,44 @@ function getAdminSupabase() {
   })
 }
 
-// Verify the requesting user is an admin using SSR client
-async function verifyAdmin() {
+// Verify the requesting user is an admin (supports Authorization header or cookies)
+async function verifyAdmin(request: NextRequest) {
   try {
+    const authHeader = request.headers.get('authorization')
+    const bearerToken = authHeader?.toLowerCase().startsWith('bearer ')
+      ? authHeader.slice(7)
+      : null
+
+    // Prefer Authorization header (client passes access token)
+    if (bearerToken) {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          auth: { autoRefreshToken: false, persistSession: false },
+          global: { headers: { Authorization: `Bearer ${bearerToken}` } },
+        }
+      )
+
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        return { isAdmin: false, error: 'Not authenticated' }
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', user.id)
+        .single()
+
+      if (!profile?.is_admin) {
+        return { isAdmin: false, error: 'Not authorized' }
+      }
+
+      return { isAdmin: true, userId: user.id }
+    }
+
+    // Fallback to cookie-based session (SSR)
     const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -42,7 +77,6 @@ async function verifyAdmin() {
       return { isAdmin: false, error: 'Not authenticated' }
     }
     
-    // Check if user is admin
     const { data: profile } = await supabase
       .from('profiles')
       .select('is_admin')
@@ -63,7 +97,7 @@ async function verifyAdmin() {
 export async function DELETE(request: NextRequest) {
   try {
     // Verify admin
-    const authCheck = await verifyAdmin()
+    const authCheck = await verifyAdmin(request)
     if (!authCheck.isAdmin) {
       return NextResponse.json({ error: authCheck.error }, { status: 403 })
     }
