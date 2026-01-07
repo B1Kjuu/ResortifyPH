@@ -140,9 +140,11 @@ export default function AdminUsersPage() {
 
       const response = await fetch('/api/admin/users', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        // Send Supabase access token so the API can verify admin role
-        Authorization: `Bearer ${session.access_token}`,
+        headers: { 
+          'Content-Type': 'application/json',
+          // Send Supabase access token so the API can verify admin role
+          Authorization: `Bearer ${session.access_token}`,
+        },
         credentials: 'include',
         body: JSON.stringify({ userId })
       })
