@@ -1,7 +1,7 @@
 -- Add initial_role_selected flag to profiles table
 -- This tracks whether a user has completed the first-time role selection
 
-ALTER TABLE profiles 
+ALTER TABLE profiles
 ADD COLUMN IF NOT EXISTS initial_role_selected boolean NOT NULL DEFAULT false;
 
 -- Comment for clarity

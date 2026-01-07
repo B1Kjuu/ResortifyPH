@@ -4,17 +4,19 @@
 create extension if not exists pgcrypto;
 
 create table if not exists profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
-  email text not null unique,
-  full_name text,
-  role text check (role in ('guest','owner')) default 'guest',
-  is_admin boolean not null default false,
-  initial_role_selected boolean not null default false,
-  phone text,
-  bio text,
-  location text,
-  avatar_url text,
-  created_at timestamp with time zone default now()
+    id uuid primary key references auth.users (id) on delete cascade,
+    email text not null unique,
+    full_name text,
+    role text check (role in ('guest', 'owner')) default 'guest',
+    is_admin boolean not null default false,
+    initial_role_selected boolean not null default false,
+    phone text,
+    bio text,
+    location text,
+    avatar_url text,
+    created_at timestamp
+    with
+        time zone default now()
 );
 
 create table if not exists resorts (
@@ -33,14 +35,22 @@ create table if not exists resorts (
 );
 
 create table if not exists bookings (
-  id uuid primary key default gen_random_uuid(),
-  resort_id uuid references resorts(id) on delete cascade,
-  guest_id uuid references profiles(id) on delete cascade,
-  date_from date,
-  date_to date,
-  guest_count int not null default 1,
-  status text check (status in ('pending','confirmed','rejected')) default 'pending',
-  created_at timestamp with time zone default now()
+    id uuid primary key default gen_random_uuid (),
+    resort_id uuid references resorts (id) on delete cascade,
+    guest_id uuid references profiles (id) on delete cascade,
+    date_from date,
+    date_to date,
+    guest_count int not null default 1,
+    status text check (
+        status in (
+            'pending',
+            'confirmed',
+            'rejected'
+        )
+    ) default 'pending',
+    created_at timestamp
+    with
+        time zone default now()
 );
 -- Keep profiles table synchronized with Supabase Auth users
 create or replace function public.handle_new_user()
@@ -94,11 +104,13 @@ end;
 $$;
 
 drop trigger if exists on_auth_users_created on auth.users;
+
 create trigger on_auth_users_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
 drop trigger if exists on_auth_users_updated on auth.users;
+
 create trigger on_auth_users_updated
   after update on auth.users
   for each row execute function public.handle_updated_user();
