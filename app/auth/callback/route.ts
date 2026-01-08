@@ -63,10 +63,10 @@ export async function GET(req: NextRequest) {
     
     if (!exchangeError && data?.session) {
       // Check the session's aal (authentication assurance level) or user metadata to detect recovery
-      const isRecovery = type === 'recovery' || tokenType === 'recovery' || data.session.user?.recovery_sent_at
+      const isRecovery = type === 'recovery' || tokenType === 'recovery' || tokenHash || data.session.user?.recovery_sent_at
       
       // Redirect based on type
-      if (isRecovery || type === 'recovery') {
+      if (isRecovery) {
         // Set a security cookie to mark this as a password reset session
         const response = NextResponse.redirect(`${origin}/auth/reset-password?verified=true`)
         response.cookies.set(PASSWORD_RESET_COOKIE, 'true', {
