@@ -19,36 +19,24 @@ export default function ForgotPasswordPage() {
       return
     }
 
+    const normalizedEmail = email.trim().toLowerCase()
     setLoading(true)
-    
-    // First check if email exists in the system
-    const { data: existingUser, error: checkError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('email', email.toLowerCase())
-      .maybeSingle()
-    
-    if (checkError && checkError.code !== 'PGRST116') {
-      console.error('Email check error:', checkError)
-    }
-    
-    // If no user found with this email, show error
-    if (!existingUser) {
-      setLoading(false)
-      setEmailError('No account found with this email address. Please check your email or create a new account.')
-      return
-    }
     
     // Use resetPasswordForEmail to send a magic link for password reset
     // Redirect to callback route which will handle the code exchange and redirect to reset-password
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
       redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
     })
     
     setLoading(false)
 
     if (error) {
-      toast.error(error.message)
+      const msg = error.message.toLowerCase()
+      if (msg.includes('user not found') || msg.includes('invalid login') || msg.includes('email not confirmed')) {
+        setEmailError('No account found with this email address. Please check your email or create a new account.')
+      } else {
+        toast.error(error.message)
+      }
       return
     }
 
