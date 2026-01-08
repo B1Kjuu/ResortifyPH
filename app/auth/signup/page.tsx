@@ -155,6 +155,19 @@ export default function SignUpPage(){
           </div>
 
           <div>
+            <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Confirm Password</label>
+            <input
+              {...register('confirmPassword')}
+              className="w-full rounded-xl border border-slate-200 px-3 sm:px-4 py-2.5 sm:py-3 text-sm focus:outline-none focus:ring-2 focus:ring-resort-500 focus:border-transparent transition"
+              placeholder="••••••••"
+              type="password"
+            />
+            {errors.confirmPassword && (
+              <p className="text-red-500 text-xs mt-1">{errors.confirmPassword.message}</p>
+            )}
+          </div>
+
+          <div>
             <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Phone</label>
             <input
               {...register('phone')}

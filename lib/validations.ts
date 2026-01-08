@@ -77,10 +77,14 @@ export const resortPricingConfigSchema = z.object({
 export const signUpSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
+  confirmPassword: z.string().min(1, 'Please confirm your password'),
   fullName: z.string().min(2, 'Full name must be at least 2 characters'),
   phone: z
     .string()
     .regex(/^((\+63|0)?9\d{9})$/, 'Invalid Philippine mobile number (e.g., 09171234567 or +639171234567)')
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
 })
 
 export const signInSchema = z.object({
