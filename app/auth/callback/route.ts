@@ -87,13 +87,20 @@ export async function GET(req: NextRequest) {
     
     // Handle exchange errors (expired token, invalid code, etc.)
     const errorMsg = exchangeError?.message?.toLowerCase() || ''
+    const looksRecovery = type === 'recovery' || tokenType === 'recovery' || tokenHash
+
     if (errorMsg.includes('expired') || errorMsg.includes('invalid')) {
-      if (type === 'recovery' || tokenType === 'recovery') {
+      if (looksRecovery) {
         return NextResponse.redirect(`${origin}/auth/reset-password?error=expired`)
       }
       if (type === 'signup' || type === 'email') {
         return NextResponse.redirect(`${origin}/auth/verify-email?error=expired`)
       }
+    }
+
+    // Fallback: if we know this was a recovery attempt, still send user to reset page with error
+    if (looksRecovery) {
+      return NextResponse.redirect(`${origin}/auth/reset-password?error=expired`)
     }
   }
 
