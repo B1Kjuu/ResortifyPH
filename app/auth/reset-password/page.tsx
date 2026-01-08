@@ -8,6 +8,12 @@ import Link from 'next/link'
 // Security: Mark session as being in password reset mode
 const PASSWORD_RESET_KEY = 'resortify_password_reset_pending'
 
+// Helper to set cookie
+function setCookie(name: string, value: string, maxAgeSeconds: number) {
+  if (typeof document === 'undefined') return
+  document.cookie = `${name}=${value}; max-age=${maxAgeSeconds}; path=/; SameSite=Lax`
+}
+
 // Helper to get cookie value
 function getCookie(name: string): string | null {
   if (typeof document === 'undefined') return null
@@ -111,6 +117,10 @@ export default function ResetPasswordPage() {
         // Double-check we have a session from the callback
         const { data: { session } } = await supabase.auth.getSession()
         if (session) {
+          // Ensure the password reset cookie is set (in case server-side cookie didn't persist)
+          if (!getCookie(PASSWORD_RESET_KEY)) {
+            setCookie(PASSWORD_RESET_KEY, 'true', 60 * 15) // 15 minutes
+          }
           setValidToken(true)
           setChecking(false)
           return

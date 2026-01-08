@@ -47,6 +47,26 @@ export default function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
   const method = req.method
 
+  // Skip middleware for static assets and Next.js internals to prevent 404s
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/assets') ||
+    pathname.startsWith('/api') ||
+    pathname.match(/\.(ico|png|jpg|jpeg|svg|gif|webp|woff|woff2|css|js|json)$/)
+  ) {
+    // Still apply rate limiting for API routes
+    if (pathname.startsWith('/api')) {
+      const isWrite = method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE'
+      if (isWrite) {
+        const ok = allow(req.ip)
+        if (!ok) {
+          return new NextResponse('Too Many Requests', { status: 429 })
+        }
+      }
+    }
+    return NextResponse.next()
+  }
+
   // If user is in a password-reset session, force them to the reset page for safety
   const resetPending = req.cookies.get(PASSWORD_RESET_COOKIE)?.value
   const isAuthResetRoute = pathname.startsWith('/auth/reset-password') || pathname.startsWith('/auth/forgot-password') || pathname.startsWith('/auth/callback')

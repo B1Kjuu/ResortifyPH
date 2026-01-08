@@ -2,11 +2,69 @@
 import { useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { supabase } from '../lib/supabaseClient'
+
+// Security cookie to mark password reset sessions
+const PASSWORD_RESET_KEY = 'resortify_password_reset_pending'
+
+// Helper to set cookie
+function setCookie(name: string, value: string, maxAgeSeconds: number) {
+  if (typeof document === 'undefined') return
+  document.cookie = `${name}=${value}; max-age=${maxAgeSeconds}; path=/; SameSite=Lax`
+}
+
+// Helper to get cookie
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null
+  const value = `; ${document.cookie}`
+  const parts = value.split(`; ${name}=`)
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null
+  return null
+}
 
 export default function AuthHashHandler(){
   const router = useRouter()
   const pathname = usePathname()
 
+  // Listen for PASSWORD_RECOVERY event from Supabase auth
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('[AuthHashHandler] Auth event:', event)
+      
+      // Supabase fires PASSWORD_RECOVERY when a recovery link is used
+      if (event === 'PASSWORD_RECOVERY') {
+        console.log('[AuthHashHandler] PASSWORD_RECOVERY event detected, forcing reset page')
+        setCookie(PASSWORD_RESET_KEY, 'true', 60 * 15) // 15 minutes
+        
+        if (!pathname.startsWith('/auth/reset-password')) {
+          router.replace('/auth/reset-password?verified=true')
+        }
+        return
+      }
+      
+      // Also check if user signs in with a recent recovery_sent_at (within last 5 minutes)
+      // This catches cases where the event wasn't PASSWORD_RECOVERY but should have been
+      if (event === 'SIGNED_IN' && session?.user) {
+        const recoverySentAt = session.user.recovery_sent_at 
+          ? new Date(session.user.recovery_sent_at).getTime() 
+          : 0
+        const isRecentRecovery = recoverySentAt > Date.now() - 5 * 60 * 1000 // Within last 5 minutes
+        
+        if (isRecentRecovery && !pathname.startsWith('/auth/reset-password')) {
+          console.log('[AuthHashHandler] Recent recovery detected on SIGNED_IN, forcing reset page')
+          setCookie(PASSWORD_RESET_KEY, 'true', 60 * 15)
+          router.replace('/auth/reset-password?verified=true')
+          return
+        }
+      }
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [router, pathname])
+
+  // Handle hash-based auth flows (legacy implicit grant)
   useEffect(() => {
     if (typeof window === 'undefined') return
     const hash = window.location.hash
@@ -25,9 +83,14 @@ export default function AuthHashHandler(){
     }
 
     // Ensure recovery flows land on the reset page even if template points to root
-    if (type === 'recovery' && pathname !== '/auth/reset-password') {
-      router.replace(`/auth/reset-password${hash}`)
-      return
+    if (type === 'recovery') {
+      // Set the security cookie to prevent navigation away
+      setCookie(PASSWORD_RESET_KEY, 'true', 60 * 15) // 15 minutes
+      
+      if (pathname !== '/auth/reset-password') {
+        router.replace(`/auth/reset-password${hash}`)
+        return
+      }
     }
 
     // Ensure signup verification flows land on the verify page

@@ -62,8 +62,27 @@ export async function GET(req: NextRequest) {
     const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
     
     if (!exchangeError && data?.session) {
-      // Check the session's aal (authentication assurance level) or user metadata to detect recovery
-      const isRecovery = type === 'recovery' || tokenType === 'recovery' || tokenHash || data.session.user?.recovery_sent_at
+      const user = data.session.user
+      
+      // Detect recovery flow - multiple checks since Supabase doesn't always pass type consistently
+      // 1. Explicit type=recovery parameter
+      // 2. token_hash presence (used in some Supabase flows)
+      // 3. User has recovery_sent_at set recently (within last hour)
+      const recoverySentAt = user?.recovery_sent_at ? new Date(user.recovery_sent_at).getTime() : 0
+      const isRecentRecovery = recoverySentAt > Date.now() - 60 * 60 * 1000 // Within last hour
+      
+      const isRecovery = 
+        type === 'recovery' || 
+        tokenType === 'recovery' || 
+        !!tokenHash || 
+        isRecentRecovery
+      
+      console.log('[Auth Callback] Recovery detection:', { 
+        type, tokenType, tokenHash: !!tokenHash, 
+        recoverySentAt: user?.recovery_sent_at, 
+        isRecentRecovery, 
+        isRecovery 
+      })
       
       // Redirect based on type
       if (isRecovery) {
