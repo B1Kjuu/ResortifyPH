@@ -23,7 +23,7 @@ export default function Footer(){
     try { window.history.pushState(null, '', path); window.dispatchEvent(new Event('load')) } catch {}
   }
   return (
-    <footer className={`bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-300 mt-auto border-t-4 border-resort-500 ${isChatPage ? 'hidden sm:block' : ''}`}>
+    <footer className={`bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-300 mt-auto border-t-4 border-resort-500${isChatPage ? ' hidden sm:block' : ''}`}>
       <div className="w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-14">
         <div className="max-w-7xl mx-auto">
           {/* Main Grid - Responsive */}

@@ -16,7 +16,7 @@ import { supabase } from '../../lib/supabaseClient'
 import { getLocationCoordinates } from '../../lib/locations'
 import { useGeolocation, calculateDistance, formatDistance } from '../../hooks/useGeolocation'
 import { FaUmbrellaBeach, FaMountain, FaLeaf, FaCity, FaTractor, FaSwimmer, FaFire, FaGem, FaUsers, FaHotel, FaCampground, FaSpa, FaMapMarkerAlt } from 'react-icons/fa'
-import { FiCheck, FiSearch } from 'react-icons/fi'
+import { FiCheck, FiSearch, FiMoreHorizontal, FiX } from 'react-icons/fi'
 
 
 
@@ -73,28 +73,36 @@ export default function ResortsPage(){
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
   
-  // Airbnb-style categories
-  const categories = [
+  // Airbnb-style categories - Priority categories first (shown on mobile)
+  const priorityCategories = [
     { id: 'nearby', icon: <FaMapMarkerAlt className="w-5 h-5" />, label: 'Nearby' },
+    { id: 'trending', icon: <FaFire className="w-5 h-5" />, label: 'Trending' },
+    { id: 'new', icon: <FiSearch className="w-5 h-5" />, label: 'New' },
+    { id: 'luxury', icon: <FaGem className="w-5 h-5" />, label: 'Luxe' },
+    { id: 'staycation', icon: <FaCity className="w-5 h-5" />, label: 'Staycations' },
+  ]
+  
+  // Extended categories (hidden on mobile unless expanded)
+  const extendedCategories = [
     { id: 'beach', icon: <FaUmbrellaBeach className="w-5 h-5" />, label: 'Beachfront' },
     { id: 'mountain', icon: <FaMountain className="w-5 h-5" />, label: 'Mountains' },
     { id: 'nature', icon: <FaLeaf className="w-5 h-5" />, label: 'Nature' },
     { id: 'city', icon: <FaCity className="w-5 h-5" />, label: 'City' },
     { id: 'countryside', icon: <FaTractor className="w-5 h-5" />, label: 'Countryside' },
     { id: 'pool', icon: <FaSwimmer className="w-5 h-5" />, label: 'Amazing Pools' },
-    { id: 'trending', icon: <FaFire className="w-5 h-5" />, label: 'Trending' },
-    { id: 'new', icon: <FiSearch className="w-5 h-5" />, label: 'New' },
-    { id: 'luxury', icon: <FaGem className="w-5 h-5" />, label: 'Luxe' },
     { id: 'family', icon: <FaUsers className="w-5 h-5" />, label: 'Family' },
-    // Emphasis categories
-    { id: 'staycation', icon: <FaCity className="w-5 h-5" />, label: 'Staycations' },
     { id: 'private', icon: <FaGem className="w-5 h-5" />, label: 'Private Resorts' },
-    // Additional diversified types
     { id: 'villa', icon: <FaHotel className="w-5 h-5" />, label: 'Villas' },
     { id: 'glamping', icon: <FaCampground className="w-5 h-5" />, label: 'Glamping' },
     { id: 'farmstay', icon: <FaTractor className="w-5 h-5" />, label: 'Farmstays' },
     { id: 'spa', icon: <FaSpa className="w-5 h-5" />, label: 'Spas' },
   ]
+  
+  // All categories combined for desktop
+  const categories = [...priorityCategories, ...extendedCategories]
+  
+  // State for mobile category expansion
+  const [showAllCategories, setShowAllCategories] = useState(false)
 
   // Accent colors per resort type for chips/badges
   const typeAccentBg: Record<string, string> = {
@@ -504,21 +512,22 @@ export default function ResortsPage(){
         <div className="border-t border-slate-100">
           <div className="px-4 sm:px-6 lg:px-8 xl:px-12 max-w-[1800px] mx-auto">
             <div className="flex items-center gap-1 sm:gap-2 py-2 sm:py-3 overflow-x-auto scrollbar-hide">
+              {/* All button */}
               <button onClick={() => { setSelectedCategory(null); setSelectedType('all'); setShowNearby(false); setSortBy('newest') }} className={`flex-shrink-0 flex flex-col items-center gap-0.5 sm:gap-1 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl transition-all ${!selectedCategory ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}>
                 <FaUmbrellaBeach className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span className="text-[10px] sm:text-xs font-medium whitespace-nowrap">All</span>
               </button>
-              {categories.map((cat) => (
+              
+              {/* Priority categories - always visible */}
+              {priorityCategories.map((cat) => (
                 <button key={cat.id} onClick={() => {
                   setSelectedCategory(cat.id)
-                  // Handle "nearby" category specially - activate geolocation and sort by nearest
                   if (cat.id === 'nearby') {
                     setShowNearby(true)
                     setSortBy('nearest')
                     setFlyToUserTrigger(prev => prev + 1)
                     requestLocation()
                     setSelectedType('all')
-                    // Switch to map view on larger screens, split on desktop for better UX
                     if (typeof window !== 'undefined') {
                       if (window.innerWidth >= 1024) {
                         setViewMode('split')
@@ -526,7 +535,7 @@ export default function ResortsPage(){
                         setViewMode('map')
                       }
                     }
-                  } else if (['beach','mountain','nature','city','countryside','staycation','private','villa','glamping','farmstay','spa'].includes(cat.id)) {
+                  } else if (['staycation'].includes(cat.id)) {
                     setSelectedType(cat.id)
                     setShowNearby(false)
                   } else {
@@ -541,7 +550,7 @@ export default function ResortsPage(){
                     : cat.id === 'nearby' 
                       ? 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50' 
                       : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-                }`} aria-label={cat.id === 'pool' ? 'Amazing swim spots' : cat.id === 'nearby' ? 'Find resorts near your location' : undefined}>
+                }`}>
                   <span className="text-base sm:text-xl relative">
                     {cat.id === 'nearby' && geoLoading ? (
                       <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
@@ -552,6 +561,36 @@ export default function ResortsPage(){
                       </span>
                     ) : cat.icon}
                   </span>
+                  <span className="text-[10px] sm:text-xs font-medium whitespace-nowrap">{cat.label}</span>
+                </button>
+              ))}
+              
+              {/* More button - Mobile only */}
+              <button 
+                onClick={() => setShowAllCategories(!showAllCategories)} 
+                className={`md:hidden flex-shrink-0 flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all ${showAllCategories ? 'border-b-2 border-resort-600 text-resort-700 bg-resort-50' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
+              >
+                {showAllCategories ? <FiX className="w-4 h-4" /> : <FiMoreHorizontal className="w-4 h-4" />}
+                <span className="text-[10px] font-medium whitespace-nowrap">{showAllCategories ? 'Less' : 'More'}</span>
+              </button>
+              
+              {/* Extended categories - Hidden on mobile unless expanded, always visible on desktop */}
+              {extendedCategories.map((cat) => (
+                <button key={cat.id} onClick={() => {
+                  setSelectedCategory(cat.id)
+                  if (['beach','mountain','nature','city','countryside','pool','family','private','villa','glamping','farmstay','spa'].includes(cat.id)) {
+                    setSelectedType(cat.id)
+                    setShowNearby(false)
+                  } else {
+                    setSelectedType('all')
+                    setShowNearby(false)
+                  }
+                }} className={`flex-shrink-0 flex-col items-center gap-0.5 sm:gap-1 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl transition-all ${showAllCategories ? 'flex' : 'hidden md:flex'} ${
+                  selectedCategory === cat.id 
+                    ? 'border-b-2 border-slate-900 text-slate-900' 
+                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                }`}>
+                  <span className="text-base sm:text-xl">{cat.icon}</span>
                   <span className="text-[10px] sm:text-xs font-medium whitespace-nowrap">{cat.label}</span>
                 </button>
               ))}
