@@ -13,10 +13,14 @@ export async function GET(req: NextRequest) {
   const error = searchParams.get('error')
   const errorCode = searchParams.get('error_code')
   const errorDescription = searchParams.get('error_description')
+  
+  // Also check for token_hash which Supabase uses for some flows
+  const tokenHash = searchParams.get('token_hash')
+  const tokenType = searchParams.get('type') || searchParams.get('token_type')
 
   // Handle error parameters from Supabase (expired/invalid links)
   if (error || errorCode) {
-    if (type === 'recovery' || errorDescription?.includes('recovery')) {
+    if (type === 'recovery' || tokenType === 'recovery' || errorDescription?.includes('recovery')) {
       return NextResponse.redirect(`${origin}/auth/reset-password?error=expired`)
     }
     if (type === 'signup' || type === 'email' || errorDescription?.includes('signup')) {
@@ -55,11 +59,14 @@ export async function GET(req: NextRequest) {
       }
     )
 
-    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+    const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
     
-    if (!exchangeError) {
+    if (!exchangeError && data?.session) {
+      // Check the session's aal (authentication assurance level) or user metadata to detect recovery
+      const isRecovery = type === 'recovery' || tokenType === 'recovery' || data.session.user?.recovery_sent_at
+      
       // Redirect based on type
-      if (type === 'recovery') {
+      if (isRecovery || type === 'recovery') {
         // Set a security cookie to mark this as a password reset session
         const response = NextResponse.redirect(`${origin}/auth/reset-password?verified=true`)
         response.cookies.set(PASSWORD_RESET_COOKIE, 'true', {
@@ -79,9 +86,9 @@ export async function GET(req: NextRequest) {
     }
     
     // Handle exchange errors (expired token, invalid code, etc.)
-    const errorMsg = exchangeError.message?.toLowerCase() || ''
+    const errorMsg = exchangeError?.message?.toLowerCase() || ''
     if (errorMsg.includes('expired') || errorMsg.includes('invalid')) {
-      if (type === 'recovery') {
+      if (type === 'recovery' || tokenType === 'recovery') {
         return NextResponse.redirect(`${origin}/auth/reset-password?error=expired`)
       }
       if (type === 'signup' || type === 'email') {
