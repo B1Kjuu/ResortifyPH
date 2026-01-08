@@ -13,15 +13,6 @@ function setCookie(name: string, value: string, maxAgeSeconds: number) {
   document.cookie = `${name}=${value}; max-age=${maxAgeSeconds}; path=/; SameSite=Lax`
 }
 
-// Helper to get cookie
-function getCookie(name: string): string | null {
-  if (typeof document === 'undefined') return null
-  const value = `; ${document.cookie}`
-  const parts = value.split(`; ${name}=`)
-  if (parts.length === 2) return parts.pop()?.split(';').shift() || null
-  return null
-}
-
 export default function AuthHashHandler(){
   const router = useRouter()
   const pathname = usePathname()
@@ -29,9 +20,13 @@ export default function AuthHashHandler(){
   // Listen for PASSWORD_RECOVERY event from Supabase auth
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('[AuthHashHandler] Auth event:', event)
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[AuthHashHandler] Auth event:', event)
+      }
       
-      // Supabase fires PASSWORD_RECOVERY when a recovery link is used
+      // Supabase fires PASSWORD_RECOVERY specifically when a recovery link is clicked
+      // This is the ONLY reliable way to detect password recovery flow
       if (event === 'PASSWORD_RECOVERY') {
         console.log('[AuthHashHandler] PASSWORD_RECOVERY event detected, forcing reset page')
         setCookie(PASSWORD_RESET_KEY, 'true', 60 * 15) // 15 minutes
@@ -42,21 +37,9 @@ export default function AuthHashHandler(){
         return
       }
       
-      // Also check if user signs in with a recent recovery_sent_at (within last 5 minutes)
-      // This catches cases where the event wasn't PASSWORD_RECOVERY but should have been
-      if (event === 'SIGNED_IN' && session?.user) {
-        const recoverySentAt = session.user.recovery_sent_at 
-          ? new Date(session.user.recovery_sent_at).getTime() 
-          : 0
-        const isRecentRecovery = recoverySentAt > Date.now() - 5 * 60 * 1000 // Within last 5 minutes
-        
-        if (isRecentRecovery && !pathname.startsWith('/auth/reset-password')) {
-          console.log('[AuthHashHandler] Recent recovery detected on SIGNED_IN, forcing reset page')
-          setCookie(PASSWORD_RESET_KEY, 'true', 60 * 15)
-          router.replace('/auth/reset-password?verified=true')
-          return
-        }
-      }
+      // DO NOT check recovery_sent_at on INITIAL_SESSION or SIGNED_IN
+      // This causes false positives during normal auth operations (role switching, page refresh, etc.)
+      // The PASSWORD_RECOVERY event is the proper way to detect recovery flows
     })
 
     return () => {

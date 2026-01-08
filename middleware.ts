@@ -68,9 +68,10 @@ export default function middleware(req: NextRequest) {
   }
 
   // If user is in a password-reset session, force them to the reset page for safety
+  // But allow access to signin/signup so they can escape if needed
   const resetPending = req.cookies.get(PASSWORD_RESET_COOKIE)?.value
-  const isAuthResetRoute = pathname.startsWith('/auth/reset-password') || pathname.startsWith('/auth/forgot-password') || pathname.startsWith('/auth/callback')
-  if (resetPending && !isAuthResetRoute) {
+  const isAuthRoute = pathname.startsWith('/auth/')
+  if (resetPending && !isAuthRoute) {
     return NextResponse.redirect(new URL('/auth/reset-password?verified=true', req.url))
   }
 

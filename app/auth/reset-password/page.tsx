@@ -26,7 +26,10 @@ function getCookie(name: string): string | null {
 // Helper to delete cookie
 function deleteCookie(name: string) {
   if (typeof document === 'undefined') return
+  // Clear with all possible path variations
   document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname}`
+  document.cookie = `${name}=; max-age=0; path=/;`
 }
 
 export default function ResetPasswordPage() {
@@ -254,6 +257,10 @@ export default function ResetPasswordPage() {
   }
 
   if (!validToken) {
+    // Clear the cookie since we're showing invalid link
+    deleteCookie(PASSWORD_RESET_KEY)
+    try { sessionStorage.removeItem(PASSWORD_RESET_KEY) } catch {}
+    
     return (
       <div className="min-h-[80vh] bg-gradient-to-br from-resort-50 to-resort-100 flex items-center justify-center px-4">
         <div className="w-full max-w-md bg-white shadow-lg rounded-xl p-8 text-center">
@@ -266,12 +273,20 @@ export default function ResetPasswordPage() {
           <p className="text-slate-600 mb-6">
             This password reset link is invalid or has expired. Please request a new one.
           </p>
-          <Link
-            href="/auth/forgot-password"
-            className="inline-block py-2.5 px-6 rounded-lg bg-resort-500 text-white font-semibold hover:bg-resort-600 transition"
-          >
-            Request New Link
-          </Link>
+          <div className="flex flex-col gap-3">
+            <Link
+              href="/auth/forgot-password"
+              className="inline-block py-2.5 px-6 rounded-lg bg-resort-500 text-white font-semibold hover:bg-resort-600 transition"
+            >
+              Request New Link
+            </Link>
+            <Link
+              href="/auth/signin"
+              className="text-resort-600 font-semibold hover:underline text-sm"
+            >
+              Back to Sign In
+            </Link>
+          </div>
         </div>
       </div>
     )
