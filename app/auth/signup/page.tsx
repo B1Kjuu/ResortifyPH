@@ -11,6 +11,8 @@ import { toast } from 'sonner'
 export default function SignUpPage(){
   const [loading, setLoading] = useState(false)
   const [oauthLoading, setOauthLoading] = useState(false)
+  const [emailError, setEmailError] = useState<string | null>(null)
+  const [phoneError, setPhoneError] = useState<string | null>(null)
   
   const router = useRouter()
   
@@ -20,28 +22,46 @@ export default function SignUpPage(){
 
   async function onSubmit(data: SignUpInput){
     setLoading(true)
+    setEmailError(null)
+    setPhoneError(null)
     
     // Check if email already exists
-    const { data: existingUser, error: checkError } = await supabase
+    const { data: existingEmail, error: emailCheckError } = await supabase
       .from('profiles')
       .select('id')
       .eq('email', data.email.toLowerCase())
       .maybeSingle()
     
-    if (checkError && checkError.code !== 'PGRST116') {
-      // PGRST116 means no rows found, which is expected
-      console.error('Email check error:', checkError)
+    if (emailCheckError && emailCheckError.code !== 'PGRST116') {
+      console.error('Email check error:', emailCheckError)
     }
     
-    if (existingUser) {
+    // Check if phone already exists
+    const { data: existingPhone, error: phoneCheckError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('phone', data.phone)
+      .maybeSingle()
+    
+    if (phoneCheckError && phoneCheckError.code !== 'PGRST116') {
+      console.error('Phone check error:', phoneCheckError)
+    }
+    
+    // Set inline errors if duplicates found
+    let hasError = false
+    
+    if (existingEmail) {
+      setEmailError('This email is already registered. Please sign in or use a different email.')
+      hasError = true
+    }
+    
+    if (existingPhone) {
+      setPhoneError('This phone number is already registered. Please use a different number.')
+      hasError = true
+    }
+    
+    if (hasError) {
       setLoading(false)
-      toast.error('An account with this email already exists', {
-        description: 'Please sign in instead or use a different email.',
-        action: {
-          label: 'Sign In',
-          onClick: () => router.push('/auth/signin')
-        }
-      })
       return
     }
     
@@ -60,7 +80,12 @@ export default function SignUpPage(){
     setLoading(false)
     
     if (error){ 
-      toast.error(error.message)
+      // Handle Supabase auth errors
+      if (error.message.toLowerCase().includes('already registered') || error.message.toLowerCase().includes('already been registered')) {
+        setEmailError('This email is already registered. Please sign in instead.')
+      } else {
+        toast.error(error.message)
+      }
       return 
     }
 
@@ -132,12 +157,28 @@ export default function SignUpPage(){
             <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Email</label>
             <input
               {...register('email')}
-              className="w-full rounded-xl border border-slate-200 px-3 sm:px-4 py-2.5 sm:py-3 text-sm focus:outline-none focus:ring-2 focus:ring-resort-500 focus:border-transparent transition"
+              onChange={(e) => { 
+                register('email').onChange(e)
+                setEmailError(null) // Clear error when user types
+              }}
+              className={`w-full rounded-xl border px-3 sm:px-4 py-2.5 sm:py-3 text-sm focus:outline-none focus:ring-2 focus:border-transparent transition ${
+                errors.email || emailError 
+                  ? 'border-red-400 focus:ring-red-500 bg-red-50' 
+                  : 'border-slate-200 focus:ring-resort-500'
+              }`}
               placeholder="you@example.com"
               type="email"
             />
             {errors.email && (
               <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
+            )}
+            {emailError && !errors.email && (
+              <div className="flex items-start gap-1.5 mt-1.5">
+                <svg className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-red-600 text-xs">{emailError} <Link href="/auth/signin" className="text-resort-600 underline hover:text-resort-700 font-medium">Sign in instead</Link></p>
+              </div>
             )}
           </div>
 
@@ -171,12 +212,28 @@ export default function SignUpPage(){
             <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Phone</label>
             <input
               {...register('phone')}
-              className="w-full rounded-xl border border-slate-200 px-3 sm:px-4 py-2.5 sm:py-3 text-sm focus:outline-none focus:ring-2 focus:ring-resort-500 focus:border-transparent transition"
+              onChange={(e) => { 
+                register('phone').onChange(e)
+                setPhoneError(null) // Clear error when user types
+              }}
+              className={`w-full rounded-xl border px-3 sm:px-4 py-2.5 sm:py-3 text-sm focus:outline-none focus:ring-2 focus:border-transparent transition ${
+                errors.phone || phoneError 
+                  ? 'border-red-400 focus:ring-red-500 bg-red-50' 
+                  : 'border-slate-200 focus:ring-resort-500'
+              }`}
               placeholder="09171234567 or +639171234567"
               type="tel"
             />
             {errors.phone && (
               <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>
+            )}
+            {phoneError && !errors.phone && (
+              <div className="flex items-start gap-1.5 mt-1.5">
+                <svg className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-red-600 text-xs">{phoneError}</p>
+              </div>
             )}
           </div>
 
