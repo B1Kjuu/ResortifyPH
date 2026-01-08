@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// Cookie flag set during recovery flow to force user into reset-password until completion
+const PASSWORD_RESET_COOKIE = 'resortify_password_reset_pending'
+
 // Simple in-memory IP-based rate limiter (best-effort). For production, use Redis (e.g., Upstash).
 const WINDOW_MS = 60 * 1000 // 1 minute
 const MAX_REQUESTS = 10 // per WINDOW_MS
@@ -43,6 +46,13 @@ function allow(ip: string | undefined): boolean {
 export default function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
   const method = req.method
+
+  // If user is in a password-reset session, force them to the reset page for safety
+  const resetPending = req.cookies.get(PASSWORD_RESET_COOKIE)?.value
+  const isAuthResetRoute = pathname.startsWith('/auth/reset-password') || pathname.startsWith('/auth/forgot-password') || pathname.startsWith('/auth/callback')
+  if (resetPending && !isAuthResetRoute) {
+    return NextResponse.redirect(new URL('/auth/reset-password?verified=true', req.url))
+  }
 
   // Scope: protect write endpoints (POST/PUT/PATCH/DELETE) under /api
   const isWrite = method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE'

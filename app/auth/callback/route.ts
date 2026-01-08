@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
       
       // Redirect based on type
       if (isRecovery) {
-        // Set a security cookie to mark this as a password reset session
+        // Force password reset flow; ignore "next" for security
         const response = NextResponse.redirect(`${origin}/auth/reset-password?verified=true`)
         response.cookies.set(PASSWORD_RESET_COOKIE, 'true', {
           httpOnly: false, // Needs to be accessible from client-side
