@@ -27,11 +27,13 @@ function getSupabaseClient(): SupabaseClient {
 				detectSessionInUrl: true,
 				// Store session in localStorage for persistence
 				storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+				// Use cookies for SSR compatibility
+				flowType: 'pkce',
 			},
-			// Optimize realtime for fewer connections on free tier
+			// Optimize realtime for concurrent users
 			realtime: {
 				params: {
-					eventsPerSecond: 5, // Reduced from 10 for free tier
+					eventsPerSecond: 10, // Higher for better real-time responsiveness
 				},
 			},
 			// Global fetch options for better performance
@@ -44,7 +46,7 @@ function getSupabaseClient(): SupabaseClient {
 					})
 				},
 			},
-			// Database settings for free tier optimization
+			// Database settings
 			db: {
 				schema: 'public',
 			},

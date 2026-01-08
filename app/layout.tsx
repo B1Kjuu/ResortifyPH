@@ -8,6 +8,7 @@ import { Toaster } from 'sonner'
 import RouteLoadNudger from '../components/RouteLoadNudger'
 import AuthHashHandler from '../components/AuthHashHandler'
 import FirstTimeRoleCheck from '../components/FirstTimeRoleCheck'
+import GlobalRealtimeManager from '../components/GlobalRealtimeManager'
 
 export const metadata = {
   title: {
@@ -110,6 +111,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthHashHandler />
         {/* First-time user role selection modal */}
         <FirstTimeRoleCheck />
+        {/* Global real-time presence and connection monitoring */}
+        <GlobalRealtimeManager />
         <Toaster position="top-right" richColors />
         {/* Ensure a 'load' event fires promptly after DOM is ready for tests */}
         <Script
