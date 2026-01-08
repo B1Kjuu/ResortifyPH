@@ -51,46 +51,46 @@ export default function RoleSelectionModal({ userId, onComplete }: RoleSelection
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in duration-300">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in duration-300 max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="bg-gradient-to-r from-resort-500 to-blue-500 px-6 py-8 text-center">
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <FaUmbrellaBeach className="w-8 h-8 text-white" />
+        <div className="bg-gradient-to-r from-resort-500 to-blue-500 px-4 sm:px-6 py-6 sm:py-8 text-center">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+            <FaUmbrellaBeach className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Welcome to ResortifyPH!</h2>
-          <p className="text-white/90 text-sm">Let's personalize your experience. How will you be using ResortifyPH?</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-white mb-1 sm:mb-2">Welcome to ResortifyPH!</h2>
+          <p className="text-white/90 text-xs sm:text-sm">Let's personalize your experience. How will you be using ResortifyPH?</p>
         </div>
 
         {/* Options */}
-        <div className="p-6 space-y-4">
+        <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
           {/* Guest Option */}
           <button
             type="button"
             onClick={() => setSelectedRole('guest')}
-            className={`w-full p-5 rounded-xl border-2 text-left transition-all ${
+            className={`w-full p-4 sm:p-5 rounded-xl border-2 text-left transition-all ${
               selectedRole === 'guest'
                 ? 'border-resort-500 bg-resort-50 ring-2 ring-resort-500/20'
                 : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
             }`}
           >
-            <div className="flex items-start gap-4">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
                 selectedRole === 'guest' ? 'bg-resort-500 text-white' : 'bg-slate-100 text-slate-600'
               }`}>
-                <FiCalendar className="w-6 h-6" />
+                <FiCalendar className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-slate-900 text-lg mb-1">I want to book resorts</h3>
-                <p className="text-sm text-slate-600">
-                  Explore and book amazing private resorts, beach houses, and vacation spots across the Philippines.
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-slate-900 text-base sm:text-lg mb-0.5 sm:mb-1">I want to book resorts</h3>
+                <p className="text-xs sm:text-sm text-slate-600 leading-snug">
+                  Explore and book amazing private resorts and vacation spots.
                 </p>
               </div>
-              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1 ${
+              <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-1 ${
                 selectedRole === 'guest' ? 'border-resort-500 bg-resort-500' : 'border-slate-300'
               }`}>
                 {selectedRole === 'guest' && (
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                   </svg>
                 )}
@@ -102,29 +102,29 @@ export default function RoleSelectionModal({ userId, onComplete }: RoleSelection
           <button
             type="button"
             onClick={() => setSelectedRole('owner')}
-            className={`w-full p-5 rounded-xl border-2 text-left transition-all ${
+            className={`w-full p-4 sm:p-5 rounded-xl border-2 text-left transition-all ${
               selectedRole === 'owner'
                 ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500/20'
                 : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
             }`}
           >
-            <div className="flex items-start gap-4">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
                 selectedRole === 'owner' ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-600'
               }`}>
-                <FiHome className="w-6 h-6" />
+                <FiHome className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-slate-900 text-lg mb-1">I want to list my resort</h3>
-                <p className="text-sm text-slate-600">
-                  List your resort property and start accepting bookings from guests looking for their next getaway.
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-slate-900 text-base sm:text-lg mb-0.5 sm:mb-1">I want to list my resort</h3>
+                <p className="text-xs sm:text-sm text-slate-600 leading-snug">
+                  List your resort and start accepting bookings from guests.
                 </p>
               </div>
-              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1 ${
+              <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-1 ${
                 selectedRole === 'owner' ? 'border-blue-500 bg-blue-500' : 'border-slate-300'
               }`}>
                 {selectedRole === 'owner' && (
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                   </svg>
                 )}
@@ -133,17 +133,17 @@ export default function RoleSelectionModal({ userId, onComplete }: RoleSelection
           </button>
 
           {/* Info note */}
-          <p className="text-xs text-slate-500 text-center px-4">
-            Don't worry — you can switch roles or access both features anytime from your profile settings.
+          <p className="text-[10px] sm:text-xs text-slate-500 text-center px-2 sm:px-4">
+            Don't worry — you can switch roles anytime from your profile.
           </p>
         </div>
 
         {/* Footer */}
-        <div className="px-6 pb-6">
+        <div className="px-4 sm:px-6 pb-4 sm:pb-6">
           <button
             onClick={handleContinue}
             disabled={!selectedRole || loading}
-            className={`w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all ${
+            className={`w-full py-3 sm:py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all text-sm sm:text-base ${
               selectedRole
                 ? 'bg-gradient-to-r from-resort-500 to-blue-500 hover:shadow-lg hover:-translate-y-0.5'
                 : 'bg-slate-300 cursor-not-allowed'

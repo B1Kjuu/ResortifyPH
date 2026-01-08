@@ -1,18 +1,27 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { supabase } from '../lib/supabaseClient'
 import RoleSelectionModal from './RoleSelectionModal'
 
 /**
  * This component monitors auth state and shows the role selection modal
  * for first-time users who haven't completed the initial role selection.
+ * Excludes admin pages and admin users.
  */
 export default function FirstTimeRoleCheck() {
   const [showModal, setShowModal] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
+  const pathname = usePathname()
+
+  // Don't show on admin pages
+  const isAdminPage = pathname?.startsWith('/admin')
 
   useEffect(() => {
+    // Skip entirely on admin pages
+    if (isAdminPage) return
+
     let mounted = true
 
     async function checkFirstTimeUser() {
@@ -27,10 +36,10 @@ export default function FirstTimeRoleCheck() {
           return
         }
 
-        // Check if user has completed initial role selection
+        // Check if user has completed initial role selection and their role
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('initial_role_selected')
+          .select('initial_role_selected, role')
           .eq('id', session.user.id)
           .single()
 
@@ -41,6 +50,14 @@ export default function FirstTimeRoleCheck() {
             setTimeout(() => {
               if (mounted) checkFirstTimeUser()
             }, 1000)
+          }
+          return
+        }
+
+        // Don't show modal for admin users
+        if (profile?.role === 'admin') {
+          if (mounted) {
+            setShowModal(false)
           }
           return
         }
@@ -76,9 +93,9 @@ export default function FirstTimeRoleCheck() {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [])
+  }, [isAdminPage])
 
-  if (!showModal || !userId) return null
+  if (!showModal || !userId || isAdminPage) return null
 
   return (
     <RoleSelectionModal

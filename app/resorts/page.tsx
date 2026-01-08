@@ -565,15 +565,6 @@ export default function ResortsPage(){
                 </button>
               ))}
               
-              {/* More button - Mobile only */}
-              <button 
-                onClick={() => setShowAllCategories(!showAllCategories)} 
-                className={`md:hidden flex-shrink-0 flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all ${showAllCategories ? 'border-b-2 border-resort-600 text-resort-700 bg-resort-50' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
-              >
-                {showAllCategories ? <FiX className="w-4 h-4" /> : <FiMoreHorizontal className="w-4 h-4" />}
-                <span className="text-[10px] font-medium whitespace-nowrap">{showAllCategories ? 'Less' : 'More'}</span>
-              </button>
-              
               {/* Extended categories - Hidden on mobile unless expanded, always visible on desktop */}
               {extendedCategories.map((cat) => (
                 <button key={cat.id} onClick={() => {
@@ -594,6 +585,15 @@ export default function ResortsPage(){
                   <span className="text-[10px] sm:text-xs font-medium whitespace-nowrap">{cat.label}</span>
                 </button>
               ))}
+              
+              {/* More/Less button - Mobile only, at the end */}
+              <button 
+                onClick={() => setShowAllCategories(!showAllCategories)} 
+                className={`md:hidden flex-shrink-0 flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all ${showAllCategories ? 'border-b-2 border-resort-600 text-resort-700 bg-resort-50' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
+              >
+                {showAllCategories ? <FiX className="w-4 h-4" /> : <FiMoreHorizontal className="w-4 h-4" />}
+                <span className="text-[10px] font-medium whitespace-nowrap">{showAllCategories ? 'Less' : 'More'}</span>
+              </button>
             </div>
           </div>
         </div>
