@@ -139,9 +139,10 @@ export default function TripsPage(){
         ) : (
           (() => {
             const now = new Date()
-            const upcoming = bookings.filter(b => new Date(b.date_to) >= now && b.status !== 'rejected')
+            // Upcoming now includes rejected future bookings so guests can delete them
+            const upcoming = bookings.filter(b => new Date(b.date_to) >= now && b.status !== 'confirmed')
             const current = bookings.filter(b => b.status === 'confirmed' && new Date(b.date_to) >= now)
-            const pastOrRejected = bookings.filter(b => new Date(b.date_to) < now || b.status === 'rejected')
+            const past = bookings.filter(b => new Date(b.date_to) < now)
             async function deleteBooking(id: string){
               const ok = typeof window !== 'undefined' ? window.confirm('Delete this booking? This cannot be undone.') : true
               if (!ok) return
@@ -164,10 +165,10 @@ export default function TripsPage(){
               <>
                 {/* Tabs */}
                 <div className="flex items-center gap-2 mb-4">
-                  {([
+                    {([ 
                     { key: 'upcoming', label: `Upcoming (${upcoming.length})` },
                     { key: 'current', label: `Current (${current.length})` },
-                    { key: 'history', label: `History (${pastOrRejected.length})` },
+                    { key: 'history', label: `History (${past.length})` },
                   ] as const).map(t => (
                     <button key={t.key} onClick={() => setTab(t.key)} className={`px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all ${tab === t.key ? 'bg-resort-600 text-white border-resort-500' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>{t.label}</button>
                   ))}
@@ -200,6 +201,9 @@ export default function TripsPage(){
                             <div className="flex items-center justify-between gap-3">
                               <Link href={`/guest/trips/${booking.id}`} className="inline-flex items-center rounded-md border px-3 py-1 text-sm bg-slate-50 text-slate-700 hover:bg-slate-100">View Details</Link>
                               <Link href={`/resorts/${booking.resort_id}`} className="inline-flex items-center rounded-md border px-3 py-1 text-sm bg-slate-50 text-slate-700 hover:bg-slate-100">View Resort</Link>
+                              {booking.status === 'rejected' && (
+                                <button onClick={() => deleteBooking(booking.id)} className="inline-flex items-center rounded-md border px-3 py-1 text-sm bg-red-50 text-red-700 hover:bg-red-100">Delete</button>
+                              )}
                             </div>
                           </div>
                         )
@@ -213,20 +217,20 @@ export default function TripsPage(){
                 {tab === 'history' && (
                 <section className="fade-in-up">
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-xl font-bold text-slate-900">Past & Rejected</h2>
-                    {pastOrRejected.length > 0 && (
+                    <h2 className="text-xl font-bold text-slate-900">Past</h2>
+                    {past.length > 0 && (
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => {
-                            if (selectedIds.size === pastOrRejected.length) {
+                            if (selectedIds.size === past.length) {
                               setSelectedIds(new Set())
                             } else {
-                              setSelectedIds(new Set(pastOrRejected.map(b => b.id)))
+                              setSelectedIds(new Set(past.map(b => b.id)))
                             }
                           }}
                           className="px-3 py-1.5 text-sm font-medium border-2 border-slate-300 rounded-lg hover:bg-slate-50 transition"
                         >
-                          {selectedIds.size === pastOrRejected.length ? 'Deselect All' : 'Select All'}
+                          {selectedIds.size === past.length ? 'Deselect All' : 'Select All'}
                         </button>
                         {selectedIds.size > 0 && (
                           <button
@@ -256,13 +260,13 @@ export default function TripsPage(){
                       </div>
                     )}
                   </div>
-                  {pastOrRejected.length === 0 ? (
+                  {past.length === 0 ? (
                     <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center">
                       <p className="text-slate-600">No past trips yet</p>
                     </div>
                   ) : (
                     <div className="grid md:grid-cols-2 gap-6">
-                      {pastOrRejected.map(booking => (
+                      {past.map(booking => (
                         <div key={booking.id} className={`bg-white border-2 rounded-2xl p-6 shadow-sm transition-all ${selectedIds.has(booking.id) ? 'border-resort-500 ring-2 ring-resort-200' : 'border-slate-200'}`}>
                           <div className="flex justify-between items-start mb-3">
                             <div className="flex items-start gap-3">
@@ -285,7 +289,7 @@ export default function TripsPage(){
                                 <p className="text-sm text-slate-600">{booking.date_from} → {booking.date_to}</p>
                               </div>
                             </div>
-                            <span className="text-xs px-2 py-1 rounded font-semibold bg-slate-200 text-slate-800">{new Date(booking.date_to) < now ? 'Completed' : 'Rejected'}</span>
+                            <span className="text-xs px-2 py-1 rounded font-semibold bg-slate-200 text-slate-800">Completed</span>
                           </div>
                           <div className="flex items-center justify-between gap-3">
                             <Link href={`/guest/trips/${booking.id}`} className="inline-flex items-center rounded-md border px-3 py-1 text-sm bg-slate-50 text-slate-700 hover:bg-slate-100">View Details</Link>
