@@ -142,32 +142,85 @@ export default function PaymentSubmissionModal({
       addDebugInfo(`   Upload path: ${fileName}`)
       addDebugInfo('3️⃣ Uploading to storage...')
       
-      // Increase timeout to 60 seconds for mobile
-      const uploadPromise = supabase.storage
-        .from('payment-receipts')
-        .upload(fileName, receiptFile, {
-          cacheControl: '3600',
-          upsert: false,
-        })
-      
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => {
-          addDebugInfo('⏱️ Upload timeout (60s)')
-          reject(new Error('Upload timeout after 60 seconds. Please check your internet connection and try with a smaller image.'))
-        }, 60000)
-      )
+      // Detect if on mobile and use alternative upload method
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+      addDebugInfo(`   Device: ${isMobile ? 'Mobile' : 'Desktop'}`)
       
       let uploadData, uploadError
+      
       try {
-        const result = await Promise.race([
-          uploadPromise,
-          timeoutPromise
-        ]) as any
-        uploadData = result.data
-        uploadError = result.error
-      } catch (timeoutErr: any) {
-        addDebugInfo(`❌ ${timeoutErr.message}`)
-        throw timeoutErr
+        // For mobile, try with a shorter initial timeout and retry logic
+        if (isMobile) {
+          addDebugInfo('   Using mobile-optimized upload...')
+          
+          // First attempt with 30s timeout
+          const uploadAttempt = async (attemptNum: number, timeout: number) => {
+            addDebugInfo(`   Attempt ${attemptNum} (${timeout}s timeout)...`)
+            
+            const uploadPromise = supabase.storage
+              .from('payment-receipts')
+              .upload(fileName, receiptFile, {
+                cacheControl: '3600',
+                upsert: false,
+              })
+            
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => {
+                reject(new Error(`Attempt ${attemptNum} timeout`))
+              }, timeout * 1000)
+            )
+            
+            return await Promise.race([uploadPromise, timeoutPromise]) as any
+          }
+          
+          // Try 3 times with increasing timeouts
+          let lastError
+          for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+              const result = await uploadAttempt(attempt, attempt * 20) // 20s, 40s, 60s
+              uploadData = result.data
+              uploadError = result.error
+              if (!uploadError) {
+                addDebugInfo(`   ✅ Upload succeeded on attempt ${attempt}`)
+                break
+              }
+              lastError = uploadError
+            } catch (err: any) {
+              lastError = err
+              addDebugInfo(`   ⚠️ Attempt ${attempt} failed: ${err.message}`)
+              if (attempt < 3) {
+                await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1s between attempts
+              }
+            }
+          }
+          
+          if (!uploadData && lastError) {
+            throw lastError
+          }
+          
+        } else {
+          // Desktop - use standard method with 60s timeout
+          const uploadPromise = supabase.storage
+            .from('payment-receipts')
+            .upload(fileName, receiptFile, {
+              cacheControl: '3600',
+              upsert: false,
+            })
+          
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => {
+              addDebugInfo('⏱️ Upload timeout (60s)')
+              reject(new Error('Upload timeout after 60 seconds'))
+            }, 60000)
+          )
+          
+          const result = await Promise.race([uploadPromise, timeoutPromise]) as any
+          uploadData = result.data
+          uploadError = result.error
+        }
+      } catch (uploadErr: any) {
+        addDebugInfo(`❌ Upload exception: ${uploadErr.message}`)
+        throw new Error(`Upload failed: ${uploadErr.message}. Try with WiFi or a smaller image.`)
       }
 
       if (uploadError) {

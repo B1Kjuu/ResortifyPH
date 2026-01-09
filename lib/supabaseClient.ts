@@ -39,10 +39,13 @@ function getSupabaseClient(): SupabaseClient {
 			// Global fetch options for better performance
 			global: {
 				fetch: (url, options) => {
+					// Detect mobile devices
+					const isMobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+					
 					return fetch(url, {
 						...options,
-						// Enable keep-alive for connection reuse
-						keepalive: true,
+						// Disable keepalive on mobile as it can cause issues
+						keepalive: !isMobile,
 					})
 				},
 			},
