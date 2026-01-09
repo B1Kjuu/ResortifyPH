@@ -41,6 +41,63 @@ export default function PaymentSubmissionModal({
     setDebugInfo(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`])
   }
 
+  // Compress image before upload
+  const compressImage = async (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = (event) => {
+        const img = new Image()
+        img.src = event.target?.result as string
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          let width = img.width
+          let height = img.height
+          
+          // Max dimensions for mobile upload
+          const MAX_WIDTH = 1200
+          const MAX_HEIGHT = 1200
+          
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width
+              width = MAX_WIDTH
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height
+              height = MAX_HEIGHT
+            }
+          }
+          
+          canvas.width = width
+          canvas.height = height
+          
+          const ctx = canvas.getContext('2d')
+          ctx?.drawImage(img, 0, 0, width, height)
+          
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                const compressedFile = new File([blob], file.name, {
+                  type: 'image/jpeg',
+                  lastModified: Date.now(),
+                })
+                resolve(compressedFile)
+              } else {
+                reject(new Error('Compression failed'))
+              }
+            },
+            'image/jpeg',
+            0.85 // 85% quality
+          )
+        }
+        img.onerror = () => reject(new Error('Failed to load image'))
+      }
+      reader.onerror = () => reject(new Error('Failed to read file'))
+    })
+  }
+
   // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
@@ -56,7 +113,7 @@ export default function PaymentSubmissionModal({
     }
   }, [isOpen, expectedAmount])
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -83,19 +140,50 @@ export default function PaymentSubmissionModal({
       return
     }
 
-    setReceiptFile(file)
     setError(null)
+    setUploading(true)
 
-    // Create preview
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      setReceiptPreview(reader.result as string)
+    try {
+      // Compress large images
+      let fileToUse = file
+      if (file.size > 500 * 1024) { // Compress if > 500KB
+        console.log('🗜️ Compressing image...')
+        const compressed = await compressImage(file)
+        console.log('✅ Compressed:', {
+          original: (file.size / 1024).toFixed(1) + ' KB',
+          compressed: (compressed.size / 1024).toFixed(1) + ' KB',
+          saved: ((1 - compressed.size / file.size) * 100).toFixed(0) + '%'
+        })
+        fileToUse = compressed
+      }
+
+      setReceiptFile(fileToUse)
+
+      // Create preview
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setReceiptPreview(reader.result as string)
+        setUploading(false)
+      }
+      reader.onerror = () => {
+        console.error('❌ FileReader error')
+        setError('Failed to read image file. Please try a different photo.')
+        setUploading(false)
+      }
+      reader.readAsDataURL(fileToUse)
+    } catch (err: any) {
+      console.error('❌ Compression error:', err)
+      setError('Failed to process image. Using original...')
+      setReceiptFile(file)
+      
+      // Still create preview with original
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setReceiptPreview(reader.result as string)
+        setUploading(false)
+      }
+      reader.readAsDataURL(file)
     }
-    reader.onerror = () => {
-      console.error('❌ FileReader error')
-      setError('Failed to read image file. Please try a different photo.')
-    }
-    reader.readAsDataURL(file)
   }
 
   const handleSubmit = async () => {
@@ -488,15 +576,26 @@ export default function PaymentSubmissionModal({
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full h-40 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-slate-300 rounded-xl hover:border-cyan-400 hover:bg-cyan-50/50 active:bg-cyan-100 transition-colors touch-manipulation"
+                    disabled={uploading}
+                    className="w-full h-40 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-slate-300 rounded-xl hover:border-cyan-400 hover:bg-cyan-50/50 active:bg-cyan-100 transition-colors touch-manipulation disabled:opacity-50"
                   >
-                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
-                      <FiImage className="w-8 h-8 text-slate-400" />
-                    </div>
-                    <div className="text-center px-4">
-                      <p className="text-base font-medium text-slate-700 mb-1">Upload Receipt</p>
-                      <p className="text-sm text-slate-500">Tap to choose photo or take picture</p>
-                    </div>
+                    {uploading ? (
+                      <>
+                        <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+                        <p className="text-sm text-slate-600">Compressing image...</p>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
+                          <FiImage className="w-8 h-8 text-slate-400" />
+                        </div>
+                        <div className="text-center px-4">
+                          <p className="text-base font-medium text-slate-700 mb-1">Upload Receipt</p>
+                          <p className="text-sm text-slate-500">Tap to choose photo or take picture</p>
+                          <p className="text-xs text-slate-400 mt-1">Images will be compressed for faster upload</p>
+                        </div>
+                      </>
+                    )}
                   </button>
                 )}
               </div>
