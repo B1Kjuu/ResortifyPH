@@ -20,33 +20,6 @@ export default function CreateResortRedirect(){
     </div>
   )
 }
-    e.preventDefault()
-    if (!userId) { alert('Not signed in'); return }
-    if (!location) { alert('Please pick a province'); return }
-
-    const provinceInfo = getProvinceInfo(location)
-
-    const { error } = await supabase.from('resorts').insert([{ 
-      owner_id: userId, 
-      name, 
-      description, 
-      location, 
-      region_code: provinceInfo?.regionCode ?? null,
-      region_name: provinceInfo?.regionName ?? null,
-      price: Number(price), 
-      capacity: Number(capacity), 
-      amenities: amenities.split(',').map(s => s.trim()), 
-      images, 
-      status: 'pending', 
-      created_at: new Date() 
-    }])
-    if (error) { alert(error.message); return }
-    alert('Resort created and pending approval')
-    router.push('/dashboard/resorts')
-  }
-
-  if (loading) return <div className="w-full px-4 sm:px-6 lg:px-8 py-10 text-center text-slate-600">Loading...</div>
-  if (!isAuthorized) return null
 
   return (
     <div className="max-w-2xl">
