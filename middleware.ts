@@ -122,19 +122,18 @@ export default function middleware(req: NextRequest) {
     ? `default-src 'self'; img-src ${imgSources}; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' ${googleFonts}; font-src 'self' ${googleFonts} data:; connect-src 'self' ${supabaseHost} ${supabaseWss} ${nominatim} ${googleMaps}; frame-src ${frameSources}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
     : `default-src 'self'; img-src ${imgSources}; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' ${googleFonts}; font-src 'self' ${googleFonts} data:; connect-src 'self' ${supabaseHost} ${supabaseWss} ${nominatim} ${googleMaps} ws:; frame-src ${frameSources}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
 
-  // Normalize double-encoded bracket segments in Next static chunk paths
+  // Normalize double-encoded bracket segments in ALL Next.js paths
   // e.g. %255BbookingId%255D -> %5BbookingId%5D
-  if (pathname.startsWith('/_next/static/chunks/app/')) {
+  if (pathname.includes('%255B') || pathname.includes('%255D')) {
     const fixedPath = pathname
       .replaceAll('%255B', '%5B')
       .replaceAll('%255D', '%5D')
-    if (fixedPath !== pathname) {
-      const url = req.nextUrl.clone()
-      url.pathname = fixedPath
-      const rewriteRes = NextResponse.rewrite(url, { request: { headers } })
-      rewriteRes.headers.set('Content-Security-Policy', csp)
-      return rewriteRes
-    }
+    const url = req.nextUrl.clone()
+    url.pathname = fixedPath
+    // Keep search params if any
+    const rewriteRes = NextResponse.rewrite(url, { request: { headers } })
+    rewriteRes.headers.set('Content-Security-Policy', csp)
+    return rewriteRes
   }
 
   const res = NextResponse.next({ request: { headers } })
