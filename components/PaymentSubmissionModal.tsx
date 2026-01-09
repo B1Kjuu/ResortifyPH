@@ -32,8 +32,14 @@ export default function PaymentSubmissionModal({
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [debugInfo, setDebugInfo] = useState<string[]>([])
   
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const addDebugInfo = (message: string) => {
+    console.log('🐛', message)
+    setDebugInfo(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`])
+  }
 
   // Reset form when modal opens
   useEffect(() => {
@@ -46,6 +52,7 @@ export default function PaymentSubmissionModal({
       setReceiptPreview(null)
       setError(null)
       setSuccess(false)
+      setDebugInfo([])
     }
   }, [isOpen, expectedAmount])
 
@@ -105,25 +112,37 @@ export default function PaymentSubmissionModal({
 
     setSubmitting(true)
     setError(null)
+    setDebugInfo([])
+    addDebugInfo('🚀 Starting payment submission')
 
     try {
-      const { data: user } = await supabase.auth.getUser()
-      if (!user.user) throw new Error('Not authenticated')
+      addDebugInfo('1️⃣ Checking authentication...')
+      const { data: user, error: userError } = await supabase.auth.getUser()
+      
+      if (userError) {
+        addDebugInfo(`❌ Auth error: ${userError.message}`)
+        throw new Error(`Authentication failed: ${userError.message}`)
+      }
+      
+      if (!user.user) {
+        addDebugInfo('❌ No user found')
+        throw new Error('Not authenticated. Please sign in and try again.')
+      }
+      
+      addDebugInfo(`✅ User authenticated: ${user.user.id}`)
 
       // Upload receipt image (bucket check removed - we know it exists)
       setUploading(true)
-      console.log('📤 Starting receipt upload...', {
-        size: receiptFile.size,
-        type: receiptFile.type,
-        name: receiptFile.name
-      })
+      addDebugInfo('2️⃣ Preparing file upload...')
+      addDebugInfo(`   File: ${receiptFile.name} (${(receiptFile.size / 1024).toFixed(1)} KB)`)
       
       const fileExt = receiptFile.name.split('.').pop()
       const fileName = `${user.user.id}/${bookingId}/${Date.now()}.${fileExt}`
       
-      console.log('📁 Upload path:', fileName)
+      addDebugInfo(`   Upload path: ${fileName}`)
+      addDebugInfo('3️⃣ Uploading to storage...')
       
-      // Add timeout wrapper for mobile networks
+      // Increase timeout to 60 seconds for mobile
       const uploadPromise = supabase.storage
         .from('payment-receipts')
         .upload(fileName, receiptFile, {
@@ -132,30 +151,48 @@ export default function PaymentSubmissionModal({
         })
       
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Upload timeout after 30 seconds. Please check your internet connection.')), 30000)
+        setTimeout(() => {
+          addDebugInfo('⏱️ Upload timeout (60s)')
+          reject(new Error('Upload timeout after 60 seconds. Please check your internet connection and try with a smaller image.'))
+        }, 60000)
       )
       
-      const { data: uploadData, error: uploadError } = await Promise.race([
-        uploadPromise,
-        timeoutPromise
-      ]) as any
+      let uploadData, uploadError
+      try {
+        const result = await Promise.race([
+          uploadPromise,
+          timeoutPromise
+        ]) as any
+        uploadData = result.data
+        uploadError = result.error
+      } catch (timeoutErr: any) {
+        addDebugInfo(`❌ ${timeoutErr.message}`)
+        throw timeoutErr
+      }
 
       if (uploadError) {
-        console.error('❌ Upload error:', uploadError)
-        throw new Error(uploadError.message || 'Failed to upload receipt')
+        addDebugInfo(`❌ Upload error: ${uploadError.message}`)
+        addDebugInfo(`   Code: ${uploadError.code || 'none'}`)
+        addDebugInfo(`   Status: ${uploadError.statusCode || 'none'}`)
+        throw new Error(`Upload failed: ${uploadError.message} (Code: ${uploadError.code || 'unknown'})`)
       }
       
       if (!uploadData) {
+        addDebugInfo('❌ Upload returned no data')
         throw new Error('Upload returned no data')
       }
       
-      console.log('✅ Upload successful:', uploadData)
+      addDebugInfo(`✅ Upload successful: ${uploadData.path}`)
       setUploading(false)
+      addDebugInfo('4️⃣ Getting public URL...')
 
       const { data: { publicUrl } } = supabase.storage
         .from('payment-receipts')
         .getPublicUrl(uploadData.path)
 
+      addDebugInfo(`   URL: ${publicUrl.substring(0, 50)}...`)
+      addDebugInfo('5️⃣ Creating payment submission...')
+      
       // Create payment submission record
       const { data: submission, error: submitError } = await supabase
         .from('payment_submissions')
@@ -173,7 +210,14 @@ export default function PaymentSubmissionModal({
         .select()
         .single()
 
-      if (submitError) throw submitError
+      if (submitError) {
+        addDebugInfo(`❌ Database error: ${submitError.message}`)
+        addDebugInfo(`   Code: ${submitError.code}`)
+        throw submitError
+      }
+      
+      addDebugInfo('✅ Payment submission created')
+      addDebugInfo('6️⃣ Updating booking status...')
 
       // Update booking payment status to pending
       await supabase
@@ -181,6 +225,9 @@ export default function PaymentSubmissionModal({
         .update({ payment_status: 'pending' })
         .eq('id', bookingId)
 
+      addDebugInfo('✅ Booking updated')
+      addDebugInfo('🎉 Payment submission complete!')
+      
       setSuccess(true)
       onSuccess?.(submission)
 
@@ -271,6 +318,16 @@ export default function PaymentSubmissionModal({
                     <FiAlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-red-700 mb-1">{error}</p>
+                      {debugInfo.length > 0 && (
+                        <details className="text-xs text-red-600 mt-2" open>
+                          <summary className="cursor-pointer font-medium mb-1">Debug Information (Share with support)</summary>
+                          <div className="mt-2 p-2 bg-red-100 rounded font-mono text-[10px] max-h-40 overflow-y-auto">
+                            {debugInfo.map((info, i) => (
+                              <div key={i} className="mb-1">{info}</div>
+                            ))}
+                          </div>
+                        </details>
+                      )}
                       {error.includes('Network') && (
                         <details className="text-xs text-red-600 mt-2">
                           <summary className="cursor-pointer font-medium">Troubleshooting tips</summary>
