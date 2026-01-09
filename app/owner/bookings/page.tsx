@@ -223,9 +223,13 @@ export default function OwnerBookingsPage(){
           // Email guest confirmation
           try {
             if (booking?.guest?.email) {
+              const { data: { session } } = await supabase.auth.getSession()
               await fetch('/api/notifications/booking-status', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${session?.access_token}`,
+                },
                 body: JSON.stringify({
                   to: booking.guest.email,
                   status: 'approved',

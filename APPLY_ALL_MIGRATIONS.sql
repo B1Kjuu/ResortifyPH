@@ -5,15 +5,42 @@
 
 -- MIGRATION 1: Fix Exclusion Constraint (FIXES BOOKING CONFIRMATION ERROR)
 -- This fixes: "Booking conflict: Another confirmed booking exists for these dates"
+-- For single-day bookings (date_from = date_to), we add 1 day to date_to to avoid empty ranges
 BEGIN;
 
+-- First, let's check for conflicts and mark duplicate bookings as cancelled
+-- Keep the earliest booking, cancel the rest
+UPDATE public.bookings b1
+SET status = 'cancelled'
+WHERE status = 'confirmed'
+  AND EXISTS (
+    SELECT 1 FROM public.bookings b2
+    WHERE b2.resort_id = b1.resort_id
+      AND b2.status = 'confirmed'
+      AND b2.id < b1.id
+      AND daterange(
+        b2.date_from,
+        CASE WHEN b2.date_from = b2.date_to THEN b2.date_to + 1 ELSE b2.date_to END,
+        '[)'
+      ) && daterange(
+        b1.date_from,
+        CASE WHEN b1.date_from = b1.date_to THEN b1.date_to + 1 ELSE b1.date_to END,
+        '[)'
+      )
+  );
+
+-- Now drop and recreate the constraint
 ALTER TABLE public.bookings DROP CONSTRAINT IF EXISTS bookings_no_overlap;
 
 ALTER TABLE public.bookings
   ADD CONSTRAINT bookings_no_overlap
   EXCLUDE USING gist (
     resort_id WITH =,
-    daterange(date_from, date_to, '[)') WITH &&
+    daterange(
+      date_from, 
+      CASE WHEN date_from = date_to THEN date_to + 1 ELSE date_to END, 
+      '[)'
+    ) WITH &&
   )
   WHERE (status = 'confirmed');
 
@@ -27,6 +54,7 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('review-images', 'review-images', true)
 ON CONFLICT (id) DO NOTHING;
 
+DROP POLICY IF EXISTS "Authenticated users can upload review images" ON storage.objects;
 CREATE POLICY "Authenticated users can upload review images"
 ON storage.objects FOR INSERT
 TO authenticated
@@ -35,11 +63,13 @@ WITH CHECK (
   AND (storage.foldername(name))[1] = 'reviews'
 );
 
+DROP POLICY IF EXISTS "Anyone can view review images" ON storage.objects;
 CREATE POLICY "Anyone can view review images"
 ON storage.objects FOR SELECT
 TO public
 USING (bucket_id = 'review-images');
 
+DROP POLICY IF EXISTS "Users can delete their own review images" ON storage.objects;
 CREATE POLICY "Users can delete their own review images"
 ON storage.objects FOR DELETE
 TO authenticated
@@ -56,6 +86,7 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('payment-receipts', 'payment-receipts', true)
 ON CONFLICT (id) DO NOTHING;
 
+DROP POLICY IF EXISTS "Authenticated users can upload payment receipts" ON storage.objects;
 CREATE POLICY "Authenticated users can upload payment receipts"
 ON storage.objects FOR INSERT
 TO authenticated
@@ -64,6 +95,7 @@ WITH CHECK (
   AND auth.uid()::text = (storage.foldername(name))[1]
 );
 
+DROP POLICY IF EXISTS "Users can view related payment receipts" ON storage.objects;
 CREATE POLICY "Users can view related payment receipts"
 ON storage.objects FOR SELECT
 TO authenticated
@@ -83,6 +115,7 @@ USING (
   )
 );
 
+DROP POLICY IF EXISTS "Users can delete own payment receipts" ON storage.objects;
 CREATE POLICY "Users can delete own payment receipts"
 ON storage.objects FOR DELETE
 TO authenticated
