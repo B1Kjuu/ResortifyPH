@@ -1030,7 +1030,21 @@ export default function OwnerBookingsContent(props: Props){
                         </div>
                       </div>
                       <div className="bg-white rounded-xl p-4 border border-slate-200">
-                        <p className="text-sm text-slate-700 mb-2">📅 <span className="font-bold">{booking.date_from}</span> → <span className="font-bold">{booking.date_to}</span></p>
+                        <div className="flex items-center gap-2 mb-2">
+                          <p className="text-sm text-slate-700">📅 <span className="font-bold">{booking.date_from}</span> → <span className="font-bold">{booking.date_to}</span></p>
+                          {booking.booking_type && (
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                              booking.booking_type === 'daytour' || booking.booking_type === 'day_12h' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
+                              booking.booking_type === 'overnight' || booking.booking_type === 'overnight_22h' ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' :
+                              booking.booking_type === '22hrs' ? 'bg-purple-100 text-purple-700 border border-purple-200' :
+                              'bg-slate-100 text-slate-700 border border-slate-200'
+                            }`}>
+                              {booking.booking_type === 'daytour' || booking.booking_type === 'day_12h' ? '☀️ Daytour' :
+                               booking.booking_type === 'overnight' || booking.booking_type === 'overnight_22h' ? '🌙 Overnight' :
+                               booking.booking_type === '22hrs' ? '⏰ 22hrs' : booking.booking_type}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-sm text-slate-700">👥 <span className="font-bold">{booking.guest_count} {booking.guest_count === 1 ? 'guest' : 'guests'}</span>{typeof booking.children_count === 'number' && booking.children_count > 0 ? ` · 👶 ${booking.children_count}` : ''}{typeof booking.pets_count === 'number' && booking.pets_count > 0 ? ` · 🐾 ${booking.pets_count}` : ''}</p>
                         <div className="mt-3 flex justify-end">
                           <ChatLink bookingId={booking.id} as="owner" label="Open Chat" title={booking.guest?.full_name || booking.guest?.email || 'Guest'} />

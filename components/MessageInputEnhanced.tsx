@@ -176,15 +176,15 @@ export default function MessageInputEnhanced({
   const formatTemplateMessage = (template: PaymentTemplate): string => {
     const method = PAYMENT_METHODS.find(m => m.id === template.payment_method)
     const lines = [
-      `💳 **Payment Details**`,
+      `💳 PAYMENT DETAILS`,
       ``,
-      `**Method:** ${method?.icon || '💳'} ${method?.label || template.payment_method}${template.bank_name ? ` (${template.bank_name})` : ''}`,
-      `**Account Name:** ${template.account_name}`,
-      `**Account Number:** ${template.account_number}`,
+      `Method: ${method?.icon || '💳'} ${method?.label || template.payment_method}${template.bank_name ? ` (${template.bank_name})` : ''}`,
+      `Account Name: ${template.account_name}`,
+      `Account Number: ${template.account_number}`,
     ]
     
     if (template.additional_notes) {
-      lines.push(``, `📝 ${template.additional_notes}`)
+      lines.push(``, `📝 Note: ${template.additional_notes}`)
     }
     
     lines.push(``, `Please send a receipt screenshot after payment.`)

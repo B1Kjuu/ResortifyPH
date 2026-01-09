@@ -7,7 +7,7 @@ import { cookies } from 'next/headers'
 // Helper to verify the request is from an authenticated user
 async function getAuthenticatedUser() {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
