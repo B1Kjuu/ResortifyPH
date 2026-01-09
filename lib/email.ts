@@ -15,12 +15,20 @@ export async function sendEmail(payload: EmailPayload) {
   const from = process.env.NOTIFY_FROM_EMAIL;
   const replyTo = process.env.NOTIFY_REPLY_TO;
 
-  if (!apiKey) throw new Error("RESEND_API_KEY is missing");
-  if (!from) throw new Error("NOTIFY_FROM_EMAIL is missing");
+  if (!apiKey) {
+    console.error("❌ Email Error: RESEND_API_KEY is missing");
+    throw new Error("RESEND_API_KEY is missing");
+  }
+  if (!from) {
+    console.error("❌ Email Error: NOTIFY_FROM_EMAIL is missing");
+    throw new Error("NOTIFY_FROM_EMAIL is missing");
+  }
 
   const resend = new Resend(apiKey);
 
   const { to, subject, html, text, cc, bcc, fromOverride } = payload;
+
+  console.log(`📧 Sending email to: ${Array.isArray(to) ? to.join(', ') : to} | Subject: ${subject}`);
 
   const response = await resend.emails.send({
     from: fromOverride ?? from,
@@ -32,10 +40,14 @@ export async function sendEmail(payload: EmailPayload) {
     bcc,
     replyTo: replyTo,
   } as any);
+  
   if ((response as any)?.error) {
     const message = (response as any)?.error?.message ?? "Resend send failed";
+    console.error("❌ Email Send Failed:", message, response);
     throw new Error(message);
   }
+  
+  console.log("✅ Email sent successfully:", (response as any)?.data?.id);
   return response;
 }
 

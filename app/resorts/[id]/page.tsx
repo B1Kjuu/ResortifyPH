@@ -660,14 +660,15 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                 })
               }
             } catch (notifyErr) {
-              console.warn('Notify owner (created) failed:', notifyErr)
+              console.error('❌ Notify owner (created) failed:', notifyErr)
+              // Don't fail the booking if notification fails
             }
 
             // Fire guest notification email for booking request confirmation
             try {
               if (user?.email) {
                 const { data: { session } } = await supabase.auth.getSession()
-                await fetch('/api/notifications/booking-confirmed', {
+                const notifyRes = await fetch('/api/notifications/booking-confirmed', {
                   method: 'POST',
                   headers: { 
                     'Content-Type': 'application/json',
@@ -683,9 +684,16 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                     status: 'pending',
                   })
                 })
+                if (!notifyRes.ok) {
+                  const errorData = await notifyRes.json().catch(() => ({ error: 'Unknown error' }))
+                  console.error('❌ Guest notification failed:', notifyRes.status, errorData)
+                } else {
+                  console.log('✅ Guest notification sent successfully')
+                }
               }
             } catch (notifyErr) {
-              console.warn('Notify guest (created) failed:', notifyErr)
+              console.error('❌ Notify guest (created) failed:', notifyErr)
+              // Don't fail the booking if notification fails
             }
           }
         } catch (chatSetupError) {

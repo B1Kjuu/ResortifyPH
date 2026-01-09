@@ -31,8 +31,11 @@ export async function POST(req: NextRequest) {
     // Security: Verify the user is authenticated
     const authUser = await getAuthenticatedUser()
     if (!authUser) {
+      console.error("❌ [booking-confirmed] Unauthorized - no authenticated user");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    console.log("✅ [booking-confirmed] Request from user:", authUser.id, authUser.email);
 
     const {
       to,
@@ -85,8 +88,17 @@ export async function POST(req: NextRequest) {
 
     const dryRun = req.nextUrl.searchParams.get("dryRun") === "1";
     let res: any = null;
+    let emailError = null;
+    
     if (!dryRun) {
-      res = await sendEmail({ to, subject, html });
+      try {
+        res = await sendEmail({ to, subject, html });
+        console.log("✅ [booking-confirmed] Email sent:", res?.data?.id);
+      } catch (emailErr: any) {
+        emailError = emailErr.message || "Email send failed";
+        console.error("❌ [booking-confirmed] Email failed:", emailError);
+        // Continue to log the attempt even if email fails
+      }
     }
 
     // Optional: log notification in Supabase if service role is configured
@@ -98,15 +110,25 @@ export async function POST(req: NextRequest) {
           type: "booking_confirmed_email",
           to_email: Array.isArray(to) ? to.join(",") : to,
           subject,
-          status: dryRun ? "dry_run" : "sent",
+          status: dryRun ? "dry_run" : emailError ? "failed" : "sent",
+          metadata: emailError ? { error: emailError } : null,
         });
       }
     } catch (logErr) {
       // non-fatal
     }
 
+    if (emailError && !dryRun) {
+      return NextResponse.json({ 
+        error: emailError, 
+        ok: false 
+      }, { status: 500 });
+    }
+
+    console.log("✅ [booking-confirmed] Success - notification sent to:", to);
     return NextResponse.json({ id: res?.data?.id ?? null, ok: true, dryRun });
   } catch (error: any) {
+    console.error("❌ [booking-confirmed] Unexpected error:", error);
     return NextResponse.json({ error: error?.message ?? "Send failed" }, { status: 500 });
   }
 }

@@ -53,15 +53,26 @@ export default function PaymentSubmissionModal({
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setError('Please upload an image file (JPG, PNG, etc.)')
+    console.log('📁 File selected:', {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      lastModified: file.lastModified
+    })
+
+    // Validate file type - be more lenient on mobile
+    const isImage = file.type.startsWith('image/') || 
+                    file.name.toLowerCase().endsWith('.heic') ||
+                    file.name.toLowerCase().endsWith('.heif')
+    
+    if (!isImage) {
+      setError('Please upload an image file (JPG, PNG, HEIC, etc.)')
       return
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Image must be less than 5MB')
+    // Validate file size (max 10MB for mobile - they might have high-res cameras)
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Image must be less than 10MB. Try taking a new photo with lower quality.')
       return
     }
 
@@ -72,6 +83,10 @@ export default function PaymentSubmissionModal({
     const reader = new FileReader()
     reader.onloadend = () => {
       setReceiptPreview(reader.result as string)
+    }
+    reader.onerror = () => {
+      console.error('❌ FileReader error')
+      setError('Failed to read image file. Please try a different photo.')
     }
     reader.readAsDataURL(file)
   }
@@ -97,8 +112,16 @@ export default function PaymentSubmissionModal({
 
       // Upload receipt image
       setUploading(true)
+      console.log('📤 Starting receipt upload...', {
+        size: receiptFile.size,
+        type: receiptFile.type,
+        name: receiptFile.name
+      })
+      
       const fileExt = receiptFile.name.split('.').pop()
       const fileName = `${user.user.id}/${bookingId}/${Date.now()}.${fileExt}`
+      
+      console.log('📁 Upload path:', fileName)
       
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('payment-receipts')
@@ -107,7 +130,12 @@ export default function PaymentSubmissionModal({
           upsert: false,
         })
 
-      if (uploadError) throw uploadError
+      if (uploadError) {
+        console.error('❌ Upload error:', uploadError)
+        throw uploadError
+      }
+      
+      console.log('✅ Upload successful:', uploadData)
       setUploading(false)
 
       const { data: { publicUrl } } = supabase.storage
@@ -148,17 +176,29 @@ export default function PaymentSubmissionModal({
       }, 2000)
 
     } catch (err: any) {
-      console.error('Error submitting payment:', err)
+      console.error('❌ Error submitting payment:', err)
+      console.error('Error details:', {
+        message: err?.message,
+        code: err?.code,
+        statusCode: err?.statusCode,
+        status: err?.status,
+        name: err?.name
+      })
+      
       // Provide user-friendly error messages
       let errorMessage = 'Failed to submit payment'
       const errMsg = err?.message?.toLowerCase() || ''
       
       if (errMsg.includes('bucket') || errMsg.includes('storage') || errMsg.includes('not found')) {
-        errorMessage = 'Unable to upload receipt. Please try again or contact support.'
-      } else if (errMsg.includes('permission') || errMsg.includes('policy') || errMsg.includes('not authorized')) {
-        errorMessage = 'You are not authorized to submit payments. Please sign in again.'
-      } else if (errMsg.includes('network') || errMsg.includes('fetch') || errMsg.includes('load failed')) {
-        errorMessage = 'Network error. Please check your internet connection and try again.'
+        errorMessage = 'Unable to upload receipt. The storage bucket may not be configured. Please contact support.'
+      } else if (errMsg.includes('permission') || errMsg.includes('policy') || errMsg.includes('not authorized') || errMsg.includes('jwt')) {
+        errorMessage = 'Authentication error. Please sign out and sign in again, then retry.'
+      } else if (errMsg.includes('network') || errMsg.includes('fetch') || errMsg.includes('load failed') || errMsg.includes('failed to fetch') || err?.status === 0) {
+        errorMessage = 'Network error. Please check your internet connection and try again. If on mobile data, try WiFi.'
+      } else if (errMsg.includes('cors') || errMsg.includes('cross-origin')) {
+        errorMessage = 'Browser security error. Please try a different browser or contact support.'
+      } else if (errMsg.includes('timeout')) {
+        errorMessage = 'Upload timed out. Your internet may be slow. Try again with a smaller image.'
       } else if (err.message) {
         errorMessage = err.message
       }
@@ -272,8 +312,7 @@ export default function PaymentSubmissionModal({
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
-                  capture="environment"
+                  accept="image/*,image/jpeg,image/png,image/jpg,image/heic"
                   onChange={handleFileSelect}
                   className="hidden"
                 />
@@ -298,13 +337,17 @@ export default function PaymentSubmissionModal({
                   </div>
                 ) : (
                   <button
+                    type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full h-32 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-slate-300 rounded-xl hover:border-cyan-400 hover:bg-cyan-50/50 transition-colors"
+                    className="w-full h-40 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-slate-300 rounded-xl hover:border-cyan-400 hover:bg-cyan-50/50 active:bg-cyan-100 transition-colors touch-manipulation"
                   >
-                    <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center">
-                      <FiImage className="w-6 h-6 text-slate-400" />
+                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
+                      <FiImage className="w-8 h-8 text-slate-400" />
                     </div>
-                    <span className="text-sm text-slate-500">Click to upload receipt</span>
+                    <div className="text-center px-4">
+                      <p className="text-base font-medium text-slate-700 mb-1">Upload Receipt</p>
+                      <p className="text-sm text-slate-500">Tap to choose photo or take picture</p>
+                    </div>
                   </button>
                 )}
               </div>
