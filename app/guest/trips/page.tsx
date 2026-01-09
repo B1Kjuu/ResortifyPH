@@ -74,12 +74,16 @@ export default function TripsPage(){
     return () => { mounted = false }
   }, [])
 
-  // Polished calendar: map confirmed bookings to per-day ISO strings
-  const confirmedBookings = useMemo(() => bookings.filter(b => b.status === 'confirmed'), [bookings])
+  // Polished calendar: map ALL bookings (pending, confirmed) to per-day ISO strings
+  // so guests can see which dates they've already booked or requested
+  const relevantBookings = useMemo(() => 
+    bookings.filter(b => ['pending', 'confirmed'].includes(b.status)), 
+    [bookings]
+  )
   const bookedDates = useMemo(() => {
     const dates: string[] = []
     const seen = new Set<string>()
-    confirmedBookings.forEach(b => {
+    relevantBookings.forEach(b => {
       const start = new Date(b.date_from)
       const end = new Date(b.date_to)
       eachDayOfInterval({ start, end }).forEach(d => {
@@ -91,7 +95,7 @@ export default function TripsPage(){
       })
     })
     return dates
-  }, [confirmedBookings])
+  }, [relevantBookings])
 
   const [selectedRange, setSelectedRange] = useState({ from: undefined as Date | undefined, to: undefined as Date | undefined });
 
@@ -121,7 +125,7 @@ export default function TripsPage(){
                 preferTwoMonthsOnDesktop
               />
             </div>
-            <p className="text-sm text-slate-600 mt-2">Red-marked dates are your confirmed bookings.</p>
+            <p className="text-sm text-slate-600 mt-2">Red-marked dates are your pending or confirmed bookings.</p>
           </div>
         </section>
 

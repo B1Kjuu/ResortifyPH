@@ -545,7 +545,9 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       const msg = (error.message || '').toLowerCase()
       let friendly = error.message
       
-      if (msg.includes('overlap') || msg.includes('check_violation')) {
+      if (msg.includes('guest_already_has_booking') || msg.includes('double')) {
+        friendly = 'You already have a booking (pending or confirmed) on these dates. Please choose different dates or cancel your existing booking first.'
+      } else if (msg.includes('overlap') || msg.includes('check_violation')) {
         friendly = 'Your selected dates overlap with an existing booking.'
       } else if (msg.includes('duplicate_pending')) {
         friendly = 'You already have a pending booking request for this resort. Please wait for the owner to respond or cancel your existing request before making a new one.'

@@ -1,53 +1,25 @@
 'use client'
-import React, { useState, useEffect } from 'react'
-import ImageUploader from '../../../components/ImageUploader'
-import LocationCombobox from '../../../components/LocationCombobox'
-import { getProvinceInfo } from '../../../lib/locations'
-import { supabase } from '../../../lib/supabaseClient'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
-export default function CreateResort(){
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [location, setLocation] = useState('')
-  const [price, setPrice] = useState<number | ''>('')
-  const [capacity, setCapacity] = useState<number | ''>('')
-  const [amenities, setAmenities] = useState('')
-  const [images, setImages] = useState<string[]>([])
-  const [userId, setUserId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [isAuthorized, setIsAuthorized] = useState(false)
+// This page has been moved to /owner/create-resort
+// Redirect users to the correct location
+export default function CreateResortRedirect(){
   const router = useRouter()
-
+  
   useEffect(() => {
-    async function getUser(){
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) {
-        router.push('/auth/login')
-        setLoading(false)
-        return
-      }
-
-      // Check if user is owner
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id, email, full_name, role, is_admin')
-        .eq('id', session.user.id)
-        .single()
-      if (profile?.role !== 'owner') {
-        router.push('/dashboard')
-        setLoading(false)
-        return
-      }
-
-      setUserId(session.user.id)
-      setIsAuthorized(true)
-      setLoading(false)
-    }
-    getUser()
+    router.replace('/owner/create-resort')
   }, [router])
-
-  async function handleCreate(e: React.FormEvent){
+  
+  return (
+    <div className="w-full min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-resort-600 mx-auto mb-4"></div>
+        <p className="text-slate-600">Redirecting to Create Resort...</p>
+      </div>
+    </div>
+  )
+}
     e.preventDefault()
     if (!userId) { alert('Not signed in'); return }
     if (!location) { alert('Please pick a province'); return }
