@@ -110,21 +110,7 @@ export default function PaymentSubmissionModal({
       const { data: user } = await supabase.auth.getUser()
       if (!user.user) throw new Error('Not authenticated')
 
-      // Check if bucket exists before attempting upload
-      const { data: buckets, error: bucketError } = await supabase.storage.listBuckets()
-      const bucketExists = buckets?.some(b => b.id === 'payment-receipts')
-      
-      if (bucketError) {
-        console.error('❌ Bucket check failed:', bucketError)
-        throw new Error('Storage check failed: ' + bucketError.message)
-      }
-      
-      if (!bucketExists) {
-        console.error('❌ payment-receipts bucket does not exist!')
-        throw new Error('Payment receipts storage is not configured. Please contact support with error code: BUCKET_NOT_FOUND')
-      }
-
-      // Upload receipt image
+      // Upload receipt image (bucket check removed - we know it exists)
       setUploading(true)
       console.log('📤 Starting receipt upload...', {
         size: receiptFile.size,
@@ -210,17 +196,26 @@ export default function PaymentSubmissionModal({
         code: err?.code,
         statusCode: err?.statusCode,
         status: err?.status,
-        name: err?.name
+        name: err?.name,
+        hint: err?.hint,
+        details: err?.details
       })
       
       // Provide user-friendly error messages
       let errorMessage = 'Failed to submit payment'
       const errMsg = err?.message?.toLowerCase() || ''
+      const errCode = err?.code || ''
+      const errDetails = err?.details || ''
       
-      if (errMsg.includes('bucket') || errMsg.includes('storage') || errMsg.includes('not found')) {
-        errorMessage = 'Unable to upload receipt. The storage bucket may not be configured. Please contact support.'
+      // Check for specific storage/policy errors
+      if (errCode === '42501' || errMsg.includes('row-level security') || errMsg.includes('policy')) {
+        errorMessage = `Permission denied. Please make sure you're logged in and try again. (Error: ${errCode})`
+      } else if (errCode === '23505' || errMsg.includes('duplicate') || errMsg.includes('already exists')) {
+        errorMessage = 'A receipt with this name already exists. Please try again.'
+      } else if (errMsg.includes('bucket') || errMsg.includes('storage') || errMsg.includes('not found')) {
+        errorMessage = `Upload failed: ${err.message}. Bucket exists but upload failed. Error code: ${errCode}`
       } else if (errMsg.includes('permission') || errMsg.includes('policy') || errMsg.includes('not authorized') || errMsg.includes('jwt')) {
-        errorMessage = 'Authentication error. Please sign out and sign in again, then retry.'
+        errorMessage = `Authentication error: ${err.message}. Please sign out and sign in again.`
       } else if (errMsg.includes('network') || errMsg.includes('fetch') || errMsg.includes('load failed') || errMsg.includes('failed to fetch') || err?.status === 0) {
         errorMessage = 'Network error. Please check your internet connection and try again. If on mobile data, try WiFi.'
       } else if (errMsg.includes('cors') || errMsg.includes('cross-origin')) {
@@ -228,7 +223,7 @@ export default function PaymentSubmissionModal({
       } else if (errMsg.includes('timeout')) {
         errorMessage = 'Upload timed out. Your internet may be slow. Try again with a smaller image.'
       } else if (err.message) {
-        errorMessage = err.message
+        errorMessage = `${err.message} ${errDetails ? '(' + errDetails + ')' : ''}`
       }
       
       setError(errorMessage)
