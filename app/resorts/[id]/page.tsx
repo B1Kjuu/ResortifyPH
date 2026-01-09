@@ -602,6 +602,20 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                 body: JSON.stringify({ bookingId: newId, resortId: resort.id, senderUserId: user.id, content: 'New booking request message' }),
               })
             } catch {}
+            
+            // Create in-app notification for owner about new booking request
+            try {
+              const { notify } = await import('../../../lib/notifications')
+              await notify({
+                userId: resort.owner_id,
+                type: 'booking_request',
+                title: `New booking request for ${resort.name}`,
+                body: `${dateMessage} • ${guests} ${guests === 1 ? 'guest' : 'guests'}`,
+                link: `/chat/${newId}?as=owner`,
+                metadata: { bookingId: newId, resortId: resort.id }
+              })
+            } catch (e) { console.warn('In-app notify owner failed:', e) }
+            
             // Add system guidance message (acts like a pinned note)
             await supabase.from('chat_messages').insert({
               chat_id: chat.id,

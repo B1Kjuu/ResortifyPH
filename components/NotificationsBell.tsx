@@ -42,31 +42,25 @@ export default function NotificationsBell(){
     soundOnRef.current = soundOn
   }, [soundOn])
 
-  // Close dropdown when clicking outside OR scrolling on mobile
+  // Close dropdown when clicking outside OR scrolling outside dropdown on mobile
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setOpen(false)
       }
     }
-    function handleScroll() {
-      // Close on any scroll (especially for mobile)
-      setOpen(false)
-    }
-    function handleTouchMove() {
-      // Also close on touch move for mobile
-      setOpen(false)
+    function handleScroll(event: Event) {
+      // Only close if scrolling outside the dropdown (not inside the notification list)
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
     }
     if (open) {
       document.addEventListener('mousedown', handleClickOutside)
       window.addEventListener('scroll', handleScroll, true) // Capture phase for scroll
-      document.addEventListener('scroll', handleScroll, true) // Also listen on document
-      document.addEventListener('touchmove', handleTouchMove, { passive: true })
       return () => {
         document.removeEventListener('mousedown', handleClickOutside)
         window.removeEventListener('scroll', handleScroll, true)
-        document.removeEventListener('scroll', handleScroll, true)
-        document.removeEventListener('touchmove', handleTouchMove)
       }
     }
   }, [open])
