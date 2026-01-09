@@ -25,8 +25,68 @@ export default function ImageUploader({
 }: Props){
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({})
+  const [debugInfo, setDebugInfo] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const inputId = useId()
+  
+  const isMobile = typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+
+  // Compress image before upload - optimized for mobile
+  const compressImage = async (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = (event) => {
+        const img = new Image()
+        img.src = event.target?.result as string
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          let width = img.width
+          let height = img.height
+          
+          // Max dimensions for resort images
+          const MAX_WIDTH = 1920
+          const MAX_HEIGHT = 1920
+          
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width
+              width = MAX_WIDTH
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height
+              height = MAX_HEIGHT
+            }
+          }
+          
+          canvas.width = width
+          canvas.height = height
+          
+          const ctx = canvas.getContext('2d')
+          ctx?.drawImage(img, 0, 0, width, height)
+          
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                const compressedFile = new File([blob], file.name, {
+                  type: 'image/jpeg',
+                  lastModified: Date.now(),
+                })
+                resolve(compressedFile)
+              } else {
+                reject(new Error('Compression failed'))
+              }
+            },
+            'image/jpeg',
+            0.88 // 88% quality for resort images
+          )
+        }
+        img.onerror = () => reject(new Error('Failed to load image'))
+      }
+      reader.onerror = () => reject(new Error('Failed to read file'))
+    })
+  }
 
   // Upload images immediately when files are selected
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>){
@@ -50,12 +110,69 @@ export default function ImageUploader({
       setUploadProgress({ ...progress })
 
       try {
+        // Compress image if it's over 500KB
+        let fileToUpload = file
+        if (file.size > 500 * 1024) {
+          console.log(`🗜️ Compressing ${fileName}...`)
+          try {
+            fileToUpload = await compressImage(file)
+            console.log(`✅ Compressed ${fileName}:`, {
+              original: (file.size / 1024).toFixed(1) + ' KB',
+              compressed: (fileToUpload.size / 1024).toFixed(1) + ' KB',
+              saved: ((1 - fileToUpload.size / file.size) * 100).toFixed(0) + '%'
+            })
+          } catch (compressionError) {
+            console.warn(`⚠️ Compression failed for ${fileName}, using original`)
+            fileToUpload = file
+          }
+        }
+
         const filePath = `${Date.now()}_${file.name}`
-        const { data, error } = await supabase.storage.from(bucket).upload(filePath, file)
         
-        if (error){
-          console.error(error)
-          toast.error(`Failed to upload ${fileName}`)
+        // Mobile-optimized upload with retry
+        let uploadData = null
+        let uploadError = null
+        const maxRetries = isMobile ? 3 : 1
+        
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          try {
+            const timeoutMs = isMobile ? (attempt * 20000) : 30000 // 20s, 40s, 60s on mobile
+            const controller = new AbortController()
+            const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+            
+            console.log(`📤 Upload attempt ${attempt}/${maxRetries} for ${fileName}`)
+            const { data, error } = await supabase.storage
+              .from(bucket)
+              .upload(filePath, fileToUpload, {
+                cacheControl: '3600',
+                upsert: false
+              })
+            
+            clearTimeout(timeoutId)
+            
+            if (!error) {
+              uploadData = data
+              console.log(`✅ Upload successful for ${fileName}`)
+              break
+            } else {
+              uploadError = error
+              console.warn(`⚠️ Attempt ${attempt} failed:`, error.message)
+              if (attempt < maxRetries) {
+                await new Promise(resolve => setTimeout(resolve, 1000 * attempt)) // Wait before retry
+              }
+            }
+          } catch (err: any) {
+            console.error(`❌ Attempt ${attempt} error:`, err)
+            uploadError = err
+            if (attempt < maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+            }
+          }
+        }
+        
+        if (uploadError || !uploadData){
+          console.error('Final error:', uploadError)
+          toast.error(`Failed to upload ${fileName} after ${maxRetries} attempts`)
           continue
         }
 
@@ -64,9 +181,11 @@ export default function ImageUploader({
         progress[fileName] = 100
         setUploadProgress({ ...progress })
         toast.success(`Uploaded ${fileName}`)
+        setDebugInfo(prev => [...prev, `✅ ${fileName} uploaded`])
       } catch (err) {
         console.error(err)
         toast.error(`Error uploading ${fileName}`)
+        setDebugInfo(prev => [...prev, `❌ ${fileName} failed`])
       }
     }
 
@@ -141,6 +260,15 @@ export default function ImageUploader({
           )}
         </div>
         
+        {/* Debug info for mobile */}
+        {isMobile && debugInfo.length > 0 && (
+          <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
+            {debugInfo.slice(-3).map((info, i) => (
+              <div key={i} className="text-blue-800">{info}</div>
+            ))}
+          </div>
+        )}
+        
         {allUrls.length > 0 && (
           <div className="flex gap-2">
             {allUrls.map((url, index) => (
@@ -207,6 +335,15 @@ export default function ImageUploader({
           </div>
         )}
       </div>
+      
+      {/* Debug info for mobile - full layout */}
+      {isMobile && debugInfo.length > 0 && (
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs space-y-1">
+          {debugInfo.slice(-5).map((info, i) => (
+            <div key={i} className="text-blue-800">{info}</div>
+          ))}
+        </div>
+      )}
       
       <div className="text-xs text-slate-500">
         <p className="flex items-center gap-1">
