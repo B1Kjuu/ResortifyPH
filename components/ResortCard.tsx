@@ -113,10 +113,14 @@ export default function ResortCard({ resort, compact = false, nights = 0, showTo
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          <img 
+          <Image 
             src={images[currentImageIndex]} 
-            alt={resort.name} 
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 pointer-events-none"
+            alt={resort.name}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+            quality={75}
+            loading="lazy"
+            className="object-cover transition-transform duration-500 group-hover:scale-105 pointer-events-none"
           />
           
           {/* Image Navigation Arrows - Always visible on mobile, hover on desktop */}

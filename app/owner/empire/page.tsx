@@ -277,7 +277,7 @@ export default function Empire(){
         </div>
 
         {/* Actions */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-10 fade-in-up">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-10 fade-in-up">
           <Link href="/owner/create-resort" className="group bg-gradient-to-br from-resort-500 to-ocean-500 text-white rounded-xl sm:rounded-2xl p-5 sm:p-8 hover:shadow-2xl hover:-translate-y-1 transition-all border-2 border-resort-400 hover:border-resort-300">
             <h3 className="text-lg sm:text-2xl font-bold mb-2 sm:mb-3">Launch New Resort</h3>
             <p className="mb-4 sm:mb-6 opacity-95 text-sm sm:text-lg">Submit your property for approval</p>
@@ -290,10 +290,16 @@ export default function Empire(){
             <span className="inline-block text-xs sm:text-sm font-bold group-hover:translate-x-2 transition-transform bg-white/20 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg">Manage →</span>
           </Link>
 
-          <Link href="/owner/bookings" className="group bg-gradient-to-br from-cyan-500 to-blue-600 text-white rounded-xl sm:rounded-2xl p-5 sm:p-8 hover:shadow-2xl hover:-translate-y-1 transition-all border-2 border-cyan-400 hover:border-cyan-300 sm:col-span-2 lg:col-span-1">
+          <Link href="/owner/bookings" className="group bg-gradient-to-br from-cyan-500 to-blue-600 text-white rounded-xl sm:rounded-2xl p-5 sm:p-8 hover:shadow-2xl hover:-translate-y-1 transition-all border-2 border-cyan-400 hover:border-cyan-300">
             <h3 className="text-lg sm:text-2xl font-bold mb-2 sm:mb-3">Booking Requests</h3>
             <p className="mb-4 sm:mb-6 opacity-95 text-sm sm:text-lg">Review and confirm guest bookings</p>
             <span className="inline-block text-xs sm:text-sm font-bold group-hover:translate-x-2 transition-transform bg-white/20 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg">View Requests →</span>
+          </Link>
+
+          <Link href="/owner/payment-settings" className="group bg-gradient-to-br from-amber-500 to-orange-500 text-white rounded-xl sm:rounded-2xl p-5 sm:p-8 hover:shadow-2xl hover:-translate-y-1 transition-all border-2 border-amber-400 hover:border-amber-300">
+            <h3 className="text-lg sm:text-2xl font-bold mb-2 sm:mb-3">💳 Payment Settings</h3>
+            <p className="mb-4 sm:mb-6 opacity-95 text-sm sm:text-lg">Setup payment templates for chat</p>
+            <span className="inline-block text-xs sm:text-sm font-bold group-hover:translate-x-2 transition-transform bg-white/20 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg">Configure →</span>
           </Link>
         </div>
 
