@@ -110,6 +110,20 @@ export default function PaymentSubmissionModal({
       const { data: user } = await supabase.auth.getUser()
       if (!user.user) throw new Error('Not authenticated')
 
+      // Check if bucket exists before attempting upload
+      const { data: buckets, error: bucketError } = await supabase.storage.listBuckets()
+      const bucketExists = buckets?.some(b => b.id === 'payment-receipts')
+      
+      if (bucketError) {
+        console.error('❌ Bucket check failed:', bucketError)
+        throw new Error('Storage check failed: ' + bucketError.message)
+      }
+      
+      if (!bucketExists) {
+        console.error('❌ payment-receipts bucket does not exist!')
+        throw new Error('Payment receipts storage is not configured. Please contact support with error code: BUCKET_NOT_FOUND')
+      }
+
       // Upload receipt image
       setUploading(true)
       console.log('📤 Starting receipt upload...', {
@@ -123,16 +137,30 @@ export default function PaymentSubmissionModal({
       
       console.log('📁 Upload path:', fileName)
       
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      // Add timeout wrapper for mobile networks
+      const uploadPromise = supabase.storage
         .from('payment-receipts')
         .upload(fileName, receiptFile, {
           cacheControl: '3600',
           upsert: false,
         })
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Upload timeout after 30 seconds. Please check your internet connection.')), 30000)
+      )
+      
+      const { data: uploadData, error: uploadError } = await Promise.race([
+        uploadPromise,
+        timeoutPromise
+      ]) as any
 
       if (uploadError) {
         console.error('❌ Upload error:', uploadError)
-        throw uploadError
+        throw new Error(uploadError.message || 'Failed to upload receipt')
+      }
+      
+      if (!uploadData) {
+        throw new Error('Upload returned no data')
       }
       
       console.log('✅ Upload successful:', uploadData)
@@ -243,9 +271,25 @@ export default function PaymentSubmissionModal({
           ) : (
             <>
               {error && (
-                <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <FiAlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-red-700">{error}</p>
+                <div className="flex flex-col gap-2 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <FiAlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-red-700 mb-1">{error}</p>
+                      {error.includes('Network') && (
+                        <details className="text-xs text-red-600 mt-2">
+                          <summary className="cursor-pointer font-medium">Troubleshooting tips</summary>
+                          <ul className="mt-2 space-y-1 list-disc list-inside">
+                            <li>Make sure you're logged in</li>
+                            <li>Try closing and reopening the app</li>
+                            <li>Check if you can access other parts of the site</li>
+                            <li>Try WiFi instead of mobile data</li>
+                            <li>Clear browser cache and retry</li>
+                          </ul>
+                        </details>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
