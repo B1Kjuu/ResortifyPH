@@ -600,9 +600,13 @@ export default function ResortDetail({ params }: { params: { id: string } }){
             })
             // Notify owner for booking-created message
             try {
+              const { data: { session } } = await supabase.auth.getSession()
               await fetch('/api/notifications/chat-message', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${session?.access_token}`
+                },
                 body: JSON.stringify({ bookingId: newId, resortId: resort.id, senderUserId: user.id, content: 'New booking request message' }),
               })
             } catch {}
@@ -630,9 +634,13 @@ export default function ResortDetail({ params }: { params: { id: string } }){
             // Fire owner notification email for new booking request
             try {
               if (owner?.email) {
+                const { data: { session } } = await supabase.auth.getSession()
                 await fetch('/api/notifications/booking-status', {
                   method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
+                  headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token}`
+                  },
                   body: JSON.stringify({
                     to: owner.email,
                     status: 'created',
@@ -651,9 +659,13 @@ export default function ResortDetail({ params }: { params: { id: string } }){
             // Fire guest notification email for booking request confirmation
             try {
               if (user?.email) {
+                const { data: { session } } = await supabase.auth.getSession()
                 await fetch('/api/notifications/booking-confirmed', {
                   method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
+                  headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token}`
+                  },
                   body: JSON.stringify({
                     to: user.email,
                     resortName: resort.name,
@@ -680,7 +692,8 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       setGuests(1)
       // Navigate to booking chat for immediate messaging
       if (newId) {
-        router.push(`/chat/${newId}?as=guest`)
+        // Use window.location to avoid double-encoding issue in production
+        window.location.href = `/chat/${newId}?as=guest`
       }
     }
   }

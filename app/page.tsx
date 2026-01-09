@@ -88,7 +88,7 @@ export default function Home(){
     <div className="w-full min-h-screen bg-white">
       <>
       {/* Hero Section - Enhanced */}
-      <section className="relative overflow-hidden w-full px-4 sm:px-6 lg:px-8 py-20 sm:py-28 lg:py-36 bg-gradient-to-br from-slate-50 via-white to-resort-50/30">
+      <section className="relative overflow-hidden w-full px-4 sm:px-6 lg:px-8 py-20 sm:py-28 lg:py-36 min-h-[600px] bg-gradient-to-br from-slate-50 via-white to-resort-50/30">
         {/* Animated background elements */}
         <div aria-hidden className="pointer-events-none absolute top-0 left-0 w-full h-full">
           <div className="absolute top-20 left-[10%] w-72 h-72 bg-resort-200/30 rounded-full blur-3xl animate-pulse"></div>

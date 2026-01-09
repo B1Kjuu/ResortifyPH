@@ -53,16 +53,17 @@ export default function ReviewForm({ resortId, bookingId, onSubmitted }: { resor
         const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${file.name.split('.').pop()}`
         const filePath = `reviews/${resortId}/${fileName}`
         
-        const { error: uploadError } = await supabase.storage
-          .from('resorts')
+        const { data, error: uploadError } = await supabase.storage
+          .from('review-images')
           .upload(filePath, file)
         
         if (uploadError) {
           console.error('Upload error:', uploadError)
+          setError(`Upload failed: ${uploadError.message}`)
           continue
         }
         
-        const { data: urlData } = supabase.storage.from('resorts').getPublicUrl(filePath)
+        const { data: urlData } = supabase.storage.from('review-images').getPublicUrl(filePath)
         if (urlData?.publicUrl) {
           uploadedUrls.push(urlData.publicUrl)
         }
