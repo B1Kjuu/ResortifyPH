@@ -71,6 +71,7 @@ export default function OwnerBookingsPage(){
         guest_count: row.guest_count,
         children_count: row.children_count ?? 0,
         pets_count: row.pets_count ?? 0,
+        booking_type: row.booking_type ?? null,
         status: row.status,
         created_at: row.created_at,
         // Cancellation fields (if present in RPC)

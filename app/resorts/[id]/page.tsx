@@ -346,7 +346,14 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       const existingType = booking.booking_type
       
       // 22hrs blocks everything on that day
+      // If there's already a 22hrs, block all types from booking this day
       if (existingType === '22hrs') {
+        blockedDates.push(startStr)
+        return
+      }
+      
+      // If user is trying to book 22hrs, block if there's ANY booking on this day
+      if (bookingType === '22hrs') {
         blockedDates.push(startStr)
         return
       }
