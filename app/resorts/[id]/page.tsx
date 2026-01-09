@@ -353,11 +353,13 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       
       // Handle overnight spans (2 days)
       if (isOvernightSpan) {
-        // Overnight uses evening of start date and morning of end date
+        // Overnight uses evening of start date (check-in) only
+        // End date is check-out morning and is available for next booking (exclusive end)
+        // Example: overnight 27-28 uses night of 27th, so 28 is available for overnight 28-29
         if (bookingType === 'overnight') {
-          // Block both dates for other overnight bookings
+          // Block ONLY the start date (the night being used)
           blockedDates.push(startStr)
-          blockedDates.push(endStr)
+          // Do NOT block endStr - it's the check-out date (exclusive)
         }
         // Daytour doesn't conflict with overnight
         return
