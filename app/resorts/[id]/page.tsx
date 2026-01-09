@@ -218,10 +218,10 @@ export default function ResortDetail({ params }: { params: { id: string } }){
             .maybeSingle()
           setLatestBookingId(latestBooking?.id || null)
 
-          // Fetch reviews for this resort (including images)
+          // Fetch reviews for this resort (including images + guest info)
           const { data: reviewsData } = await supabase
             .from('reviews')
-            .select('id, rating, title, content, created_at, guest_id, booking_id, images')
+            .select('id, rating, title, content, created_at, guest_id, booking_id, images, guest:profiles!reviews_guest_id_fkey(full_name, avatar_url)')
             .eq('resort_id', params.id)
             .order('created_at', { ascending: false })
 
@@ -1073,7 +1073,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                       onSubmitted={async () => {
                         const { data: reviewsData } = await supabase
                           .from('reviews')
-                          .select('id, rating, title, content, created_at, guest_id, booking_id')
+                          .select('id, rating, title, content, created_at, guest_id, booking_id, images, guest:profiles!reviews_guest_id_fkey(full_name, avatar_url)')
                           .eq('resort_id', params.id)
                           .order('created_at', { ascending: false })
                         setReviews(reviewsData || [])

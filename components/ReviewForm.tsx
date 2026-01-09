@@ -124,6 +124,22 @@ export default function ReviewForm({ resortId, bookingId, onSubmitted }: { resor
         }
         
         setRating(5); setTitle(''); setContent(''); setImages([])
+        
+        // Send notification to resort owner (non-blocking)
+        if (data) {
+          fetch('/api/notifications/review-posted', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              reviewId: data,
+              resortId,
+              rating,
+              title,
+              content
+            })
+          }).catch(err => console.warn('Review notification failed:', err))
+        }
+        
         onSubmitted()
       }
     } catch (e: any) {

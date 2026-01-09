@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useMemo } from 'react'
 import Image from 'next/image'
+import { maskName } from '../lib/utils'
 
 type Review = {
   id: string
@@ -10,6 +11,10 @@ type Review = {
   guest_id?: string
   created_at: string
   images?: string[] | null
+  guest?: {
+    full_name?: string | null
+    avatar_url?: string | null
+  } | null
 }
 
 const REVIEWS_PER_PAGE = 5
@@ -63,18 +68,41 @@ export default function ReviewsList({ reviews, currentUserId }: { reviews: Revie
                   : 'border-slate-200'
               }`}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="text-yellow-500 text-sm" aria-label={`${r.rating} star rating`}>
-                    {Array.from({length:5}).map((_,i)=> (
-                      <span key={i} className={i < r.rating ? 'text-yellow-500' : 'text-slate-300'}>★</span>
-                    ))}
+              {/* Reviewer info with avatar */}
+              <div className="flex items-center gap-3 mb-3">
+                {r.guest?.avatar_url ? (
+                  <img
+                    src={r.guest.avatar_url}
+                    alt="Reviewer"
+                    className="w-10 h-10 rounded-full object-cover border-2 border-slate-100"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-resort-100 flex items-center justify-center text-resort-600 font-semibold text-sm border-2 border-slate-100">
+                    {(r.guest?.full_name?.[0] || 'G').toUpperCase()}
                   </div>
-                  {currentUserId && r.guest_id === currentUserId && (
-                    <span className="px-2 py-0.5 bg-resort-500 text-white text-xs font-semibold rounded-full">Your Review</span>
-                  )}
+                )}
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-slate-900">
+                      {currentUserId && r.guest_id === currentUserId
+                        ? 'You'
+                        : maskName(r.guest?.full_name)}
+                    </p>
+                    {currentUserId && r.guest_id === currentUserId && (
+                      <span className="px-2 py-0.5 bg-resort-500 text-white text-xs font-semibold rounded-full">Your Review</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500">{new Date(r.created_at).toLocaleDateString()}</p>
                 </div>
-                <span className="text-xs text-slate-500">{new Date(r.created_at).toLocaleDateString()}</span>
+              </div>
+              
+              {/* Rating stars */}
+              <div className="flex items-center gap-2 mb-2">
+                <div className="text-yellow-500 text-sm" aria-label={`${r.rating} star rating`}>
+                  {Array.from({length:5}).map((_,i)=> (
+                    <span key={i} className={i < r.rating ? 'text-yellow-500' : 'text-slate-300'}>★</span>
+                  ))}
+                </div>
               </div>
               {r.title && <p className="mt-2 text-sm font-semibold text-resort-900">{r.title}</p>}
               <p className="mt-1 text-sm text-slate-700 leading-relaxed">{r.content}</p>

@@ -74,6 +74,7 @@ export default function OwnerBookingsContent(props: Props){
   const [tab, setTab] = React.useState<'requests' | 'calendar' | 'confirmed' | 'cancellations' | 'history'>(initialTab || 'calendar')
   const [showOnlyVerified, setShowOnlyVerified] = React.useState(false)
   const [showOnlyCancellations, setShowOnlyCancellations] = React.useState(false)
+  const [bookingTypeFilter, setBookingTypeFilter] = React.useState<'all' | 'daytour' | 'overnight' | '22hrs'>('all')
   const [verificationEdits, setVerificationEdits] = React.useState<Record<string, { method: string; reference: string; notes: string }>>({})
   const [paymentModalBookingId, setPaymentModalBookingId] = React.useState<string | null>(null)
   
@@ -129,6 +130,24 @@ export default function OwnerBookingsContent(props: Props){
   const pendingToShow = showOnlyVerified ? pendingBookings.filter(b => !!b.payment_verified_at) : pendingBookings
   let upcomingToShow = showOnlyVerified ? upcomingConfirmed.filter(b => !!b.payment_verified_at) : upcomingConfirmed
   let pastToShow = showOnlyVerified ? pastConfirmed.filter(b => !!b.payment_verified_at) : pastConfirmed
+  
+  // Apply booking type filter
+  if (bookingTypeFilter !== 'all') {
+    upcomingToShow = upcomingToShow.filter(b => {
+      // Normalize booking_type values
+      const normalizedType = b.booking_type === 'day_12h' ? 'daytour' 
+        : b.booking_type === 'overnight_22h' ? 'overnight' 
+        : b.booking_type
+      return normalizedType === bookingTypeFilter
+    })
+    pastToShow = pastToShow.filter(b => {
+      const normalizedType = b.booking_type === 'day_12h' ? 'daytour' 
+        : b.booking_type === 'overnight_22h' ? 'overnight' 
+        : b.booking_type
+      return normalizedType === bookingTypeFilter
+    })
+  }
+  
   if (showOnlyCancellations) {
     upcomingToShow = upcomingToShow.filter(b => b.cancellation_status === 'requested')
     pastToShow = pastToShow.filter(b => b.cancellation_status === 'requested')
@@ -662,8 +681,21 @@ export default function OwnerBookingsContent(props: Props){
 
             {tab === 'confirmed' && (
             <section className="mb-8 sm:mb-12 fade-in-up">
-              <div className="flex items-center gap-3 mb-4 sm:mb-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 sm:mb-6">
                 <h2 className="text-xl sm:text-3xl font-bold text-slate-900">Confirmed Bookings ({upcomingToShow.length})</h2>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs sm:text-sm text-slate-600 font-medium">Type:</label>
+                  <select
+                    value={bookingTypeFilter}
+                    onChange={(e) => setBookingTypeFilter(e.target.value as any)}
+                    className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg bg-white hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-resort-500"
+                  >
+                    <option value="all">All Types</option>
+                    <option value="daytour">☀️ Daytour</option>
+                    <option value="overnight">🌙 Overnight</option>
+                    <option value="22hrs">⏰ 22 Hours</option>
+                  </select>
+                </div>
               </div>
 
               {upcomingToShow.length === 0 ? (
@@ -693,9 +725,23 @@ export default function OwnerBookingsContent(props: Props){
                       </div>
 
                       <div className="bg-white rounded-xl p-3 sm:p-4 border border-green-100">
-                        <p className="text-xs sm:text-sm text-slate-700 mb-2">
-                          📅 <span className="font-bold">{booking.date_from}</span> → <span className="font-bold">{booking.date_to}</span>
-                        </p>
+                        <div className="flex items-center gap-2 mb-2">
+                          <p className="text-xs sm:text-sm text-slate-700">
+                            📅 <span className="font-bold">{booking.date_from}</span> → <span className="font-bold">{booking.date_to}</span>
+                          </p>
+                          {booking.booking_type && (
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                              booking.booking_type === 'daytour' || booking.booking_type === 'day_12h' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
+                              booking.booking_type === 'overnight' || booking.booking_type === 'overnight_22h' ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' :
+                              booking.booking_type === '22hrs' ? 'bg-purple-100 text-purple-700 border border-purple-200' :
+                              'bg-slate-100 text-slate-700 border border-slate-200'
+                            }`}>
+                              {booking.booking_type === 'daytour' || booking.booking_type === 'day_12h' ? '☀️ Daytour' :
+                               booking.booking_type === 'overnight' || booking.booking_type === 'overnight_22h' ? '🌙 Overnight' :
+                               booking.booking_type === '22hrs' ? '⏰ 22hrs' : booking.booking_type}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs sm:text-sm text-slate-700">
                           👥 <span className="font-bold">{booking.guest_count} {booking.guest_count === 1 ? 'guest' : 'guests'}</span>
                           {typeof booking.children_count === 'number' && (

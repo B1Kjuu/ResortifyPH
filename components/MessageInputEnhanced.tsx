@@ -192,19 +192,26 @@ export default function MessageInputEnhanced({
     return lines.join('\n')
   }
 
-  const insertTemplate = (template: PaymentTemplate) => {
+  const insertTemplate = (template: PaymentTemplate, autoSend = false) => {
     const message = formatTemplateMessage(template)
-    setValue(prev => prev?.trim() ? prev + '\n\n' + message : message)
-    setShowTemplateModal(false)
-    handleTyping()
+    if (autoSend) {
+      // Auto-send immediately
+      onSend(message, undefined)
+      setShowTemplateModal(false)
+    } else {
+      // Insert into input field
+      setValue(prev => prev?.trim() ? prev + '\n\n' + message : message)
+      setShowTemplateModal(false)
+      handleTyping()
+    }
   }
 
-  const insertDefaultTemplate = () => {
+  const insertDefaultTemplate = (autoSend = false) => {
     const defaultTemplate = templates.find(t => t.is_default)
     if (defaultTemplate) {
-      insertTemplate(defaultTemplate)
+      insertTemplate(defaultTemplate, autoSend)
     } else if (templates.length > 0) {
-      insertTemplate(templates[0])
+      insertTemplate(templates[0], autoSend)
     } else {
       setShowTemplateModal(true)
     }
@@ -247,20 +254,20 @@ export default function MessageInputEnhanced({
               <div className="relative">
                 <button
                   className="p-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
-                  onClick={insertDefaultTemplate}
+                  onClick={() => insertDefaultTemplate(true)}
                   disabled={disabled || sending || uploading}
-                  title={templates.length > 0 ? "Send payment details" : "Create payment template"}
+                  title={templates.length > 0 ? "Send payment details instantly" : "Create payment template"}
                   aria-label="Send payment details"
                 >
                   <FiCreditCard className="w-4 h-4" />
                 </button>
                 
                 {/* Dropdown arrow for template selection */}
-                {templates.length > 1 && (
+                {templates.length > 0 && (
                   <button
                     className="absolute -right-1 -bottom-1 w-4 h-4 bg-amber-500 text-white rounded-full flex items-center justify-center hover:bg-amber-600 transition-colors"
                     onClick={(e) => { e.stopPropagation(); setShowTemplateModal(true) }}
-                    title="Select template"
+                    title="Choose template"
                   >
                     <FiChevronDown className="w-3 h-3" />
                   </button>
@@ -337,26 +344,39 @@ export default function MessageInputEnhanced({
             <div className="p-4">
               {templates.length > 0 ? (
                 <div className="space-y-2 mb-4">
-                  <p className="text-sm text-slate-500 mb-3">Select a template to send:</p>
+                  <p className="text-sm text-slate-500 mb-3">Select a template:</p>
                   {templates.map(template => {
                     const method = PAYMENT_METHODS.find(m => m.id === template.payment_method)
                     return (
-                      <button
+                      <div
                         key={template.id}
-                        onClick={() => insertTemplate(template)}
-                        className="w-full text-left p-3 bg-slate-50 border border-slate-200 rounded-xl hover:border-cyan-400 hover:bg-cyan-50 transition-colors"
+                        className="p-3 bg-slate-50 border border-slate-200 rounded-xl hover:border-cyan-400 hover:bg-cyan-50 transition-colors"
                       >
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 mb-2">
                           <span className="text-lg">{method?.icon || '💳'}</span>
                           <span className="font-medium text-slate-800">{template.name}</span>
                           {template.is_default && (
                             <span className="text-xs bg-cyan-100 text-cyan-700 px-2 py-0.5 rounded-full">Default</span>
                           )}
                         </div>
-                        <p className="text-sm text-slate-500 mt-1">
+                        <p className="text-sm text-slate-500 mb-3">
                           {template.account_name} • {template.account_number}
                         </p>
-                      </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => insertTemplate(template, true)}
+                            className="flex-1 px-3 py-2 bg-gradient-to-r from-cyan-600 to-cyan-500 text-white text-sm font-semibold rounded-lg hover:from-cyan-700 hover:to-cyan-600 transition-all"
+                          >
+                            Send Now
+                          </button>
+                          <button
+                            onClick={() => insertTemplate(template, false)}
+                            className="px-3 py-2 bg-white border border-slate-300 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors"
+                          >
+                            Insert
+                          </button>
+                        </div>
+                      </div>
                     )
                   })}
                 </div>
