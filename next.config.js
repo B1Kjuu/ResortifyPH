@@ -69,6 +69,11 @@ const nextConfig = {
       {
         source: '/_next/static/chunks/app/chat/resort/%255BresortId%255D/:file*',
         destination: '/_next/static/chunks/app/chat/resort/%5BresortId%5D/:file*'
+      },
+      // Admin resorts detail route
+      {
+        source: '/_next/static/chunks/app/admin/resorts/%255Bid%255D/:file*',
+        destination: '/_next/static/chunks/app/admin/resorts/%5Bid%5D/:file*'
       }
     ]
   },

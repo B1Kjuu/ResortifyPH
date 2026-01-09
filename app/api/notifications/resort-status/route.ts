@@ -79,13 +79,12 @@ export async function POST(req: NextRequest) {
       title: status === "approved" 
         ? `🎉 Your resort "${resortName}" has been approved!`
         : `❌ Your resort "${resortName}" was not approved`,
-      message: status === "approved"
+      body: status === "approved"
         ? `Congratulations! Your resort is now live and visible to guests. Start receiving bookings today!`
         : `Unfortunately, your resort submission was not approved.${reason ? ` Reason: ${reason}` : ' Please review and resubmit.'}`,
       link: status === "approved" 
         ? `/resorts/${resortId}`
         : `/owner/my-resorts`,
-      read: false,
     };
 
     const { error: notifError } = await supabaseAdmin

@@ -111,13 +111,19 @@ export default function ApprovalsPage(){
     
     // Notify owner via email and in-app notification
     try {
-      await fetch('/api/notifications/resort-status', {
+      const response = await fetch('/api/notifications/resort-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ resortId: resort.id, status: 'approved' }),
       })
+      const result = await response.json()
+      if (!response.ok) {
+        console.error('Failed to send approval notification:', result)
+      } else {
+        console.log('Approval notification sent:', result)
+      }
     } catch (notifyErr) {
-      console.warn('Failed to send approval notification:', notifyErr)
+      console.error('Failed to send approval notification:', notifyErr)
     }
     
     toast.success('Resort approved!')
@@ -142,13 +148,19 @@ export default function ApprovalsPage(){
     
     // Notify owner via email and in-app notification
     try {
-      await fetch('/api/notifications/resort-status', {
+      const response = await fetch('/api/notifications/resort-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ resortId: id, status: 'rejected', reason }),
       })
+      const result = await response.json()
+      if (!response.ok) {
+        console.error('Failed to send rejection notification:', result)
+      } else {
+        console.log('Rejection notification sent:', result)
+      }
     } catch (notifyErr) {
-      console.warn('Failed to send rejection notification:', notifyErr)
+      console.error('Failed to send rejection notification:', notifyErr)
     }
     
     toast.success('Resort rejected')
