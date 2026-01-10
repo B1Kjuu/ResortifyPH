@@ -47,6 +47,22 @@ export default function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
   const method = req.method
 
+  // Normalize double-encoded bracket segments everywhere (including /_next/static chunks).
+  // Some proxies/CDNs will double-encode dynamic segment brackets in chunk URLs:
+  //   %5Bid%5D -> %255Bid%255D
+  // If we don't fix it BEFORE the static-asset bypass below, the request 404s and the
+  // browser refuses to execute the returned text/plain response.
+  if (pathname.includes('%255B') || pathname.includes('%255D')) {
+    const fixedPath = pathname
+      .replaceAll('%255B', '%5B')
+      .replaceAll('%255D', '%5D')
+    if (fixedPath !== pathname) {
+      const url = req.nextUrl.clone()
+      url.pathname = fixedPath
+      return NextResponse.redirect(url)
+    }
+  }
+
   // Skip middleware for static assets and Next.js internals to prevent 404s
   if (
     pathname.startsWith('/_next') ||
@@ -121,21 +137,6 @@ export default function middleware(req: NextRequest) {
   const csp = isProd
     ? `default-src 'self'; img-src ${imgSources}; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' ${googleFonts}; font-src 'self' ${googleFonts} data:; connect-src 'self' ${supabaseHost} ${supabaseWss} ${nominatim} ${googleMaps}; frame-src ${frameSources}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
     : `default-src 'self'; img-src ${imgSources}; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' ${googleFonts}; font-src 'self' ${googleFonts} data:; connect-src 'self' ${supabaseHost} ${supabaseWss} ${nominatim} ${googleMaps} ws:; frame-src ${frameSources}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`
-
-  // Normalize double-encoded bracket segments everywhere
-  // Use redirect (not rewrite) so the browser requests the real JS chunk with correct MIME
-  if (pathname.includes('%255B') || pathname.includes('%255D')) {
-    const fixedPath = pathname
-      .replaceAll('%255B', '%5B')
-      .replaceAll('%255D', '%5D')
-    if (fixedPath !== pathname) {
-      const url = req.nextUrl.clone()
-      url.pathname = fixedPath
-      const redirectRes = NextResponse.redirect(url)
-      redirectRes.headers.set('Content-Security-Policy', csp)
-      return redirectRes
-    }
-  }
 
   const res = NextResponse.next({ request: { headers } })
   res.headers.set('Content-Security-Policy', csp)
