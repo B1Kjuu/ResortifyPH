@@ -7,17 +7,20 @@ import {
   BOOKING_TYPES,
   TIME_SLOTS,
   TimeSlot,
+  ResortTimeSlot,
   getTimeSlotsForType,
   getDayType,
   getGuestTier,
   formatTime,
   GuestTier,
   BookingPricing,
+  toTimeSlot,
 } from '../lib/bookingTypes'
 import type { ResortPricingConfig } from '../lib/validations'
 
 interface BookingTypeSelectorProps {
   pricingConfig: ResortPricingConfig | null
+  resortTimeSlots?: ResortTimeSlot[]
   selectedBookingType: BookingType | null
   selectedTimeSlot: string | null
   selectedDate: Date | null
@@ -35,6 +38,7 @@ interface BookingTypeSelectorProps {
 
 export default function BookingTypeSelector({
   pricingConfig,
+  resortTimeSlots,
   selectedBookingType,
   selectedTimeSlot,
   selectedDate,
@@ -56,6 +60,14 @@ export default function BookingTypeSelector({
   // Get available time slots for selected booking type
   const availableSlots = useMemo(() => {
     if (!selectedBookingType) return []
+
+    // Prefer DB-backed slots (owner-customizable) when available
+    const dbSlots = (resortTimeSlots || [])
+      .filter(s => s.slot_type === selectedBookingType && (s.is_active ?? true))
+      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+      .map(toTimeSlot)
+
+    if (dbSlots.length > 0) return dbSlots
     
     if (pricingConfig?.enabledTimeSlots?.length) {
       return TIME_SLOTS.filter(s => 
@@ -65,7 +77,7 @@ export default function BookingTypeSelector({
     }
     // Fallback: show first default slot for the type (simplified mode)
     return getTimeSlotsForType(selectedBookingType).slice(0, 1)
-  }, [selectedBookingType, pricingConfig])
+  }, [selectedBookingType, pricingConfig, resortTimeSlots])
 
   // Check if we should show time slot selector (only if multiple slots available)
   const showTimeSlotSelector = availableSlots.length > 1

@@ -23,6 +23,7 @@ import {
   getGuestTier,
   DEFAULT_DOWNPAYMENT_PERCENTAGE,
   AvailableTimeSlot,
+  ResortTimeSlot,
 } from '../../../lib/bookingTypes'
 import type { ResortPricingConfig } from '../../../lib/validations'
 
@@ -64,7 +65,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
   const [reviews, setReviews] = useState<any[]>([])
   const [eligibleReviewBookingId, setEligibleReviewBookingId] = useState<string | null>(null)
   // State for time slots and pricing display (even with legacy calendar)
-  const [resortTimeSlots, setResortTimeSlots] = useState<Array<{ slot_type: string; start_time: string; end_time: string }>>([])
+  const [resortTimeSlots, setResortTimeSlots] = useState<ResortTimeSlot[]>([])
   const [minAdvancedPrice, setMinAdvancedPrice] = useState<number | null>(null)
   const [slotTypePrices, setSlotTypePrices] = useState<{ daytour: number | null; overnight: number | null; '22hrs': number | null }>({ daytour: null, overnight: null, '22hrs': null })
   const bookingCardRef = useRef<HTMLDivElement | null>(null)
@@ -166,12 +167,12 @@ export default function ResortDetail({ params }: { params: { id: string } }){
         // Fetch time slots for this resort (for cutoff times)
         const { data: timeSlotsData } = await supabase
           .from('resort_time_slots')
-          .select('slot_type, start_time, end_time')
+          .select('id, resort_id, slot_type, label, start_time, end_time, crosses_midnight, hours, is_active, sort_order')
           .eq('resort_id', params.id)
           .eq('is_active', true)
         
         if (timeSlotsData && mounted) {
-          setResortTimeSlots(timeSlotsData)
+          setResortTimeSlots(timeSlotsData as ResortTimeSlot[])
         }
 
         // Get owner info - with error handling
@@ -464,6 +465,9 @@ export default function ResortDetail({ params }: { params: { id: string } }){
     const provinceInfo = getProvinceInfo(resort?.location)
     
     // Get time slot details if selected (for legacy time slots)
+    const dbTimeSlot = selectedTimeSlot
+      ? resortTimeSlots.find(s => s.id === selectedTimeSlot)
+      : null
     const timeSlotDetails = selectedTimeSlot ? getTimeSlotById(selectedTimeSlot) : null
     
     // Default times based on booking type (fallback if no time slot selected)
@@ -483,8 +487,8 @@ export default function ResortDetail({ params }: { params: { id: string } }){
     const finalSlotId = selectedTimeSlot
     
     // Use time slot times if available, otherwise use defaults based on booking type
-    const checkInTime = timeSlotDetails?.startTime ?? defaultTimes.start
-    const checkOutTime = timeSlotDetails?.endTime ?? defaultTimes.end
+    const checkInTime = dbTimeSlot?.start_time?.substring(0, 5) ?? timeSlotDetails?.startTime ?? defaultTimes.start
+    const checkOutTime = dbTimeSlot?.end_time?.substring(0, 5) ?? timeSlotDetails?.endTime ?? defaultTimes.end
 
     let newId: string | null = null
     let error: any = null
@@ -655,7 +659,9 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                     dateFrom: format(bookingDateFrom, 'yyyy-MM-dd'),
                     dateTo: format(bookingDateTo, 'yyyy-MM-dd'),
                     link: `/chat/${newId}?as=owner`,
-                    userId: owner.id,
+                    bookingId: newId,
+                    actorUserId: user.id,
+                    recipientUserId: owner.id,
                   })
                 })
               }
@@ -1104,10 +1110,13 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                               body: JSON.stringify({
                                 to: owner.email,
                                 resortName: resort.name,
+                                resortId: params.id,
+                                bookingId: eligibleReviewBookingId,
                                 rating: latest.rating,
                                 comment: latest.title ? `${latest.title} — ${latest.content}` : latest.content,
                                 link: `/resorts/${params.id}#reviews`,
-                                userId: owner.id,
+                                actorUserId: user.id,
+                                recipientUserId: owner.id,
                               })
                             })
                           }
@@ -1344,6 +1353,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
               {/* Unified Booking Type Selector - Always use button UI */}
               <BookingTypeSelector
                 pricingConfig={pricingConfig}
+                resortTimeSlots={resortTimeSlots}
                 selectedBookingType={bookingType}
                 selectedTimeSlot={selectedTimeSlot}
                 selectedDate={selectedDate ?? null}

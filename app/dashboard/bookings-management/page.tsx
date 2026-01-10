@@ -112,6 +112,7 @@ export default function BookingsManagementPage(){
     try {
       const b = (original || confirmedBookings.find(x => x.id === id))
       if (b?.guest?.email) {
+        const { data: { session } } = await supabase.auth.getSession()
         await fetch('/api/notifications/booking-status', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -122,6 +123,8 @@ export default function BookingsManagementPage(){
             dateFrom: b.date_from,
             dateTo: b.date_to,
             link: `/chat/${id}?as=guest`,
+            bookingId: id,
+            actorUserId: session?.user?.id,
           })
         })
       }
@@ -152,6 +155,7 @@ export default function BookingsManagementPage(){
     try {
       const orig = pendingBookings.find(b => b.id === id)
       if (orig?.guest?.email) {
+        const { data: { session } } = await supabase.auth.getSession()
         await fetch('/api/notifications/booking-status', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -162,6 +166,8 @@ export default function BookingsManagementPage(){
             dateFrom: orig.date_from,
             dateTo: orig.date_to,
             link: `/chat/${id}?as=guest`,
+            bookingId: id,
+            actorUserId: session?.user?.id,
           })
         })
       }

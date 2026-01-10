@@ -237,7 +237,9 @@ export default function OwnerBookingsPage(){
                   dateFrom: booking.date_from,
                   dateTo: booking.date_to,
                   link: `/chat/${bookingId}?as=guest`,
-                  userId: booking.guest.id,
+                  bookingId,
+                  actorUserId: userId,
+                  recipientUserId: booking.guest.id,
                 })
               })
             }
@@ -294,7 +296,9 @@ export default function OwnerBookingsPage(){
                   dateFrom: booking.date_from,
                   dateTo: booking.date_to,
                   link: `/chat/${bookingId}?as=guest`,
-                  userId: booking.guest.id,
+                  bookingId,
+                  actorUserId: userId,
+                  recipientUserId: booking.guest.id,
                 })
               })
             }

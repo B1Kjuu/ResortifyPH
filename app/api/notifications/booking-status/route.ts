@@ -41,12 +41,75 @@ export async function POST(req: NextRequest) {
       dateFrom,
       dateTo,
       link,
-      userId,
+      bookingId,
+      actorUserId,
+      recipientUserId,
     } = await req.json();
 
-    // Security: Ensure userId matches authenticated user (prevent spoofing)
-    if (userId && userId !== authUser.id) {
-      return NextResponse.json({ error: "User mismatch" }, { status: 403 })
+    // Security: Ensure actorUserId matches authenticated user (prevent spoofing)
+    if (actorUserId && actorUserId !== authUser.id) {
+      return NextResponse.json({ error: "Actor mismatch" }, { status: 403 })
+    }
+
+    // Security: if emailing someone other than yourself, require bookingId validation
+    const toNormalized = Array.isArray(to)
+      ? to.map((x: any) => String(x).trim().toLowerCase())
+      : [String(to ?? '').trim().toLowerCase()]
+    const authEmail = String(authUser.email ?? '').trim().toLowerCase()
+
+    if (toNormalized.some(e => e && e !== authEmail)) {
+      if (!bookingId) {
+        return NextResponse.json({ error: "bookingId is required when emailing another user" }, { status: 400 })
+      }
+      const sb = getServerSupabaseOrNull()
+      if (!sb) {
+        return NextResponse.json({ error: "Server email validation unavailable" }, { status: 500 })
+      }
+
+      const { data: booking, error: bookingErr } = await sb
+        .from('bookings')
+        .select('id, guest_id, resort_id')
+        .eq('id', bookingId)
+        .maybeSingle()
+
+      if (bookingErr || !booking) {
+        return NextResponse.json({ error: "Booking not found" }, { status: 404 })
+      }
+
+      const { data: resortRow, error: resortErr } = await sb
+        .from('resorts')
+        .select('id, owner_id')
+        .eq('id', booking.resort_id)
+        .maybeSingle()
+
+      if (resortErr || !resortRow?.owner_id) {
+        return NextResponse.json({ error: "Resort not found" }, { status: 404 })
+      }
+
+      // Caller must be part of this booking (guest or owner)
+      const isParticipant = authUser.id === booking.guest_id || authUser.id === resortRow.owner_id
+      if (!isParticipant) {
+        return NextResponse.json({ error: "Not allowed" }, { status: 403 })
+      }
+
+      const ids = [booking.guest_id, resortRow.owner_id].filter(Boolean)
+      const { data: profiles, error: profErr } = await sb
+        .from('profiles')
+        .select('id, email')
+        .in('id', ids)
+
+      if (profErr) {
+        return NextResponse.json({ error: "Failed to resolve booking participants" }, { status: 500 })
+      }
+
+      const allowedEmails = (profiles || [])
+        .map((p: any) => String(p.email || '').trim().toLowerCase())
+        .filter(Boolean)
+
+      const ok = toNormalized.every(e => !e || allowedEmails.includes(e))
+      if (!ok) {
+        return NextResponse.json({ error: "Recipient not allowed" }, { status: 403 })
+      }
     }
 
     if (!to || !status || !resortName || !dateFrom || !dateTo) {
@@ -76,14 +139,15 @@ export async function POST(req: NextRequest) {
       const sb = getServerSupabaseOrNull();
       if (sb) {
         await sb.from("notifications").insert({
-          user_id: userId ?? null,
+          user_id: recipientUserId ?? null,
           type: "booking_status",
           to_email: Array.isArray(to) ? to.join(",") : to,
           subject: `Booking ${status}: ${resortName}`,
           status: dryRun ? "dry_run" : "sent",
+          metadata: bookingId ? { bookingId } : null,
         });
       }
-    } catch (logErr) {
+    } catch {
       // non-fatal
     }
 
