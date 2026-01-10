@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { rateLimit } from './lib/edgeRateLimit'
 
 // Cookie flag set during recovery flow to force user into reset-password until completion
 const PASSWORD_RESET_COOKIE = 'resortify_password_reset_pending'
@@ -43,7 +44,43 @@ function allow(ip: string | undefined): boolean {
   return true
 }
 
-export default function middleware(req: NextRequest) {
+function getClientIp(req: NextRequest): string {
+  const header = req.headers.get('x-forwarded-for')
+  const forwarded = header?.split(',')[0]?.trim()
+  return req.ip || forwarded || 'unknown'
+}
+
+function getApiGroup(pathname: string): string {
+  if (pathname.startsWith('/api/notifications')) return 'notifications'
+  if (pathname.startsWith('/api/payments')) return 'payments'
+  if (pathname.startsWith('/api/resorts')) return 'resorts'
+  if (pathname.startsWith('/api/admin')) return 'admin'
+  if (pathname.startsWith('/api/email')) return 'email'
+  return 'api'
+}
+
+async function allowWithSharedLimiter(req: NextRequest, scope: 'api:write' | 'api:read'): Promise<{ ok: boolean; headers?: Headers; status?: number }> {
+  const ip = getClientIp(req)
+  const group = getApiGroup(req.nextUrl.pathname)
+  const key = `${ip}:${group}`
+
+  try {
+    const result = await rateLimit({ scope, key })
+    if (!result.ok) {
+      const headers = new Headers()
+      if (result.limit != null) headers.set('X-RateLimit-Limit', String(result.limit))
+      if (result.remaining != null) headers.set('X-RateLimit-Remaining', String(result.remaining))
+      if (result.reset != null) headers.set('X-RateLimit-Reset', String(result.reset))
+      return { ok: false, headers, status: 429 }
+    }
+    return { ok: true }
+  } catch {
+    // If Upstash is misconfigured or transiently down, fail open and rely on fallback.
+    return { ok: true }
+  }
+}
+
+export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
   const method = req.method
 
@@ -74,10 +111,18 @@ export default function middleware(req: NextRequest) {
     if (pathname.startsWith('/api')) {
       const isWrite = method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE'
       if (isWrite) {
-        const ok = allow(req.ip)
-        if (!ok) {
-          return new NextResponse('Too Many Requests', { status: 429 })
-        }
+        const shared = await allowWithSharedLimiter(req, 'api:write')
+        if (!shared.ok) return new NextResponse('Too Many Requests', { status: 429, headers: shared.headers })
+
+        const ok = allow(getClientIp(req))
+        if (!ok) return new NextResponse('Too Many Requests', { status: 429 })
+      }
+
+      // Also protect expensive read endpoints (availability/pricing/listings) under load.
+      // This is intentionally looser than writes.
+      if (method === 'GET' && (pathname.startsWith('/api/resorts') || pathname.startsWith('/api/payments'))) {
+        const shared = await allowWithSharedLimiter(req, 'api:read')
+        if (!shared.ok) return new NextResponse('Too Many Requests', { status: 429, headers: shared.headers })
       }
     }
     return NextResponse.next()
@@ -96,10 +141,11 @@ export default function middleware(req: NextRequest) {
   const isApi = pathname.startsWith('/api') || pathname.startsWith('/app/api')
 
   if (isWrite && isApi) {
-    const ok = allow(req.ip)
-    if (!ok) {
-      return new NextResponse('Too Many Requests', { status: 429 })
-    }
+    const shared = await allowWithSharedLimiter(req, 'api:write')
+    if (!shared.ok) return new NextResponse('Too Many Requests', { status: 429, headers: shared.headers })
+
+    const ok = allow(getClientIp(req))
+    if (!ok) return new NextResponse('Too Many Requests', { status: 429 })
   }
 
   // Generate per-request CSP nonce and attach CSP header

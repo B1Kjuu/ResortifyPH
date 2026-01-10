@@ -117,8 +117,17 @@ export default function ResetPasswordPage() {
       // Check if coming from callback with verified=true (PKCE flow)
       const isVerified = searchParams.get('verified') === 'true'
       if (isVerified) {
+        // If the link landed here with a code but no session yet, round-trip through our callback route
+        // so the server can exchange the code and set the security cookie.
+        const code = searchParams.get('code')
+
         // Double-check we have a session from the callback
         const { data: { session } } = await supabase.auth.getSession()
+        if (!session && code) {
+          router.replace(`/auth/callback?type=recovery&code=${encodeURIComponent(code)}`)
+          return
+        }
+
         if (session) {
           // Ensure the password reset cookie is set (in case server-side cookie didn't persist)
           if (!getCookie(PASSWORD_RESET_KEY)) {

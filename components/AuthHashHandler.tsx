@@ -17,6 +17,36 @@ export default function AuthHashHandler(){
   const router = useRouter()
   const pathname = usePathname()
 
+  // Handle query-based auth flows (PKCE/code) that may land on ANY route.
+  // Key security rule: if this is a recovery flow, force reset-password and set the pending cookie ASAP.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const url = new URL(window.location.href)
+    const type = url.searchParams.get('type') || url.searchParams.get('token_type')
+    const error = url.searchParams.get('error')
+    const errorCode = url.searchParams.get('error_code')
+
+    // Handle expired or invalid link
+    if (errorCode === 'otp_expired' || error === 'access_denied') {
+      toast.error('Your link is invalid or expired. Request a new one.')
+      router.replace('/auth/forgot-password')
+      return
+    }
+
+    if (type === 'recovery') {
+      setCookie(PASSWORD_RESET_KEY, 'true', 60 * 15)
+
+      // If the recovery link landed on a non-reset route (e.g. /dashboard), force reset-password.
+      // Preserve query/hash so the session exchange can still happen.
+      if (!pathname.startsWith('/auth/reset-password')) {
+        url.pathname = '/auth/reset-password'
+        url.searchParams.set('verified', 'true')
+        router.replace(`${url.pathname}?${url.searchParams.toString()}${url.hash}`)
+      }
+    }
+  }, [router, pathname])
+
   // Listen for PASSWORD_RECOVERY event from Supabase auth
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {

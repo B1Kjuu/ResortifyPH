@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   
   // Also check for token_hash which Supabase uses for some flows
   const tokenHash = searchParams.get('token_hash')
-  const tokenType = searchParams.get('type') || searchParams.get('token_type')
+  const tokenType = searchParams.get('token_type') || type
 
   // Handle error parameters from Supabase (expired/invalid links)
   if (error || errorCode) {
@@ -66,15 +66,13 @@ export async function GET(req: NextRequest) {
       
       // Detect recovery flow - multiple checks since Supabase doesn't always pass type consistently
       // 1. Explicit type=recovery parameter
-      // 2. token_hash presence (used in some Supabase flows)
-      // 3. User has recovery_sent_at set recently (within last hour)
+      // 2. User has recovery_sent_at set recently (within a short window)
       const recoverySentAt = user?.recovery_sent_at ? new Date(user.recovery_sent_at).getTime() : 0
-      const isRecentRecovery = recoverySentAt > Date.now() - 60 * 60 * 1000 // Within last hour
+      const isRecentRecovery = recoverySentAt > Date.now() - 15 * 60 * 1000 // Within last 15 minutes
       
       const isRecovery = 
         type === 'recovery' || 
         tokenType === 'recovery' || 
-        !!tokenHash || 
         isRecentRecovery
       
       console.log('[Auth Callback] Recovery detection:', { 
@@ -106,7 +104,7 @@ export async function GET(req: NextRequest) {
     
     // Handle exchange errors (expired token, invalid code, etc.)
     const errorMsg = exchangeError?.message?.toLowerCase() || ''
-    const looksRecovery = type === 'recovery' || tokenType === 'recovery' || tokenHash
+    const looksRecovery = type === 'recovery' || tokenType === 'recovery'
 
     if (errorMsg.includes('expired') || errorMsg.includes('invalid')) {
       if (looksRecovery) {
