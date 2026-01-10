@@ -44,6 +44,12 @@ function isChunkLoadError(err: any): boolean {
   )
 }
 
+function isLikelyNextChunkUrl(url: string): boolean {
+  // Next.js chunk URLs (app router) look like:
+  // /_next/static/chunks/(app|pages)/...
+  return /\/_next\/static\/chunks\//.test(url) && /\.js(\?|#|$)/.test(url)
+}
+
 function clearRuntimeCachesBestEffort(): void {
   // This is best-effort; we can't fully clear browser HTTP cache.
   try {
@@ -130,14 +136,35 @@ export default function ChunkLoadRecovery() {
       showHardReloadBanner()
     }
 
-    const onError = (event: ErrorEvent) => handler(event.error || event.message)
+    const onError = (event: Event) => {
+      // Script/link resource failures surface as a generic Event with a target.
+      // These often show up as MIME type / 404 errors in console, without an
+      // unhandled rejection we can catch.
+      const anyEvent = event as any
+      const target = anyEvent?.target as any
+
+      if (target && typeof target === 'object') {
+        const tagName = String(target.tagName || '')
+        const src = String(target.src || '')
+        if (tagName === 'SCRIPT' && src && isLikelyNextChunkUrl(src)) {
+          handler(new Error(`ChunkLoadError: ${src}`))
+          return
+        }
+      }
+
+      // Regular JS errors
+      if (event instanceof ErrorEvent) {
+        handler(event.error || event.message)
+      }
+    }
     const onRejection = (event: PromiseRejectionEvent) => handler(event.reason)
 
-    window.addEventListener('error', onError)
+    // Use capture so we reliably receive resource load errors.
+    window.addEventListener('error', onError, true)
     window.addEventListener('unhandledrejection', onRejection)
 
     return () => {
-      window.removeEventListener('error', onError)
+      window.removeEventListener('error', onError, true)
       window.removeEventListener('unhandledrejection', onRejection)
     }
   }, [])
