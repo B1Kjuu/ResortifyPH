@@ -9,6 +9,7 @@ import RouteLoadNudger from '../components/RouteLoadNudger'
 import AuthHashHandler from '../components/AuthHashHandler'
 import FirstTimeRoleCheck from '../components/FirstTimeRoleCheck'
 import GlobalRealtimeManager from '../components/GlobalRealtimeManager'
+import ChunkLoadRecovery from '../components/ChunkLoadRecovery'
 
 export const metadata = {
   title: {
@@ -105,6 +106,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Navbar />
         <main className="w-full">{children}</main>
         <Footer />
+        {/* Self-heal stale Next.js chunk cache after deployments */}
+        <ChunkLoadRecovery />
         {/* Nudge SPA route changes to emit a synthetic load for E2E stability */}
         <RouteLoadNudger />
         {/* Handle Supabase auth link hashes (expired, recovery, signup) */}
