@@ -50,8 +50,8 @@ export default function middleware(req: NextRequest) {
   // Normalize double-encoded bracket segments everywhere (including /_next/static chunks).
   // Some proxies/CDNs will double-encode dynamic segment brackets in chunk URLs:
   //   %5Bid%5D -> %255Bid%255D
-  // If we don't fix it BEFORE the static-asset bypass below, the request 404s and the
-  // browser refuses to execute the returned text/plain response.
+  // IMPORTANT: use rewrite (not redirect). Some browsers will complain about the
+  // redirect response MIME type for <script> loads under strict checking.
   if (pathname.includes('%255B') || pathname.includes('%255D')) {
     const fixedPath = pathname
       .replaceAll('%255B', '%5B')
@@ -59,7 +59,7 @@ export default function middleware(req: NextRequest) {
     if (fixedPath !== pathname) {
       const url = req.nextUrl.clone()
       url.pathname = fixedPath
-      return NextResponse.redirect(url)
+      return NextResponse.rewrite(url)
     }
   }
 
