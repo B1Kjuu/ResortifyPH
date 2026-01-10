@@ -74,6 +74,26 @@ const nextConfig = {
       {
         source: '/_next/static/chunks/app/admin/resorts/%255Bid%255D/:file*',
         destination: '/_next/static/chunks/app/admin/resorts/%5Bid%5D/:file*'
+      },
+      // Public resort detail route
+      {
+        source: '/_next/static/chunks/app/resorts/%255Bid%255D/:file*',
+        destination: '/_next/static/chunks/app/resorts/%5Bid%5D/:file*'
+      },
+      // Owner edit resort route
+      {
+        source: '/_next/static/chunks/app/owner/edit-resort/%255Bid%255D/:file*',
+        destination: '/_next/static/chunks/app/owner/edit-resort/%5Bid%5D/:file*'
+      },
+      // Guest bookings route
+      {
+        source: '/_next/static/chunks/app/guest/bookings/%255Bid%255D/:file*',
+        destination: '/_next/static/chunks/app/guest/bookings/%5Bid%5D/:file*'
+      },
+      // Profile route
+      {
+        source: '/_next/static/chunks/app/profile/%255Bid%255D/:file*',
+        destination: '/_next/static/chunks/app/profile/%5Bid%5D/:file*'
       }
     ]
   },
