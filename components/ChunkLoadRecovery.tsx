@@ -71,6 +71,16 @@ function clearRuntimeCachesBestEffort(): void {
   } catch {}
 }
 
+function navigateToClearSiteDataReload(): void {
+  // Uses a server response header (Clear-Site-Data: "cache") to clear the
+  // browser HTTP cache for this origin (where supported), then redirects back.
+  const current = new URL(window.location.href)
+  current.searchParams.set('_refresh', String(Date.now()))
+  const nextPath = `${current.pathname}${current.search}`
+  const url = `/api/clear-site-data?next=${encodeURIComponent(nextPath)}`
+  window.location.replace(url)
+}
+
 function showHardReloadBanner(): void {
   if (document.getElementById('chunk-recovery-banner')) return
 
@@ -109,10 +119,7 @@ function showHardReloadBanner(): void {
 
   document.getElementById('chunk-recovery-reload')?.addEventListener('click', () => {
     clearRuntimeCachesBestEffort()
-    // Add a cache-busting param so the HTML/RSC path changes.
-    const url = new URL(window.location.href)
-    url.searchParams.set('_refresh', String(Date.now()))
-    window.location.replace(url.toString())
+    navigateToClearSiteDataReload()
   })
 }
 
@@ -126,9 +133,7 @@ export default function ChunkLoadRecovery() {
         recordRecoveryAttempt()
         clearRuntimeCachesBestEffort()
 
-        const url = new URL(window.location.href)
-        url.searchParams.set('_refresh', String(Date.now()))
-        window.location.replace(url.toString())
+        navigateToClearSiteDataReload()
         return
       }
 
