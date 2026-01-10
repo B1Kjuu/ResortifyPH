@@ -21,6 +21,65 @@ export default function ReviewForm({ resortId, bookingId, onSubmitted }: { resor
   const [uploading, setUploading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  const isMobile = typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+
+  // Compress image before upload
+  const compressImage = async (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = (event) => {
+        const img = new Image()
+        img.src = event.target?.result as string
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          let width = img.width
+          let height = img.height
+          
+          // Max dimensions for review images
+          const MAX_WIDTH = 1600
+          const MAX_HEIGHT = 1600
+          
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width
+              width = MAX_WIDTH
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height
+              height = MAX_HEIGHT
+            }
+          }
+          
+          canvas.width = width
+          canvas.height = height
+          
+          const ctx = canvas.getContext('2d')
+          ctx?.drawImage(img, 0, 0, width, height)
+          
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                const compressedFile = new File([blob], file.name, {
+                  type: 'image/jpeg',
+                  lastModified: Date.now(),
+                })
+                resolve(compressedFile)
+              } else {
+                reject(new Error('Compression failed'))
+              }
+            },
+            'image/jpeg',
+            0.87 // 87% quality
+          )
+        }
+        img.onerror = () => reject(new Error('Failed to load image'))
+      }
+      reader.onerror = () => reject(new Error('Failed to read file'))
+    })
+  }
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files
@@ -50,16 +109,63 @@ export default function ReviewForm({ resortId, bookingId, onSubmitted }: { resor
           continue
         }
         
+        // Compress image if over 500KB
+        let fileToUpload = file
+        if (file.size > 500 * 1024) {
+          console.log(`🗜️ Compressing review image...`)
+          try {
+            fileToUpload = await compressImage(file)
+            console.log(`✅ Compressed:`, {
+              original: (file.size / 1024).toFixed(1) + ' KB',
+              compressed: (fileToUpload.size / 1024).toFixed(1) + ' KB',
+              saved: ((1 - fileToUpload.size / file.size) * 100).toFixed(0) + '%'
+            })
+          } catch (compressionError) {
+            console.warn(`⚠️ Compression failed, using original`)
+            fileToUpload = file
+          }
+        }
+        
         const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${file.name.split('.').pop()}`
         const filePath = `reviews/${resortId}/${fileName}`
         
-        const { data, error: uploadError } = await supabase.storage
-          .from('review-images')
-          .upload(filePath, file)
+        // Mobile-optimized upload with retry
+        let uploadData = null
+        let uploadError = null
+        const maxRetries = isMobile ? 3 : 1
         
-        if (uploadError) {
-          console.error('Upload error:', uploadError)
-          setError(`Upload failed: ${uploadError.message}`)
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          try {
+            const timeoutMs = isMobile ? (attempt * 20000) : 30000
+            
+            console.log(`📤 Upload attempt ${attempt}/${maxRetries}`)
+            const { data, error } = await supabase.storage
+              .from('review-images')
+              .upload(filePath, fileToUpload)
+            
+            if (!error) {
+              uploadData = data
+              console.log(`✅ Upload successful`)
+              break
+            } else {
+              uploadError = error
+              console.warn(`⚠️ Attempt ${attempt} failed:`, error.message)
+              if (attempt < maxRetries) {
+                await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+              }
+            }
+          } catch (err: any) {
+            console.error(`❌ Attempt ${attempt} error:`, err)
+            uploadError = err
+            if (attempt < maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+            }
+          }
+        }
+        
+        if (uploadError || !uploadData) {
+          console.error('Final upload error:', uploadError)
+          setError(`Upload failed after ${maxRetries} attempts`)
           continue
         }
         

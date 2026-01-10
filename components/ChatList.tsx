@@ -37,6 +37,27 @@ export default function ChatList({ roleFilter }: ChatListProps) {
   const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
+  // Format timestamp to relative or absolute time
+  const formatMessageTime = (timestamp: string | null): string => {
+    if (!timestamp) return ''
+    
+    const date = new Date(timestamp)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+    
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays === 1) return 'Yesterday'
+    if (diffDays < 7) return `${diffDays}d ago`
+    
+    // Format as date for older messages
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
+
   useEffect(() => {
     let mounted = true
     ;(async () => {
@@ -111,9 +132,19 @@ export default function ChatList({ roleFilter }: ChatListProps) {
                   </span>
                 ) : null}
               </div>
-              {subtitle && (
-                <div className="text-xs text-slate-500 mt-0.5">{subtitle}</div>
-              )}
+              <div className="flex items-center gap-2 mt-0.5">
+                {subtitle && (
+                  <div className="text-xs text-slate-500">{subtitle}</div>
+                )}
+                {c.lastMessage?.created_at && (
+                  <>
+                    {subtitle && <span className="text-slate-300">•</span>}
+                    <div className="text-xs text-slate-400">
+                      {formatMessageTime(c.lastMessage.created_at)}
+                    </div>
+                  </>
+                )}
+              </div>
               {c.lastMessage ? (
                 <div className="truncate text-sm text-slate-600 mt-1">
                   {c.lastMessage.content}
