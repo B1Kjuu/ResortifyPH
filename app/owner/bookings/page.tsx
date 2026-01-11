@@ -646,8 +646,19 @@ export default function OwnerBookingsPage(){
 
       if (error) {
         console.error('Manual booking error:', error)
-        setToast({ message: `Error: ${error.message}`, type: 'error' })
-        sonnerToast.error('Failed to add booking')
+        const msg = String((error as any)?.message || '')
+        const lower = msg.toLowerCase()
+        const isOverlapConstraint = lower.includes('bookings_no_overlap') || lower.includes('exclusion') || lower.includes('overlap')
+
+        if (isOverlapConstraint) {
+          setToast({ message: 'Error: Dates conflict with an existing booking (or DB overlap constraint is still enabled).', type: 'error' })
+          sonnerToast.error('Dates conflict (overlap)', {
+            description: 'If you expect Day Tour + Overnight to coexist, apply the latest Supabase migration that drops bookings_no_overlap.'
+          })
+        } else {
+          setToast({ message: `Error: ${msg}`, type: 'error' })
+          sonnerToast.error('Failed to add booking')
+        }
         return
       }
 

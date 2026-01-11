@@ -28,6 +28,7 @@ function deleteCookie(name: string) {
 
 export default function Navbar(){
   const pathname = usePathname()
+  const routeRole = pathname?.startsWith('/owner') ? 'owner' : (pathname?.startsWith('/guest') ? 'guest' : '')
   
   // Don't render Navbar on admin pages - AdminLayout has its own navigation
   if (pathname?.startsWith('/admin')) {
@@ -36,7 +37,8 @@ export default function Navbar(){
   
   const [user, setUser] = useState<any>(null)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [userRole, setUserRole] = useState<string>('')
+  // Initialize from route to avoid Guest/Host flash on owner/guest pages during reload.
+  const [userRole, setUserRole] = useState<string>(routeRole)
   const [profileEmail, setProfileEmail] = useState<string | null>(null)
   const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
@@ -110,7 +112,8 @@ export default function Navbar(){
             if (error) {
               console.error('Profile fetch error:', error)
               setIsAdmin(false)
-              setUserRole('guest')
+              // Avoid clobbering route-derived role on owner/guest pages.
+              setUserRole((prev) => prev || routeRole || 'guest')
             } else if (profile) {
               setIsAdmin(profile.is_admin || false)
               setUserRole(profile.role || 'guest')
@@ -118,7 +121,7 @@ export default function Navbar(){
                 setProfileAvatarUrl(profile.avatar_url || null)
             } else {
               setIsAdmin(false)
-              setUserRole('guest')
+              setUserRole((prev) => prev || routeRole || 'guest')
               setProfileEmail(session.user.email || null)
                 setProfileAvatarUrl(null)
             }
@@ -130,7 +133,7 @@ export default function Navbar(){
             if (!mounted) return
             console.error('Profile fetch exception:', err)
             setIsAdmin(false)
-            setUserRole('guest')
+            setUserRole((prev) => prev || routeRole || 'guest')
             setProfileEmail(session.user.email || null)
             authCompletedRef.current = true
             clearTimeout(timeoutId)
@@ -139,7 +142,7 @@ export default function Navbar(){
         } else {
           setUser(null)
           setIsAdmin(false)
-          setUserRole('')
+          setUserRole(routeRole)
           setProfileEmail(null)
           authCompletedRef.current = true
           clearTimeout(timeoutId)
@@ -170,6 +173,13 @@ export default function Navbar(){
       clearTimeout(timeoutId)
     }
   }, [])
+
+  // Keep navbar mode consistent with the current route.
+  // This prevents showing "Guest" while you're already on an /owner/* page (and vice versa).
+  useEffect(() => {
+    if (!routeRole) return
+    setUserRole((prev) => (prev === routeRole ? prev : routeRole))
+  }, [routeRole])
 
   useEffect(() => {
     if (pathname?.startsWith('/resorts')) {
