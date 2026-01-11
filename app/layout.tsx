@@ -32,17 +32,22 @@ export const metadata = {
   },
   openGraph: {
     type: 'website',
-    locale: 'en_PH',
     url: 'https://www.resortifyph.me/',
     title: 'ResortifyPH - Staycations & Private Resorts in the Philippines',
     description: 'Book staycations and private resorts across the Philippines. Connect with resort owners and create unforgettable experiences.',
     siteName: 'ResortifyPH',
     images: [
       {
+        // Static fallback for maximum compatibility with social scrapers
+        url: 'https://www.resortifyph.me/assets/ResortifyPH-LOGO-CLEAN.png',
+        alt: 'ResortifyPH',
+      },
+      {
+        // Dynamic image (nice-looking), kept as a secondary option
         url: 'https://www.resortifyph.me/opengraph-image',
         width: 1200,
         height: 630,
-        alt: 'ResortifyPH - Philippine Resort Booking Platform',
+        alt: 'ResortifyPH - Staycations & Private Resorts in the Philippines',
       },
     ],
   },
@@ -50,7 +55,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: 'ResortifyPH - Staycations & Private Resorts in the Philippines',
     description: 'Book staycations and private resorts across the Philippines. Connect with resort owners and create unforgettable experiences.',
-    images: ['https://www.resortifyph.me/twitter-image'],
+    images: ['https://www.resortifyph.me/assets/ResortifyPH-LOGO-CLEAN.png'],
   },
   robots: {
     index: true,
