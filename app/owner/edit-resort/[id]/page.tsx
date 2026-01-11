@@ -72,7 +72,7 @@ export default function EditResort(){
         .eq('id', session.user.id)
         .maybeSingle()
       if (profile?.role !== 'owner') {
-        router.push('/owner/dashboard')
+        router.push('/dashboard')
         setLoading(false)
         return
       }

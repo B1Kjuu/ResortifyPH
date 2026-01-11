@@ -701,11 +701,16 @@ export default function ResortDetail({ params }: { params: { id: string } }){
         }
 
         // Fire-and-forget emails (do not block UX; allow request to finish during navigation).
+        const { data: { session } } = await supabase.auth.getSession()
+        const accessToken = session?.access_token
         try {
           if (owner?.email) {
             fetch('/api/notifications/booking-status', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: {
+                'Content-Type': 'application/json',
+                ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+              },
               credentials: 'include',
               keepalive: true,
               body: JSON.stringify({
@@ -727,7 +732,10 @@ export default function ResortDetail({ params }: { params: { id: string } }){
           if (user?.email) {
             fetch('/api/notifications/booking-confirmed', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: {
+                'Content-Type': 'application/json',
+                ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+              },
               credentials: 'include',
               keepalive: true,
               body: JSON.stringify({

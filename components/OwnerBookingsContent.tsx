@@ -8,6 +8,8 @@ import DisclaimerBanner from './DisclaimerBanner'
 import PaymentVerificationPanel from './PaymentVerificationPanel'
 import { format } from 'date-fns'
 import { FiCreditCard, FiX } from 'react-icons/fi'
+import { supabase } from '../lib/supabaseClient'
+import { getTimeSlotsForType } from '../lib/bookingTypes'
 
 type ManualBookingData = {
   resort_id: string
@@ -17,6 +19,9 @@ type ManualBookingData = {
   guest_count: number
   notes: string
   booking_type: 'daytour' | 'overnight' | '22hrs'
+  time_slot_id?: string
+  check_in_time?: string
+  check_out_time?: string
 }
 
 type Props = {
@@ -85,9 +90,89 @@ export default function OwnerBookingsContent(props: Props){
     guest_name: '',
     guest_count: 1,
     notes: '',
-    booking_type: 'overnight' as 'daytour' | 'overnight' | '22hrs'
+    booking_type: 'overnight' as 'daytour' | 'overnight' | '22hrs',
+    time_slot_id: '',
+    check_in_time: '',
+    check_out_time: '',
   })
   const [manualBookingSubmitting, setManualBookingSubmitting] = React.useState(false)
+  const [manualGuestCountDraft, setManualGuestCountDraft] = React.useState<string>('')
+  const [manualSlotLoading, setManualSlotLoading] = React.useState(false)
+  const [manualSlotError, setManualSlotError] = React.useState<string | null>(null)
+  const [manualSlotOptions, setManualSlotOptions] = React.useState<Array<{ id: string; label: string; start: string; end: string }>>([])
+
+  React.useEffect(() => {
+    let cancelled = false
+
+    async function loadSlots() {
+      if (!showManualBookingModal) return
+      if (!manualBookingForm.resort_id) {
+        setManualSlotOptions([])
+        setManualSlotError(null)
+        setManualSlotLoading(false)
+        return
+      }
+
+      setManualSlotLoading(true)
+      setManualSlotError(null)
+
+      const { data, error } = await supabase
+        .from('resort_time_slots')
+        .select('id, label, start_time, end_time, slot_type, is_active, sort_order')
+        .eq('resort_id', manualBookingForm.resort_id)
+        .eq('slot_type', manualBookingForm.booking_type)
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+
+      if (cancelled) return
+
+      if (error) {
+        setManualSlotError(error.message)
+        setManualSlotOptions([])
+        setManualSlotLoading(false)
+        return
+      }
+
+      const fromDb = (data || []).map((row: any) => ({
+        id: String(row.id),
+        label: String(row.label ?? ''),
+        start: String(row.start_time ?? '').substring(0, 5),
+        end: String(row.end_time ?? '').substring(0, 5),
+      }))
+
+      const fallback = getTimeSlotsForType(manualBookingForm.booking_type).map(s => ({
+        id: s.id,
+        label: s.label,
+        start: s.startTime,
+        end: s.endTime,
+      }))
+
+      const options = fromDb.length > 0 ? fromDb : fallback
+      setManualSlotOptions(options)
+
+      // Pick a default slot if current is invalid / empty
+      setManualBookingForm(prev => {
+        const currentId = prev.time_slot_id
+        const selected = options.find(o => o.id === currentId) || options[0]
+        if (!selected) {
+          return { ...prev, time_slot_id: '', check_in_time: '', check_out_time: '' }
+        }
+        return {
+          ...prev,
+          time_slot_id: selected.id,
+          check_in_time: selected.start,
+          check_out_time: selected.end,
+        }
+      })
+
+      setManualSlotLoading(false)
+    }
+
+    loadSlots()
+    return () => {
+      cancelled = true
+    }
+  }, [showManualBookingModal, manualBookingForm.resort_id, manualBookingForm.booking_type])
 
   const setEdit = (id: string, field: 'method' | 'reference' | 'notes', value: string) => {
     setVerificationEdits(prev => ({
@@ -114,8 +199,12 @@ export default function OwnerBookingsContent(props: Props){
         guest_name: '',
         guest_count: 1,
         notes: '',
-        booking_type: 'overnight'
+        booking_type: 'overnight',
+        time_slot_id: '',
+        check_in_time: '',
+        check_out_time: '',
       })
+      setManualGuestCountDraft('')
     } finally {
       setManualBookingSubmitting(false)
     }
@@ -337,8 +426,14 @@ export default function OwnerBookingsContent(props: Props){
                         <select
                           required
                           value={manualBookingForm.resort_id}
-                          onChange={(e) => setManualBookingForm(prev => ({ ...prev, resort_id: e.target.value }))}
-                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white text-sm appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%236b7280%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_0.75rem_center] bg-no-repeat pr-10 focus:outline-none focus:ring-2 focus:ring-resort-500/20 focus:border-resort-500 transition-all hover:border-slate-300"
+                          onChange={(e) => setManualBookingForm(prev => ({
+                            ...prev,
+                            resort_id: e.target.value,
+                            time_slot_id: '',
+                            check_in_time: '',
+                            check_out_time: '',
+                          }))}
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white text-base sm:text-sm appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%236b7280%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_0.75rem_center] bg-no-repeat pr-10 focus:outline-none focus:ring-2 focus:ring-resort-500/20 focus:border-resort-500 transition-all hover:border-slate-300"
                         >
                           <option value="">Select a resort</option>
                           {allResorts.map(r => (
@@ -357,7 +452,13 @@ export default function OwnerBookingsContent(props: Props){
                             <button
                               key={type.value}
                               type="button"
-                              onClick={() => setManualBookingForm(prev => ({ ...prev, booking_type: type.value as any }))}
+                              onClick={() => setManualBookingForm(prev => ({
+                                ...prev,
+                                booking_type: type.value as any,
+                                time_slot_id: '',
+                                check_in_time: '',
+                                check_out_time: '',
+                              }))}
                               className={`p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${
                                 manualBookingForm.booking_type === type.value
                                   ? 'border-resort-500 bg-resort-50 text-resort-700'
@@ -369,6 +470,47 @@ export default function OwnerBookingsContent(props: Props){
                             </button>
                           ))}
                         </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">Time Slot</label>
+                        <select
+                          value={manualBookingForm.time_slot_id}
+                          onChange={(e) => {
+                            const nextId = e.target.value
+                            const selected = manualSlotOptions.find(o => o.id === nextId)
+                            setManualBookingForm(prev => ({
+                              ...prev,
+                              time_slot_id: nextId,
+                              check_in_time: selected?.start || prev.check_in_time,
+                              check_out_time: selected?.end || prev.check_out_time,
+                            }))
+                          }}
+                          disabled={!manualBookingForm.resort_id || manualSlotLoading || manualSlotOptions.length === 0}
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-resort-500/20 focus:border-resort-500 disabled:bg-slate-50 disabled:text-slate-400"
+                        >
+                          {!manualBookingForm.resort_id ? (
+                            <option value="">Select a resort first</option>
+                          ) : manualSlotLoading ? (
+                            <option value="">Loading time slots…</option>
+                          ) : manualSlotOptions.length === 0 ? (
+                            <option value="">No active time slots</option>
+                          ) : (
+                            manualSlotOptions.map(o => (
+                              <option key={o.id} value={o.id}>
+                                {o.label} ({o.start} → {o.end})
+                              </option>
+                            ))
+                          )}
+                        </select>
+                        {manualSlotError ? (
+                          <p className="mt-1 text-xs text-red-600">{manualSlotError}</p>
+                        ) : null}
+                        {(manualBookingForm.check_in_time || manualBookingForm.check_out_time) ? (
+                          <p className="mt-1 text-xs text-slate-500">
+                            Check-in {manualBookingForm.check_in_time || '—'} · Check-out {manualBookingForm.check_out_time || '—'}
+                          </p>
+                        ) : null}
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <div>
@@ -408,8 +550,23 @@ export default function OwnerBookingsContent(props: Props){
                         <input
                           type="number"
                           min="1"
-                          value={manualBookingForm.guest_count}
-                          onChange={(e) => setManualBookingForm(prev => ({ ...prev, guest_count: parseInt(e.target.value) || 1 }))}
+                          value={manualGuestCountDraft !== '' ? manualGuestCountDraft : String(manualBookingForm.guest_count)}
+                          onChange={(e) => {
+                            const raw = e.target.value
+                            setManualGuestCountDraft(raw)
+                            if (raw === '') return
+                            const parsed = parseInt(raw, 10)
+                            if (!Number.isFinite(parsed)) return
+                            setManualBookingForm(prev => ({ ...prev, guest_count: Math.max(1, parsed) }))
+                          }}
+                          onBlur={() => {
+                            if (manualGuestCountDraft === '') return
+                            const raw = manualGuestCountDraft
+                            const parsed = raw.trim() === '' ? 1 : parseInt(raw, 10)
+                            const normalized = Number.isFinite(parsed) ? Math.max(1, parsed) : 1
+                            setManualBookingForm(prev => ({ ...prev, guest_count: normalized }))
+                            setManualGuestCountDraft('')
+                          }}
                           className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl"
                         />
                       </div>

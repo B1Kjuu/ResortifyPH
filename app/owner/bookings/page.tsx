@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import OwnerBookingsContent from '../../../components/OwnerBookingsContent'
 import { eachDayOfInterval } from 'date-fns'
 import { toast as sonnerToast } from 'sonner'
+import { getTimeSlotsForType } from '../../../lib/bookingTypes'
 
 export default function OwnerBookingsPage(){
   type Toast = { message: string; type: 'success' | 'error' | '' }
@@ -286,9 +287,13 @@ export default function OwnerBookingsPage(){
           // Email guest rejection
           try {
             if (booking?.guest?.email) {
+              const { data: { session } } = await supabase.auth.getSession()
               await fetch('/api/notifications/booking-status', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${session?.access_token}`,
+                },
                 body: JSON.stringify({
                   to: booking.guest.email,
                   status: 'rejected',
@@ -582,13 +587,18 @@ export default function OwnerBookingsPage(){
   }
 
   // Add manual booking for dates booked before using the platform
-  async function addManualBooking(data: { resort_id: string; date_from: string; date_to: string; guest_name: string; guest_count: number; notes: string; booking_type: 'daytour' | 'overnight' | '22hrs' }){
+  async function addManualBooking(data: { resort_id: string; date_from: string; date_to: string; guest_name: string; guest_count: number; notes: string; booking_type: 'daytour' | 'overnight' | '22hrs'; time_slot_id?: string; check_in_time?: string; check_out_time?: string }){
     if (!userId) {
       setToast({ message: 'You must be logged in', type: 'error' })
       return
     }
 
     try {
+      const defaultSlot = getTimeSlotsForType(data.booking_type)?.[0]
+      const timeSlotId = data.time_slot_id || defaultSlot?.id || null
+      const checkIn = data.check_in_time || defaultSlot?.startTime || null
+      const checkOut = data.check_out_time || defaultSlot?.endTime || null
+
       // Create a booking entry with owner as the "guest" (manual/external booking)
       // These are marked as confirmed immediately since they're existing reservations
       const { data: newBooking, error } = await supabase
@@ -598,8 +608,11 @@ export default function OwnerBookingsPage(){
           guest_id: userId, // Owner creates as placeholder guest
           date_from: data.date_from,
           date_to: data.date_to,
-          guest_count: data.guest_count || 1,
+          guest_count: Math.max(1, Number(data.guest_count) || 1),
           booking_type: data.booking_type,
+          time_slot_id: timeSlotId,
+          check_in_time: checkIn,
+          check_out_time: checkOut,
           status: 'confirmed',
           // Store guest name and notes in a notes field if available, or use verified_notes
           verified_notes: data.guest_name ? `External booking: ${data.guest_name}${data.notes ? ' - ' + data.notes : ''}` : (data.notes || 'External booking (made before platform)'),

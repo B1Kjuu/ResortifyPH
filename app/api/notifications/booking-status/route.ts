@@ -2,11 +2,27 @@ import { NextRequest, NextResponse } from "next/server";
 import { sendBookingEmail } from "lib/email";
 import { getServerSupabaseOrNull } from "lib/supabaseServer";
 import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
 // Helper to verify the request is from an authenticated user
-async function getAuthenticatedUser() {
+async function getAuthenticatedUser(req: NextRequest) {
   try {
+    const authHeader = req.headers.get('authorization') || ''
+    const bearerMatch = authHeader.match(/^Bearer\s+(.+)$/i)
+    const bearerToken = bearerMatch?.[1]?.trim()
+    if (bearerToken) {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      if (url && anonKey) {
+        const tokenClient = createClient(url, anonKey, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        })
+        const { data: { user } } = await tokenClient.auth.getUser(bearerToken)
+        if (user) return user
+      }
+    }
+
     const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -29,7 +45,7 @@ async function getAuthenticatedUser() {
 export async function POST(req: NextRequest) {
   try {
     // Security: Verify the user is authenticated
-    const authUser = await getAuthenticatedUser()
+    const authUser = await getAuthenticatedUser(req)
     if (!authUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -138,13 +154,34 @@ export async function POST(req: NextRequest) {
     try {
       const sb = getServerSupabaseOrNull();
       if (sb) {
+        const emailSubject = `Booking ${status}: ${resortName}`
+        const statusLabel: Record<string, string> = {
+          created: 'created',
+          approved: 'approved',
+          rejected: 'rejected',
+        }
+        const bodyText =
+          status === 'created'
+            ? `A booking request was created for ${resortName}.`
+            : status === 'approved'
+              ? `Your booking for ${resortName} was approved.`
+              : `Your booking for ${resortName} was rejected.`
         await sb.from("notifications").insert({
           user_id: recipientUserId ?? null,
           type: "booking_status",
-          to_email: Array.isArray(to) ? to.join(",") : to,
-          subject: `Booking ${status}: ${resortName}`,
-          status: dryRun ? "dry_run" : "sent",
-          metadata: bookingId ? { bookingId } : null,
+          actor_id: actorUserId ?? authUser.id,
+          title: emailSubject,
+          body: bodyText,
+          link: link ?? null,
+          metadata: {
+            bookingId: bookingId ?? null,
+            status: statusLabel[status] ?? status,
+            email: {
+              to: Array.isArray(to) ? to.join(',') : to,
+              subject: emailSubject,
+              status: dryRun ? 'dry_run' : 'sent',
+            },
+          },
         });
       }
     } catch {

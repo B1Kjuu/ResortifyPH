@@ -375,9 +375,15 @@ export default function ChatWindow({ bookingId, resortId, participantRole, title
               }
             }
 
+            const { data: { session } } = await supabase.auth.getSession()
+            const accessToken = session?.access_token
+
             await fetch('/api/notifications/chat-message', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: {
+                'Content-Type': 'application/json',
+                ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+              },
               body: JSON.stringify({
                 bookingId,
                 resortId,

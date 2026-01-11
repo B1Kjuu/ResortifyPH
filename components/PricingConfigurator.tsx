@@ -64,6 +64,7 @@ export default function PricingConfigurator({ value, onChange, capacity }: Prici
   const [showCustomSlotForm, setShowCustomSlotForm] = useState<BookingType | null>(null)
   const [customStartTime, setCustomStartTime] = useState('08:00')
   const [customEndTime, setCustomEndTime] = useState('17:00')
+  const [minGuestsDraft, setMinGuestsDraft] = useState<Record<string, string>>({})
   
   const updateConfig = (updates: Partial<ResortPricingConfig>) => {
     onChange({ ...config, ...updates })
@@ -399,8 +400,43 @@ export default function PricingConfigurator({ value, onChange, capacity }: Prici
                     type="number"
                     min={1}
                     max={capacity}
-                    value={tier.minGuests}
-                    onChange={(e) => updateTier(index, { ...tier, minGuests: parseInt(e.target.value) || 1 })}
+                    value={minGuestsDraft[tier.id] ?? String(tier.minGuests)}
+                    onChange={(e) => {
+                      const raw = e.target.value
+                      setMinGuestsDraft(prev => ({ ...prev, [tier.id]: raw }))
+                      if (raw === '') return
+                      const parsed = parseInt(raw, 10)
+                      if (!Number.isFinite(parsed)) return
+                      const clamped = Math.max(1, capacity ? Math.min(parsed, capacity) : parsed)
+                      const nextTier: GuestTier = {
+                        ...tier,
+                        minGuests: clamped,
+                        maxGuests: tier.maxGuests != null && tier.maxGuests < clamped ? clamped : tier.maxGuests,
+                      }
+                      updateTier(index, nextTier)
+                    }}
+                    onBlur={() => {
+                      const raw = minGuestsDraft[tier.id]
+                      if (raw === undefined) return
+
+                      const parsed = raw.trim() === '' ? 1 : parseInt(raw, 10)
+                      const normalized = Number.isFinite(parsed)
+                        ? Math.max(1, capacity ? Math.min(parsed, capacity) : parsed)
+                        : 1
+
+                      const nextTier: GuestTier = {
+                        ...tier,
+                        minGuests: normalized,
+                        maxGuests: tier.maxGuests != null && tier.maxGuests < normalized ? normalized : tier.maxGuests,
+                      }
+                      updateTier(index, nextTier)
+
+                      setMinGuestsDraft(prev => {
+                        const next = { ...prev }
+                        delete next[tier.id]
+                        return next
+                      })
+                    }}
                     className="w-full px-2 py-1.5 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-emerald-400"
                   />
                 </div>

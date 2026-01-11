@@ -2,11 +2,27 @@ import { NextRequest, NextResponse } from "next/server"
 import { sendEmail, brandEmailTemplate } from "lib/email"
 import { getServerSupabaseOrNull } from "lib/supabaseServer"
 import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
 // Helper to verify the request is from an authenticated user
-async function getAuthenticatedUser() {
+async function getAuthenticatedUser(req: NextRequest) {
   try {
+    const authHeader = req.headers.get('authorization') || ''
+    const bearerMatch = authHeader.match(/^Bearer\s+(.+)$/i)
+    const bearerToken = bearerMatch?.[1]?.trim()
+    if (bearerToken) {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      if (url && anonKey) {
+        const tokenClient = createClient(url, anonKey, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        })
+        const { data: { user } } = await tokenClient.auth.getUser(bearerToken)
+        if (user) return user
+      }
+    }
+
     const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -29,7 +45,7 @@ async function getAuthenticatedUser() {
 export async function POST(req: NextRequest) {
   try {
     // Security: Verify the user is authenticated
-    const authUser = await getAuthenticatedUser()
+    const authUser = await getAuthenticatedUser(req)
     if (!authUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -245,11 +261,21 @@ export async function POST(req: NextRequest) {
     try {
       if (sb) {
         await sb.from('notifications').insert({
-        user_id: null,
+        user_id: ownerId ?? null,
+        actor_id: senderUserId ?? authUser.id,
         type: 'chat_message',
-        to_email: finalTo,
-        subject,
-        status: dryRun ? 'dry_run' : 'sent',
+        title: subject,
+        body: 'New chat message notification',
+        link: link ?? null,
+        metadata: {
+          bookingId: bookingId ?? null,
+          resortId: resortId ?? null,
+          email: {
+            to: finalTo,
+            subject,
+            status: dryRun ? 'dry_run' : 'sent',
+          },
+        },
         })
       }
     } catch {}

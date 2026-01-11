@@ -62,6 +62,8 @@ export default function PricingSettingsPage() {
   const [timeSlots, setTimeSlots] = useState<DraftTimeSlot[]>([])
   const [guestTiers, setGuestTiers] = useState<DraftGuestTier[]>([])
   const [pricingMatrix, setPricingMatrix] = useState<DraftPricingEntry[]>([])
+  const [minGuestsDraft, setMinGuestsDraft] = useState<Record<string, string>>({})
+  const [maxGuestsDraft, setMaxGuestsDraft] = useState<Record<string, string>>({})
 
   // Active tab
   const [activeTab, setActiveTab] = useState<'slots' | 'tiers' | 'pricing'>('slots')
@@ -626,8 +628,34 @@ export default function PricingSettingsPage() {
                       <input
                         type="number"
                         min={1}
-                        value={tier.min_guests}
-                        onChange={e => updateGuestTier(index, { min_guests: Number(e.target.value) })}
+                        value={minGuestsDraft[String(index)] ?? String(tier.min_guests)}
+                        onChange={e => {
+                          const raw = e.target.value
+                          setMinGuestsDraft(prev => ({ ...prev, [String(index)]: raw }))
+                          if (raw === '') return
+                          const parsed = parseInt(raw, 10)
+                          if (!Number.isFinite(parsed)) return
+                          const normalized = Math.max(1, parsed)
+                          updateGuestTier(index, {
+                            min_guests: normalized,
+                            max_guests: tier.max_guests != null && tier.max_guests < normalized ? normalized : tier.max_guests,
+                          })
+                        }}
+                        onBlur={() => {
+                          const raw = minGuestsDraft[String(index)]
+                          if (raw === undefined) return
+                          const parsed = raw.trim() === '' ? 1 : parseInt(raw, 10)
+                          const normalized = Number.isFinite(parsed) ? Math.max(1, parsed) : 1
+                          updateGuestTier(index, {
+                            min_guests: normalized,
+                            max_guests: tier.max_guests != null && tier.max_guests < normalized ? normalized : tier.max_guests,
+                          })
+                          setMinGuestsDraft(prev => {
+                            const next = { ...prev }
+                            delete next[String(index)]
+                            return next
+                          })
+                        }}
                         className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-resort-500"
                       />
                     </div>
@@ -637,10 +665,37 @@ export default function PricingSettingsPage() {
                       <input
                         type="number"
                         min={tier.min_guests}
-                        value={tier.max_guests ?? ''}
-                        onChange={e => updateGuestTier(index, { 
-                          max_guests: e.target.value ? Number(e.target.value) : null 
-                        })}
+                        value={maxGuestsDraft[String(index)] ?? (tier.max_guests == null ? '' : String(tier.max_guests))}
+                        onChange={e => {
+                          const raw = e.target.value
+                          setMaxGuestsDraft(prev => ({ ...prev, [String(index)]: raw }))
+                          if (raw === '') {
+                            updateGuestTier(index, { max_guests: null })
+                            return
+                          }
+                          const parsed = parseInt(raw, 10)
+                          if (!Number.isFinite(parsed)) return
+                          const normalized = Math.max(tier.min_guests, parsed)
+                          updateGuestTier(index, { max_guests: normalized })
+                        }}
+                        onBlur={() => {
+                          const raw = maxGuestsDraft[String(index)]
+                          if (raw === undefined) return
+
+                          if (raw.trim() === '') {
+                            updateGuestTier(index, { max_guests: null })
+                          } else {
+                            const parsed = parseInt(raw, 10)
+                            const normalized = Number.isFinite(parsed) ? Math.max(tier.min_guests, parsed) : tier.min_guests
+                            updateGuestTier(index, { max_guests: normalized })
+                          }
+
+                          setMaxGuestsDraft(prev => {
+                            const next = { ...prev }
+                            delete next[String(index)]
+                            return next
+                          })
+                        }}
                         placeholder="Unlimited"
                         className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-resort-500"
                       />

@@ -140,7 +140,7 @@ export default function CreateResort() {
           .single()
 
         if (!profile || profile.role !== 'owner') {
-          router.push('/owner/dashboard')
+          router.push('/dashboard')
           return
         }
 

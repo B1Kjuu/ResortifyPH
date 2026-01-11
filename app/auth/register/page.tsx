@@ -42,7 +42,7 @@ export default function RegisterPage(){
       })
       if (error) throw error
       toast.success('Account created! Check your email to verify.')
-      router.push(role === 'owner' ? '/dashboard' : '/')
+      router.push(role === 'owner' ? '/owner/empire' : '/guest/adventure-hub')
     } catch (err: any) {
       toast.error(err?.message || 'Failed to create account')
     } finally {
