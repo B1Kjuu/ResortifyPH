@@ -6,6 +6,7 @@ import ChatLink from './ChatLink'
 import { DayPicker } from 'react-day-picker'
 import DisclaimerBanner from './DisclaimerBanner'
 import PaymentVerificationPanel from './PaymentVerificationPanel'
+import DateRangePicker from './DateRangePicker'
 import { format } from 'date-fns'
 import { FiCreditCard, FiX } from 'react-icons/fi'
 import { supabase } from '../lib/supabaseClient'
@@ -117,6 +118,7 @@ export default function OwnerBookingsContent(props: Props){
   }
 
   const normalizeManualDates = (next: Partial<typeof manualBookingForm>) => {
+    // Keep this helper for any programmatic updates (type switches, DateRangePicker sync)
     const booking_type = (next.booking_type ?? manualBookingForm.booking_type) as typeof manualBookingForm.booking_type
     const date_from = next.date_from ?? manualBookingForm.date_from
     const date_to = next.date_to ?? manualBookingForm.date_to
@@ -317,6 +319,99 @@ export default function OwnerBookingsContent(props: Props){
     if (!Number.isFinite(year) || !Number.isFinite(monthIndex) || !Number.isFinite(day)) return null
     return new Date(year, monthIndex, day)
   }
+
+  const manualSelectedRange = React.useMemo(() => {
+    if (!manualBookingForm.date_from || !manualBookingForm.date_to) {
+      return { from: undefined as Date | undefined, to: undefined as Date | undefined }
+    }
+    const from = parseLocalYmd(manualBookingForm.date_from)
+    const to = parseLocalYmd(manualBookingForm.date_to)
+    return { from: from || undefined, to: to || undefined }
+  }, [manualBookingForm.date_from, manualBookingForm.date_to])
+
+  const manualSelectedSingleDate = React.useMemo(() => {
+    const d = parseLocalYmd(manualBookingForm.date_from)
+    return d || undefined
+  }, [manualBookingForm.date_from])
+
+  const manualSlotAwareBookedDates = React.useMemo(() => {
+    const resortId = manualBookingForm.resort_id
+    if (!resortId) return [] as string[]
+
+    const raw = confirmedBookings
+      .filter((b: any) => b?.resort_id === resortId)
+      .map((b: any) => ({
+        date_from: String(b.date_from),
+        date_to: String(b.date_to),
+        booking_type: (b.booking_type ?? null) as string | null,
+      }))
+
+    if (!raw.length) return [] as string[]
+
+    const selectedType = manualBookingForm.booking_type
+    const blockedDates: string[] = []
+
+    raw.forEach((booking) => {
+      const start = new Date(booking.date_from)
+      const end = new Date(booking.date_to)
+      const startStr = format(start, 'yyyy-MM-dd')
+      const endStr = format(end, 'yyyy-MM-dd')
+
+      const daysDiff = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+      const existingType = booking.booking_type
+
+      const isOvernightSpan = (
+        (existingType === 'overnight' || existingType === 'overnight_22h')
+        && daysDiff === 1
+      )
+
+      const isTrueMultiDay = daysDiff >= 2 || (daysDiff === 1 && !isOvernightSpan)
+      if (isTrueMultiDay) {
+        const current = new Date(start)
+        while (current <= end) {
+          blockedDates.push(format(current, 'yyyy-MM-dd'))
+          current.setDate(current.getDate() + 1)
+        }
+        return
+      }
+
+      // 22hrs blocks everything on that day
+      if (existingType === '22hrs') {
+        blockedDates.push(startStr)
+        return
+      }
+
+      // If user is trying to book 22hrs, block if there's ANY booking on this day
+      if (selectedType === '22hrs') {
+        blockedDates.push(startStr)
+        return
+      }
+
+      // Handle overnight spans (2 days)
+      if (isOvernightSpan) {
+        if (selectedType === 'overnight') {
+          blockedDates.push(startStr)
+        }
+        // Daytour doesn't conflict with overnight
+        return
+      }
+
+      // Single-day slot booking: only block when types match
+      if (existingType && existingType === selectedType) {
+        blockedDates.push(startStr)
+        return
+      }
+
+      // Legacy mapping
+      if (existingType === 'day_12h' && selectedType === 'daytour') {
+        blockedDates.push(startStr)
+      } else if (existingType === 'overnight_22h' && selectedType === 'overnight') {
+        blockedDates.push(startStr)
+      }
+    })
+
+    return [...new Set(blockedDates)]
+  }, [confirmedBookings, manualBookingForm.resort_id, manualBookingForm.booking_type])
 
   const toEndOfLocalDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999)
 
@@ -540,7 +635,7 @@ export default function OwnerBookingsContent(props: Props){
                       </div>
                       <div>
                         <label className="block text-sm font-bold text-slate-700 mb-1">Stay Type *</label>
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                           {[
                             { value: 'daytour', label: 'Day Tour', desc: '8AM-5PM' },
                             { value: 'overnight', label: 'Overnight', desc: '7PM-6AM' },
@@ -549,13 +644,19 @@ export default function OwnerBookingsContent(props: Props){
                             <button
                               key={type.value}
                               type="button"
-                              onClick={() => setManualBookingForm(prev => ({
-                                ...prev,
-                                booking_type: type.value as any,
-                                time_slot_id: '',
-                                check_in_time: '',
-                                check_out_time: '',
-                              }))}
+                              onClick={() => {
+                                setManualBookingValidationError(null)
+                                setManualBookingForm(prev => ({
+                                  ...prev,
+                                  booking_type: type.value as any,
+                                  time_slot_id: '',
+                                  check_in_time: '',
+                                  check_out_time: '',
+                                  // Clear dates so the picker can re-apply correct rules per type
+                                  date_from: '',
+                                  date_to: '',
+                                }))
+                              }}
                               className={`p-2 sm:p-3 rounded-xl border-2 text-center transition-all ${
                                 manualBookingForm.booking_type === type.value
                                   ? 'border-resort-500 bg-resort-50 text-resort-700'
@@ -609,37 +710,68 @@ export default function OwnerBookingsContent(props: Props){
                           </p>
                         ) : null}
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                        <div>
-                          <label className="block text-sm font-bold text-slate-700 mb-1">Check-in Date *</label>
-                          <input
-                            type="date"
-                            required
-                            value={manualBookingForm.date_from}
-                            onChange={(e) => normalizeManualDates({ date_from: e.target.value })}
-                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-base bg-white focus:outline-none focus:ring-2 focus:ring-resort-500/20 focus:border-resort-500"
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">
+                          {manualBookingForm.booking_type === 'daytour' ? 'Select Date *' : 'Select Dates *'}
+                        </label>
+                        <div className="w-full max-w-full overflow-x-auto rounded-2xl border-2 border-slate-200 bg-white p-2 sm:p-3">
+                          <DateRangePicker
+                            bookedDates={manualSlotAwareBookedDates}
+                            selectedRange={manualSelectedRange}
+                            onSelectRange={(range) => {
+                              // Clear
+                              if (!range?.from) {
+                                setManualBookingForm(prev => ({ ...prev, date_from: '', date_to: '' }))
+                                setManualBookingValidationError(null)
+                                return
+                              }
+
+                              const fromYmd = format(range.from, 'yyyy-MM-dd')
+
+                              if (manualBookingForm.booking_type === 'daytour') {
+                                setManualBookingForm(prev => ({ ...prev, date_from: fromYmd, date_to: fromYmd }))
+                                setManualBookingValidationError(null)
+                                return
+                              }
+
+                              if (!range.to) {
+                                setManualBookingForm(prev => ({ ...prev, date_from: fromYmd, date_to: '' }))
+                                setManualBookingValidationError(null)
+                                return
+                              }
+
+                              const toYmd = format(range.to, 'yyyy-MM-dd')
+                              setManualBookingForm(prev => ({ ...prev, date_from: fromYmd, date_to: toYmd }))
+                              setManualBookingValidationError(null)
+                            }}
+                            preferTwoMonthsOnDesktop
+                            singleDateMode={manualBookingForm.booking_type === 'daytour'}
+                            selectedSingleDate={manualBookingForm.booking_type === 'daytour' ? manualSelectedSingleDate : undefined}
+                            onSelectSingleDate={(date) => {
+                              if (!date) {
+                                setManualBookingForm(prev => ({ ...prev, date_from: '', date_to: '' }))
+                                setManualBookingValidationError(null)
+                                return
+                              }
+                              const ymd = format(date, 'yyyy-MM-dd')
+                              setManualBookingForm(prev => ({ ...prev, date_from: ymd, date_to: ymd }))
+                              setManualBookingValidationError(null)
+                            }}
+                            bookingType={manualBookingForm.booking_type}
+                            checkInTime={manualBookingForm.check_in_time || undefined}
+                            checkOutTime={manualBookingForm.check_out_time || undefined}
+                            cutoffTime={manualBookingForm.check_in_time || undefined}
+                            overnightStartTime={manualBookingForm.booking_type === 'overnight' ? (manualBookingForm.check_in_time || undefined) : undefined}
+                            twentyTwoHrsStartTime={manualBookingForm.booking_type === '22hrs' ? (manualBookingForm.check_in_time || undefined) : undefined}
                           />
                         </div>
-                        <div>
-                          <label className="block text-sm font-bold text-slate-700 mb-1">Check-out Date *</label>
-                          <input
-                            type="date"
-                            required
-                            value={manualBookingForm.date_to}
-                            min={manualBookingForm.booking_type === '22hrs' ? (manualBookingForm.date_from ? addDaysToYmd(manualBookingForm.date_from, 1) : undefined) : (manualBookingForm.date_from || undefined)}
-                            max={manualBookingForm.booking_type === 'overnight' ? (manualBookingForm.date_from ? addDaysToYmd(manualBookingForm.date_from, 1) : undefined) : (manualBookingForm.booking_type === 'daytour' ? (manualBookingForm.date_from || undefined) : undefined)}
-                            disabled={manualBookingForm.booking_type !== '22hrs'}
-                            onChange={(e) => normalizeManualDates({ date_to: e.target.value })}
-                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-base bg-white focus:outline-none focus:ring-2 focus:ring-resort-500/20 focus:border-resort-500 disabled:bg-slate-50 disabled:text-slate-500"
-                          />
-                          <p className="mt-1 text-xs text-slate-500">
-                            {manualBookingForm.booking_type === 'daytour'
-                              ? 'Day Tour is always a single date.'
-                              : manualBookingForm.booking_type === 'overnight'
-                              ? 'Overnight is always next-day checkout.'
-                              : '22 Hours allows longer stays (2+ days).'}
-                          </p>
-                        </div>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {manualBookingForm.booking_type === 'daytour'
+                            ? 'Day Tour is always a single date.'
+                            : manualBookingForm.booking_type === 'overnight'
+                            ? 'Overnight is always next-day checkout.'
+                            : '22 Hours allows longer stays (2+ days).'}
+                        </p>
                       </div>
                       {manualBookingValidationError ? (
                         <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
