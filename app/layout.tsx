@@ -14,10 +14,10 @@ import TermsAcceptanceGate from '../components/TermsAcceptanceGate'
 
 export const metadata = {
   title: {
-    default: 'ResortifyPH - Book Private Resorts in the Philippines',
+    default: 'ResortifyPH - Staycations & Private Resorts in the Philippines',
     template: '%s | ResortifyPH'
   },
-  description: 'Book private resorts across the Philippines. Connect with resort owners and create unforgettable experiences. Find beach resorts, mountain getaways, and exclusive staycations.',
+  description: 'Book staycations and private resorts across the Philippines. Connect with resort owners and create unforgettable experiences. Find beach resorts, mountain getaways, and exclusive staycations.',
   keywords: ['resort booking philippines', 'private resort', 'beach resort', 'staycation', 'resort ph', 'philippine resorts', 'vacation rental philippines', 'resortify'],
   authors: [{ name: 'ResortifyPH' }],
   creator: 'ResortifyPH',
@@ -34,8 +34,8 @@ export const metadata = {
     type: 'website',
     locale: 'en_PH',
     url: 'https://www.resortifyph.me/',
-    title: 'ResortifyPH - Book Private Resorts in the Philippines',
-    description: 'Book private resorts across the Philippines. Connect with resort owners and create unforgettable experiences.',
+    title: 'ResortifyPH - Staycations & Private Resorts in the Philippines',
+    description: 'Book staycations and private resorts across the Philippines. Connect with resort owners and create unforgettable experiences.',
     siteName: 'ResortifyPH',
     images: [
       {
@@ -48,8 +48,8 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'ResortifyPH - Book Private Resorts in the Philippines',
-    description: 'Book private resorts across the Philippines. Connect with resort owners and create unforgettable experiences.',
+    title: 'ResortifyPH - Staycations & Private Resorts in the Philippines',
+    description: 'Book staycations and private resorts across the Philippines. Connect with resort owners and create unforgettable experiences.',
     images: ['https://www.resortifyph.me/twitter-image'],
   },
   robots: {

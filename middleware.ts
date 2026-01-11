@@ -102,6 +102,8 @@ export default async function middleware(req: NextRequest) {
 
   // Skip middleware for static assets and Next.js internals to prevent 404s
   if (
+    pathname === '/opengraph-image' ||
+    pathname === '/twitter-image' ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/assets') ||
     pathname.startsWith('/api') ||
