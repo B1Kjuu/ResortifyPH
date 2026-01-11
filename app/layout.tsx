@@ -22,9 +22,9 @@ export const metadata = {
   authors: [{ name: 'ResortifyPH' }],
   creator: 'ResortifyPH',
   publisher: 'ResortifyPH',
-  metadataBase: new URL('https://resortifyph.me'),
+  metadataBase: new URL('https://www.resortifyph.me'),
   alternates: {
-    canonical: '/',
+    canonical: 'https://www.resortifyph.me/',
   },
   icons: {
     icon: '/assets/ResortifyPH-LOGO-CLEAN.ico',
@@ -33,13 +33,13 @@ export const metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_PH',
-    url: 'https://resortifyph.me',
+    url: 'https://www.resortifyph.me/',
     title: 'ResortifyPH - Book Private Resorts in the Philippines',
     description: 'Book private resorts across the Philippines. Connect with resort owners and create unforgettable experiences.',
     siteName: 'ResortifyPH',
     images: [
       {
-        url: '/opengraph-image',
+        url: 'https://www.resortifyph.me/opengraph-image',
         width: 1200,
         height: 630,
         alt: 'ResortifyPH - Philippine Resort Booking Platform',
@@ -50,7 +50,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: 'ResortifyPH - Book Private Resorts in the Philippines',
     description: 'Book private resorts across the Philippines. Connect with resort owners and create unforgettable experiences.',
-    images: ['/twitter-image'],
+    images: ['https://www.resortifyph.me/twitter-image'],
   },
   robots: {
     index: true,
@@ -81,11 +81,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'ResortifyPH',
-    url: 'https://resortifyph.me',
+    url: 'https://www.resortifyph.me/',
     description: 'Book private resorts across the Philippines',
     potentialAction: {
       '@type': 'SearchAction',
-      target: 'https://resortifyph.me/resorts?search={search_term_string}',
+      target: 'https://www.resortifyph.me/resorts?search={search_term_string}',
       'query-input': 'required name=search_term_string',
     },
   }

@@ -1,6 +1,7 @@
 'use client'
 import React, { useEffect, useMemo, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import Slider from 'rc-slider'
@@ -460,6 +461,23 @@ export default function ResortsPage(){
     return [...result].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   }, [resortsWithDistance, searchTerm, selectedLocation, selectedType, priceRange, priceBounds, guestCount, selectedAmenities, sortBy, availableResortIds, showNearby, position])
 
+  const hasActiveFilters =
+    Boolean(searchTerm) ||
+    selectedType !== 'all' ||
+    selectedLocation !== 'all' ||
+    guestCount !== 'all' ||
+    selectedAmenities.length > 0 ||
+    sortBy !== 'newest' ||
+    stayTypeFilter !== 'all' ||
+    Boolean(dateFrom) ||
+    Boolean(dateTo) ||
+    Boolean(selectedCategory) ||
+    showNearby ||
+    priceRange[0] !== priceBounds[0] ||
+    priceRange[1] !== priceBounds[1]
+
+  const isCatalogEmpty = resorts.length === 0
+
   // Nearby resorts list (optional, currently unused placeholder)
   const nearbyResorts = useMemo(() => {
     return [] as any[]
@@ -793,14 +811,39 @@ export default function ResortsPage(){
                 <FiSearch className="w-8 h-8 sm:w-10 sm:h-10 text-slate-400" />
               </div>
             </div>
-            <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">No resorts found</h3>
-            <p className="text-slate-600 mb-6 text-sm sm:text-base">Try adjusting your search or filters</p>
-            <button
-              onClick={() => { setSearchTerm(''); setSelectedType('all'); setSelectedLocation('all'); setGuestCount('all'); setSelectedAmenities([]); setSortBy('newest'); setPriceRange(priceBounds); setDateFrom(null); setDateTo(null); setSelectedCategory(null) }}
-              className="px-6 py-2.5 bg-resort-600 hover:bg-resort-700 text-white rounded-xl font-medium transition-colors"
-            >
-              Clear all filters
-            </button>
+            <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">{isCatalogEmpty ? 'No resorts yet' : 'No resorts found'}</h3>
+            <p className="text-slate-600 mb-6 text-sm sm:text-base">
+              {isCatalogEmpty ? 'Add your own resort to be the first one on ResortifyPH.' : 'Try adjusting your search or filters'}
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              {hasActiveFilters && (
+                <button
+                  onClick={() => { setSearchTerm(''); setSelectedType('all'); setSelectedLocation('all'); setGuestCount('all'); setSelectedAmenities([]); setSortBy('newest'); setPriceRange(priceBounds); setDateFrom(null); setDateTo(null); setSelectedCategory(null) }}
+                  className="px-6 py-2.5 bg-resort-600 hover:bg-resort-700 text-white rounded-xl font-medium transition-colors w-full sm:w-auto"
+                >
+                  Clear all filters
+                </button>
+              )}
+
+              {isCatalogEmpty && (
+                <Link
+                  href="/become-host"
+                  className="px-6 py-2.5 bg-resort-600 hover:bg-resort-700 text-white rounded-xl font-medium transition-colors w-full sm:w-auto"
+                >
+                  List your resort
+                </Link>
+              )}
+
+              {isCatalogEmpty && (
+                <Link
+                  href="/how-it-works"
+                  className="px-6 py-2.5 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-900 rounded-xl font-medium transition-colors w-full sm:w-auto"
+                >
+                  How it works
+                </Link>
+              )}
+            </div>
           </div>
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
