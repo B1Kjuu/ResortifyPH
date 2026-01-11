@@ -39,7 +39,7 @@ export const metadata = {
     siteName: 'ResortifyPH',
     images: [
       {
-        url: '/assets/og-image.jpg',
+        url: '/opengraph-image',
         width: 1200,
         height: 630,
         alt: 'ResortifyPH - Philippine Resort Booking Platform',
@@ -50,7 +50,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: 'ResortifyPH - Book Private Resorts in the Philippines',
     description: 'Book private resorts across the Philippines. Connect with resort owners and create unforgettable experiences.',
-    images: ['/assets/og-image.jpg'],
+    images: ['/twitter-image'],
   },
   robots: {
     index: true,
