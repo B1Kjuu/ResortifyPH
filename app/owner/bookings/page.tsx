@@ -86,7 +86,7 @@ export default function OwnerBookingsPage(){
         verified_by: row.verified_by ?? null,
         verified_notes: row.verified_notes ?? null,
         resort: { id: row.resort_id, name: row.resort_name },
-        guest: { id: row.guest_id, full_name: row.guest_full_name, email: row.guest_email }
+        guest: row.guest_id ? { id: row.guest_id, full_name: row.guest_full_name, email: row.guest_email } : null
       }))
       setBookings(enrichedBookings)
     } catch (err) {
@@ -599,28 +599,50 @@ export default function OwnerBookingsPage(){
       const checkIn = data.check_in_time || defaultSlot?.startTime || null
       const checkOut = data.check_out_time || defaultSlot?.endTime || null
 
-      // Create a booking entry with owner as the "guest" (manual/external booking)
-      // These are marked as confirmed immediately since they're existing reservations
-      const { data: newBooking, error } = await supabase
+      const insertPayloadBase: any = {
+        resort_id: data.resort_id,
+        date_from: data.date_from,
+        date_to: data.date_to,
+        guest_count: Math.max(1, Number(data.guest_count) || 1),
+        booking_type: data.booking_type,
+        time_slot_id: timeSlotId,
+        check_in_time: checkIn,
+        check_out_time: checkOut,
+        status: 'confirmed',
+        verified_notes: data.guest_name
+          ? `External booking: ${data.guest_name}${data.notes ? ' - ' + data.notes : ''}`
+          : (data.notes || 'External booking (made before platform)'),
+        payment_verified_at: new Date().toISOString(),
+        verified_by: userId,
+      }
+
+      // Preferred: NULL guest_id so it doesn't become a "self" booking
+      let { data: newBooking, error } = await supabase
         .from('bookings')
-        .insert({
-          resort_id: data.resort_id,
-          guest_id: userId, // Owner creates as placeholder guest
-          date_from: data.date_from,
-          date_to: data.date_to,
-          guest_count: Math.max(1, Number(data.guest_count) || 1),
-          booking_type: data.booking_type,
-          time_slot_id: timeSlotId,
-          check_in_time: checkIn,
-          check_out_time: checkOut,
-          status: 'confirmed',
-          // Store guest name and notes in a notes field if available, or use verified_notes
-          verified_notes: data.guest_name ? `External booking: ${data.guest_name}${data.notes ? ' - ' + data.notes : ''}` : (data.notes || 'External booking (made before platform)'),
-          payment_verified_at: new Date().toISOString(), // Mark as verified since it's manual
-          verified_by: userId,
-        })
+        .insert({ ...insertPayloadBase, guest_id: null })
         .select()
         .single()
+
+      // Fallback (for older DB policies/RPCs): attach to owner to pass RLS and appear in RPC lists
+      if (error) {
+        const msg = String((error as any)?.message || '')
+        const looksLikeRls = msg.toLowerCase().includes('row-level security') || msg.toLowerCase().includes('rls')
+        const looksLikeJoinOrPolicy = msg.toLowerCase().includes('violates') || msg.toLowerCase().includes('permission')
+        if (looksLikeRls || looksLikeJoinOrPolicy) {
+          const retry = await supabase
+            .from('bookings')
+            .insert({ ...insertPayloadBase, guest_id: userId })
+            .select()
+            .single()
+          newBooking = retry.data as any
+          error = retry.error as any
+          if (!error) {
+            sonnerToast.warning('Added booking, but DB migration needed', {
+              description: 'Apply the latest Supabase migration to avoid self-chat/self-booking behavior for external bookings.'
+            })
+          }
+        }
+      }
 
       if (error) {
         console.error('Manual booking error:', error)

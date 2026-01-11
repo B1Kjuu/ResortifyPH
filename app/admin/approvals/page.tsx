@@ -111,9 +111,14 @@ export default function ApprovalsPage(){
     
     // Notify owner via email and in-app notification
     try {
+      const { data: { session } } = await supabase.auth.getSession()
       const response = await fetch('/api/notifications/resort-status', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
+        },
+        keepalive: true,
         body: JSON.stringify({ resortId: resort.id, status: 'approved' }),
       })
       const result = await response.json()
@@ -148,9 +153,14 @@ export default function ApprovalsPage(){
     
     // Notify owner via email and in-app notification
     try {
+      const { data: { session } } = await supabase.auth.getSession()
       const response = await fetch('/api/notifications/resort-status', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
+        },
+        keepalive: true,
         body: JSON.stringify({ resortId: id, status: 'rejected', reason }),
       })
       const result = await response.json()

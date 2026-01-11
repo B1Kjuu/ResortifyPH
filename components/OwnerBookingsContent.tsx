@@ -97,9 +97,84 @@ export default function OwnerBookingsContent(props: Props){
   })
   const [manualBookingSubmitting, setManualBookingSubmitting] = React.useState(false)
   const [manualGuestCountDraft, setManualGuestCountDraft] = React.useState<string>('')
+  const [manualBookingValidationError, setManualBookingValidationError] = React.useState<string | null>(null)
   const [manualSlotLoading, setManualSlotLoading] = React.useState(false)
   const [manualSlotError, setManualSlotError] = React.useState<string | null>(null)
   const [manualSlotOptions, setManualSlotOptions] = React.useState<Array<{ id: string; label: string; start: string; end: string }>>([])
+
+  const addDaysToYmd = (ymd: string, days: number): string => {
+    const match = ymd.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+    if (!match) return ''
+    const year = Number(match[1])
+    const monthIndex = Number(match[2]) - 1
+    const day = Number(match[3])
+    const base = new Date(year, monthIndex, day)
+    base.setDate(base.getDate() + days)
+    const yyyy = String(base.getFullYear()).padStart(4, '0')
+    const mm = String(base.getMonth() + 1).padStart(2, '0')
+    const dd = String(base.getDate()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd}`
+  }
+
+  const normalizeManualDates = (next: Partial<typeof manualBookingForm>) => {
+    const booking_type = (next.booking_type ?? manualBookingForm.booking_type) as typeof manualBookingForm.booking_type
+    const date_from = next.date_from ?? manualBookingForm.date_from
+    const date_to = next.date_to ?? manualBookingForm.date_to
+
+    if (!date_from) {
+      setManualBookingForm(prev => ({ ...prev, ...next }))
+      setManualBookingValidationError(null)
+      return
+    }
+
+    if (booking_type === 'daytour') {
+      setManualBookingForm(prev => ({ ...prev, ...next, date_to: date_from }))
+      setManualBookingValidationError(null)
+      return
+    }
+
+    if (booking_type === 'overnight') {
+      const forcedTo = addDaysToYmd(date_from, 1)
+      setManualBookingForm(prev => ({ ...prev, ...next, date_to: forcedTo || date_from }))
+      setManualBookingValidationError(null)
+      return
+    }
+
+    // 22hrs: minimum 2 days (date_to must be at least +1 day)
+    const minTo = addDaysToYmd(date_from, 1)
+    if (!date_to) {
+      setManualBookingForm(prev => ({ ...prev, ...next, date_to: minTo }))
+      setManualBookingValidationError(null)
+      return
+    }
+    if (minTo && date_to < minTo) {
+      setManualBookingForm(prev => ({ ...prev, ...next, date_to: minTo }))
+      setManualBookingValidationError('22 Hours bookings require at least 2 days (next-day checkout minimum).')
+      return
+    }
+
+    setManualBookingForm(prev => ({ ...prev, ...next }))
+    setManualBookingValidationError(null)
+  }
+
+  const isExternalManualBooking = (booking: any): boolean => {
+    const notes = typeof booking?.verified_notes === 'string' ? booking.verified_notes.toLowerCase() : ''
+    return notes.includes('external booking')
+  }
+
+  const extractExternalGuestName = (booking: any): string | null => {
+    const notes = booking?.verified_notes
+    if (typeof notes !== 'string') return null
+    const match = notes.match(/^External booking:\s*([^\-\n\r]+?)(?:\s*-\s*|$)/i)
+    const name = match?.[1]?.trim()
+    return name ? name : null
+  }
+
+  const getGuestDisplayName = (booking: any): string => {
+    const extracted = extractExternalGuestName(booking)
+    if (isExternalManualBooking(booking)) return extracted || 'External guest'
+    return booking?.guest?.full_name || extracted || 'Guest'
+  }
 
   React.useEffect(() => {
     let cancelled = false
@@ -188,6 +263,27 @@ export default function OwnerBookingsContent(props: Props){
     if (!manualBookingForm.resort_id || !manualBookingForm.date_from || !manualBookingForm.date_to) {
       return
     }
+
+    // Validate date rules (mirror DateRangePicker constraints)
+    if (manualBookingForm.booking_type === 'daytour' && manualBookingForm.date_to !== manualBookingForm.date_from) {
+      setManualBookingValidationError('Day Tour bookings must be a single day.')
+      return
+    }
+    if (manualBookingForm.booking_type === 'overnight') {
+      const expected = addDaysToYmd(manualBookingForm.date_from, 1)
+      if (expected && manualBookingForm.date_to !== expected) {
+        setManualBookingValidationError('Overnight bookings must be exactly 2 days (next-day checkout).')
+        return
+      }
+    }
+    if (manualBookingForm.booking_type === '22hrs') {
+      const minTo = addDaysToYmd(manualBookingForm.date_from, 1)
+      if (minTo && manualBookingForm.date_to < minTo) {
+        setManualBookingValidationError('22 Hours bookings require at least 2 days (next-day checkout minimum).')
+        return
+      }
+    }
+
     setManualBookingSubmitting(true)
     try {
       await onAddManualBooking(manualBookingForm)
@@ -205,6 +301,7 @@ export default function OwnerBookingsContent(props: Props){
         check_out_time: '',
       })
       setManualGuestCountDraft('')
+      setManualBookingValidationError(null)
     } finally {
       setManualBookingSubmitting(false)
     }
@@ -519,7 +616,7 @@ export default function OwnerBookingsContent(props: Props){
                             type="date"
                             required
                             value={manualBookingForm.date_from}
-                            onChange={(e) => setManualBookingForm(prev => ({ ...prev, date_from: e.target.value }))}
+                            onChange={(e) => normalizeManualDates({ date_from: e.target.value })}
                             className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-base bg-white focus:outline-none focus:ring-2 focus:ring-resort-500/20 focus:border-resort-500"
                           />
                         </div>
@@ -529,12 +626,26 @@ export default function OwnerBookingsContent(props: Props){
                             type="date"
                             required
                             value={manualBookingForm.date_to}
-                            min={manualBookingForm.date_from || undefined}
-                            onChange={(e) => setManualBookingForm(prev => ({ ...prev, date_to: e.target.value }))}
-                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-base bg-white focus:outline-none focus:ring-2 focus:ring-resort-500/20 focus:border-resort-500"
+                            min={manualBookingForm.booking_type === '22hrs' ? (manualBookingForm.date_from ? addDaysToYmd(manualBookingForm.date_from, 1) : undefined) : (manualBookingForm.date_from || undefined)}
+                            max={manualBookingForm.booking_type === 'overnight' ? (manualBookingForm.date_from ? addDaysToYmd(manualBookingForm.date_from, 1) : undefined) : (manualBookingForm.booking_type === 'daytour' ? (manualBookingForm.date_from || undefined) : undefined)}
+                            disabled={manualBookingForm.booking_type !== '22hrs'}
+                            onChange={(e) => normalizeManualDates({ date_to: e.target.value })}
+                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-base bg-white focus:outline-none focus:ring-2 focus:ring-resort-500/20 focus:border-resort-500 disabled:bg-slate-50 disabled:text-slate-500"
                           />
+                          <p className="mt-1 text-xs text-slate-500">
+                            {manualBookingForm.booking_type === 'daytour'
+                              ? 'Day Tour is always a single date.'
+                              : manualBookingForm.booking_type === 'overnight'
+                              ? 'Overnight is always next-day checkout.'
+                              : '22 Hours allows longer stays (2+ days).'}
+                          </p>
                         </div>
                       </div>
+                      {manualBookingValidationError ? (
+                        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                          {manualBookingValidationError}
+                        </div>
+                      ) : null}
                       <div>
                         <label className="block text-sm font-bold text-slate-700 mb-1">Guest Name (optional)</label>
                         <input
@@ -542,7 +653,7 @@ export default function OwnerBookingsContent(props: Props){
                           placeholder="e.g., Juan dela Cruz"
                           value={manualBookingForm.guest_name}
                           onChange={(e) => setManualBookingForm(prev => ({ ...prev, guest_name: e.target.value }))}
-                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl"
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-base"
                         />
                       </div>
                       <div>
@@ -567,7 +678,7 @@ export default function OwnerBookingsContent(props: Props){
                             setManualBookingForm(prev => ({ ...prev, guest_count: normalized }))
                             setManualGuestCountDraft('')
                           }}
-                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl"
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-base"
                         />
                       </div>
                       <div>
@@ -577,7 +688,7 @@ export default function OwnerBookingsContent(props: Props){
                           placeholder="Any additional details about this booking"
                           value={manualBookingForm.notes}
                           onChange={(e) => setManualBookingForm(prev => ({ ...prev, notes: e.target.value }))}
-                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl resize-none"
+                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl resize-none text-base"
                         />
                       </div>
                       <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
@@ -625,7 +736,7 @@ export default function OwnerBookingsContent(props: Props){
                         setHoverTooltip(null)
                         return
                       }
-                      const summary = bookingsForDay.slice(0,3).map((b: any) => `${b.resort?.name || 'Resort'} — ${b.guest?.full_name || 'Guest'} (${b.date_from} → ${b.date_to})`).join('\n')
+                      const summary = bookingsForDay.slice(0,3).map((b: any) => `${b.resort?.name || 'Resort'} — ${getGuestDisplayName(b)} (${b.date_from} → ${b.date_to})`).join('\n')
                       const rect = calendarRef.current?.getBoundingClientRect()
                       const x = rect ? e.clientX - rect.left + 12 : 0
                       const y = rect ? e.clientY - rect.top + 12 : 0
@@ -650,7 +761,7 @@ export default function OwnerBookingsContent(props: Props){
                       <div className="sticky top-0 z-10 flex items-start justify-between gap-3 p-4 sm:p-6 bg-white border-b border-slate-100">
                         <div className="min-w-0">
                           <h3 className="text-lg sm:text-2xl font-bold text-slate-900 truncate">Bookings on {selectedDate.toLocaleDateString()}</h3>
-                          <p className="text-xs sm:text-sm text-slate-600">Tap a booking to open chat</p>
+                          <p className="text-xs sm:text-sm text-slate-600">Tap a booking to view details</p>
                         </div>
                         <button
                           className="px-3 py-2 rounded-lg border-2 border-slate-200 hover:bg-slate-50 text-sm"
@@ -670,7 +781,10 @@ export default function OwnerBookingsContent(props: Props){
                                   <div className="min-w-0">
                                     <p className="text-xs text-slate-600">Resort</p>
                                     <p className="text-base sm:text-lg font-bold text-slate-900 truncate">{b.resort?.name}</p>
-                                    <p className="text-xs sm:text-sm text-slate-600 mt-1 break-all">👤 {b.guest?.full_name} — 📧 {b.guest?.email}</p>
+                                    <p className="text-xs sm:text-sm text-slate-600 mt-1 break-all">
+                                      👤 {getGuestDisplayName(b)}
+                                      {b.guest?.email ? ` — 📧 ${b.guest.email}` : isExternalManualBooking(b) ? ' — External booking' : ''}
+                                    </p>
                                     <p className="text-xs sm:text-sm text-slate-700 mt-1">📅 {b.date_from} → {b.date_to}</p>
                                     <p className="text-xs sm:text-sm text-slate-700 mt-1">👥 {b.guest_count} {b.guest_count === 1 ? 'guest' : 'guests'}{typeof b.children_count === 'number' && b.children_count > 0 ? ` · 👶 ${b.children_count}` : ''}{typeof b.pets_count === 'number' && b.pets_count > 0 ? ` · 🐾 ${b.pets_count}` : ''}</p>
                                   </div>
@@ -679,7 +793,13 @@ export default function OwnerBookingsContent(props: Props){
                                       {b.cancellation_status === 'requested' && (
                                         <span className="text-[10px] bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-lg border border-yellow-200">⚠ Cancellation requested</span>
                                       )}
-                                    <ChatLink bookingId={b.id} as="owner" label="Open Chat" title={b.guest?.full_name || b.guest?.email || 'Guest'} />
+                                    {!isExternalManualBooking(b) ? (
+                                      <ChatLink bookingId={b.id} as="owner" label="Open Chat" title={getGuestDisplayName(b)} />
+                                    ) : (
+                                      <span className="text-[10px] sm:text-xs px-2 py-1 rounded-lg border border-slate-200 text-slate-600 bg-slate-50">
+                                        No chat (external)
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
                               </div>
@@ -716,8 +836,10 @@ export default function OwnerBookingsContent(props: Props){
                           <div className="flex flex-wrap justify-between items-start gap-2 mb-4">
                             <div className="min-w-0">
                               <h3 className="text-base sm:text-lg font-bold text-slate-900 truncate">{booking.resort?.name}</h3>
-                              <p className="text-xs sm:text-sm text-slate-600 mt-1">👤 {booking.guest?.full_name}</p>
-                              <p className="text-xs sm:text-sm text-slate-600 break-all">📧 {booking.guest?.email}</p>
+                              <p className="text-xs sm:text-sm text-slate-600 mt-1">👤 {getGuestDisplayName(booking)}</p>
+                              {booking.guest?.email ? (
+                                <p className="text-xs sm:text-sm text-slate-600 break-all">📧 {booking.guest.email}</p>
+                              ) : null}
                             </div>
                             <div className="flex flex-wrap items-center gap-1">
                               <span className="text-[10px] sm:text-xs bg-yellow-100 text-yellow-800 px-2 sm:px-3 py-1 rounded-lg font-bold border-2 border-yellow-300">⏳ Pending</span>
@@ -779,7 +901,9 @@ export default function OwnerBookingsContent(props: Props){
                             >
                               Delete
                             </button>
-                            <ChatLink bookingId={booking.id} as="owner" label="Open Chat" title={booking.guest?.full_name || booking.guest?.email || 'Guest'} />
+                            {!isExternalManualBooking(booking) ? (
+                              <ChatLink bookingId={booking.id} as="owner" label="Open Chat" title={getGuestDisplayName(booking)} />
+                            ) : null}
                           </div>
                           <p className="text-xs text-slate-500 mt-2">Coordinate payment in chat; confirm only after verifying proof.</p>
                           <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -882,8 +1006,12 @@ export default function OwnerBookingsContent(props: Props){
                       <div className="flex flex-wrap justify-between items-start gap-2 mb-4">
                         <div className="min-w-0">
                           <h3 className="text-base sm:text-lg font-bold text-slate-900 truncate">{booking.resort?.name}</h3>
-                          <p className="text-xs sm:text-sm text-slate-600 mt-1">👤 {booking.guest?.full_name}</p>
-                          <p className="text-xs sm:text-sm text-slate-600 break-all">📧 {booking.guest?.email}</p>
+                          <p className="text-xs sm:text-sm text-slate-600 mt-1">👤 {getGuestDisplayName(booking)}</p>
+                          {booking.guest?.email ? (
+                            <p className="text-xs sm:text-sm text-slate-600 break-all">📧 {booking.guest.email}</p>
+                          ) : isExternalManualBooking(booking) ? (
+                            <p className="text-xs sm:text-sm text-slate-500">External booking</p>
+                          ) : null}
                         </div>
                         <div className="flex flex-wrap items-center gap-1">
                           <span className="text-[10px] sm:text-xs bg-green-100 text-green-800 px-2 sm:px-3 py-1 rounded-lg font-bold border-2 border-green-300">✅ Confirmed</span>
@@ -930,7 +1058,13 @@ export default function OwnerBookingsContent(props: Props){
                           ✓ Confirmed: {new Date(booking.created_at).toLocaleDateString()}
                         </p>
                         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                          <ChatLink bookingId={booking.id} as="owner" label="Open Chat" title={booking.guest?.full_name || booking.guest?.email || 'Guest'} />
+                          {!isExternalManualBooking(booking) ? (
+                            <ChatLink bookingId={booking.id} as="owner" label="Open Chat" title={getGuestDisplayName(booking)} />
+                          ) : (
+                            <span className="text-[10px] sm:text-xs px-2 py-1 rounded-lg border border-slate-200 text-slate-600 bg-slate-50">
+                              No chat (external)
+                            </span>
+                          )}
                           <div className="flex flex-wrap items-center gap-2">
                             <button
                               type="button"
@@ -1081,8 +1215,12 @@ export default function OwnerBookingsContent(props: Props){
                                 <div className="flex flex-wrap justify-between items-start gap-2 mb-2">
                                   <div className="min-w-0">
                                     <h3 className="text-base sm:text-lg font-bold text-slate-900 truncate">{booking.resort?.name}</h3>
-                                    <p className="text-xs sm:text-sm text-slate-600">👤 {booking.guest?.full_name}</p>
-                                    <p className="text-xs sm:text-sm text-slate-600 break-all">📧 {booking.guest?.email}</p>
+                                    <p className="text-xs sm:text-sm text-slate-600">👤 {getGuestDisplayName(booking)}</p>
+                                    {booking.guest?.email ? (
+                                      <p className="text-xs sm:text-sm text-slate-600 break-all">📧 {booking.guest.email}</p>
+                                    ) : isExternalManualBooking(booking) ? (
+                                      <p className="text-xs sm:text-sm text-slate-500">External booking</p>
+                                    ) : null}
                                   </div>
                                   <span className="text-[10px] bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-lg border border-yellow-200">⚠ Cancellation requested</span>
                                 </div>
@@ -1099,7 +1237,13 @@ export default function OwnerBookingsContent(props: Props){
                                     onClick={() => declineCancellation(booking.id)}
                                     className="px-3 py-2 text-xs font-semibold bg-slate-100 text-slate-900 rounded-lg border-2 border-slate-300 hover:bg-slate-200"
                                   >Decline</button>
-                                  <ChatLink bookingId={booking.id} as="owner" label="Open Chat" title={booking.guest?.full_name || booking.guest?.email || 'Guest'} />
+                                  {!isExternalManualBooking(booking) ? (
+                                    <ChatLink bookingId={booking.id} as="owner" label="Open Chat" title={getGuestDisplayName(booking)} />
+                                  ) : (
+                                    <span className="text-[10px] sm:text-xs px-2 py-1 rounded-lg border border-slate-200 text-slate-600 bg-slate-50">
+                                      No chat (external)
+                                    </span>
+                                  )}
                                 </div>
                                 <p className="mt-2 text-[10px] text-slate-600">If payment was collected, follow your refund policy and coordinate details in chat before approving.</p>
                               </div>
@@ -1145,7 +1289,7 @@ export default function OwnerBookingsContent(props: Props){
                           <div className="flex flex-wrap justify-between items-start gap-2 mb-4">
                             <div className="min-w-0">
                               <h3 className="text-base sm:text-lg font-bold text-slate-900 truncate">{booking.resort?.name}</h3>
-                              <p className="text-xs sm:text-sm text-slate-600 mt-1">{booking.guest?.full_name}</p>
+                              <p className="text-xs sm:text-sm text-slate-600 mt-1">{getGuestDisplayName(booking)}</p>
                             </div>
                             <span className="text-[10px] sm:text-xs bg-red-100 text-red-800 px-2 sm:px-3 py-1 rounded-lg font-bold border-2 border-red-200">Rejected</span>
                           </div>
@@ -1198,8 +1342,12 @@ export default function OwnerBookingsContent(props: Props){
                           />
                           <div className="min-w-0">
                             <h3 className="text-base sm:text-lg font-bold text-slate-900 truncate">{booking.resort?.name}</h3>
-                            <p className="text-xs sm:text-sm text-slate-600 mt-1">👤 {booking.guest?.full_name}</p>
-                            <p className="text-xs sm:text-sm text-slate-600 break-all">📧 {booking.guest?.email}</p>
+                            <p className="text-xs sm:text-sm text-slate-600 mt-1">👤 {getGuestDisplayName(booking)}</p>
+                            {booking.guest?.email ? (
+                              <p className="text-xs sm:text-sm text-slate-600 break-all">📧 {booking.guest.email}</p>
+                            ) : isExternalManualBooking(booking) ? (
+                              <p className="text-xs sm:text-sm text-slate-500">External booking</p>
+                            ) : null}
                           </div>
                         </div>
                         <div className="flex flex-wrap items-center gap-1">
@@ -1227,7 +1375,13 @@ export default function OwnerBookingsContent(props: Props){
                         </div>
                         <p className="text-sm text-slate-700">👥 <span className="font-bold">{booking.guest_count} {booking.guest_count === 1 ? 'guest' : 'guests'}</span>{typeof booking.children_count === 'number' && booking.children_count > 0 ? ` · 👶 ${booking.children_count}` : ''}{typeof booking.pets_count === 'number' && booking.pets_count > 0 ? ` · 🐾 ${booking.pets_count}` : ''}</p>
                         <div className="mt-3 flex justify-end">
-                          <ChatLink bookingId={booking.id} as="owner" label="Open Chat" title={booking.guest?.full_name || booking.guest?.email || 'Guest'} />
+                          {!isExternalManualBooking(booking) ? (
+                            <ChatLink bookingId={booking.id} as="owner" label="Open Chat" title={getGuestDisplayName(booking)} />
+                          ) : (
+                            <span className="text-[10px] sm:text-xs px-2 py-1 rounded-lg border border-slate-200 text-slate-600 bg-slate-50">
+                              No chat (external)
+                            </span>
+                          )}
                         </div>
                         {booking.cancellation_status === 'requested' && (
                           <div className="mt-3 flex items-center gap-2">

@@ -267,9 +267,14 @@ export default function CreateResort() {
 
     // Notify admins of new submission
     try {
+      const { data: { session } } = await supabase.auth.getSession()
       await fetch('/api/notifications/resort-submitted', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
+        },
+        keepalive: true,
         body: JSON.stringify({
           resortName: values.name,
           ownerName: undefined,

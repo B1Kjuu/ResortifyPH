@@ -233,9 +233,14 @@ export default function ReviewForm({ resortId, bookingId, onSubmitted }: { resor
         
         // Send notification to resort owner (non-blocking)
         if (data) {
+          const { data: { session } } = await supabase.auth.getSession()
           fetch('/api/notifications/review-posted', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
+            },
+            keepalive: true,
             body: JSON.stringify({
               reviewId: data,
               resortId,
