@@ -57,8 +57,8 @@ export default function AnnouncementBanner() {
   const [isAdmin, setIsAdmin] = useState(false)
   const pathname = usePathname()
 
-  // Don't show on admin pages (admin has their own announcement management)
-  const isAdminPage = pathname?.startsWith('/admin')
+  // Only hide on the announcement management page itself
+  const hideOnThisPage = pathname?.startsWith('/admin/announcements')
 
   useEffect(() => {
     // Load dismissed announcements from localStorage
@@ -72,8 +72,6 @@ export default function AnnouncementBanner() {
 
   useEffect(() => {
     async function fetchAnnouncements() {
-      const now = new Date().toISOString()
-      
       // Get current user's role
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
@@ -95,8 +93,6 @@ export default function AnnouncementBanner() {
         .select('*')
         .eq('is_active', true)
         .eq('display_type', 'banner')
-        .lte('starts_at', now)
-        .or(`ends_at.is.null,ends_at.gt.${now}`)
         .order('created_at', { ascending: false })
 
       if (!error && data) {
@@ -104,10 +100,10 @@ export default function AnnouncementBanner() {
       }
     }
 
-    if (!isAdminPage) {
+    if (!hideOnThisPage) {
       fetchAnnouncements()
     }
-  }, [isAdminPage])
+  }, [hideOnThisPage])
 
   const handleDismiss = useCallback((id: string) => {
     setDismissedIds(prev => {
@@ -120,8 +116,8 @@ export default function AnnouncementBanner() {
     })
   }, [])
 
-  // Don't render on admin pages
-  if (isAdminPage) return null
+  // Don't render on announcements admin page
+  if (hideOnThisPage) return null
 
   // Filter announcements based on user role and dismissed state
   const visibleAnnouncements = announcements.filter(a => {

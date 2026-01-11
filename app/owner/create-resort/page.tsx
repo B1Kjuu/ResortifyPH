@@ -15,6 +15,7 @@ import LocationPicker from '../../../components/LocationPicker'
 import PricingConfigurator from '../../../components/PricingConfigurator'
 import { getProvinceInfo } from '../../../lib/locations'
 import { supabase } from '../../../lib/supabaseClient'
+import { generateUniqueResortSlug } from '../../../lib/slug'
 import { resortSchema, type ResortInput, type ResortPricingConfig } from '../../../lib/validations'
 import DisclaimerBanner from '../../../components/DisclaimerBanner'
 import { FiMapPin, FiDollarSign, FiUsers, FiCamera, FiCheck, FiClock } from 'react-icons/fi'
@@ -207,9 +208,12 @@ export default function CreateResort() {
       if (hrs22Prices.length > 0) night_tour_price = Math.min(...hrs22Prices) // Use night_tour_price for 22hrs
     }
     
+    const slug = await generateUniqueResortSlug(values.name, supabase)
+
     const payload = {
       owner_id: userId,
       name: values.name,
+      slug,
       description: values.description,
       location: values.location,
       latitude: values.latitude ?? null,

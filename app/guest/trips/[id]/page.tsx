@@ -30,7 +30,7 @@ export default function GuestTripDetailsPage(){
           id, resort_id, guest_id, date_from, date_to, guest_count, status, created_at,
           cancellation_status, cancellation_requested_at, cancellation_reason,
           payment_verified_at, payment_method, payment_reference, verified_by, verified_notes,
-          resorts:resorts(id, name, location, price, images, owner_id)
+          resorts:resorts(id, slug, name, location, price, images, owner_id)
         `)
         .eq('id', bookingId)
         .eq('guest_id', session.user.id)
@@ -142,7 +142,7 @@ export default function GuestTripDetailsPage(){
             ) : null}
             <ChatLink bookingId={booking.id} as="guest" label="Message Host" title={booking.resorts?.name || undefined} />
           </div>
-          <Link href={`/resorts/${booking.resort_id}`} className="inline-flex items-center rounded-md border px-3 py-1 text-sm bg-slate-50 text-slate-700 hover:bg-slate-100">View Resort</Link>
+          <Link href={`/resorts/${booking.resorts?.slug || booking.resort_id}`} className="inline-flex items-center rounded-md border px-3 py-1 text-sm bg-slate-50 text-slate-700 hover:bg-slate-100">View Resort</Link>
         </div>
 
         {/* Cancellation Reason Modal */}

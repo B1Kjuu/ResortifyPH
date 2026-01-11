@@ -6,6 +6,7 @@ import LocationCombobox from '../../../components/LocationCombobox'
 import DisclaimerBanner from '../../../components/DisclaimerBanner'
 import { getProvinceInfo } from '../../../lib/locations'
 import { supabase } from '../../../lib/supabaseClient'
+import { generateUniqueResortSlug } from '../../../lib/slug'
 import { useRouter } from 'next/navigation'
 import { FiMapPin, FiDollarSign, FiUsers, FiStar, FiEdit3, FiCamera, FiCheck, FiClock, FiX } from 'react-icons/fi'
 import { FaHotel, FaRocket } from 'react-icons/fa'
@@ -61,9 +62,12 @@ export default function LaunchResort(){
     setSubmitting(true)
     const provinceInfo = getProvinceInfo(location)
 
+    const slug = await generateUniqueResortSlug(name, supabase)
+
     const { error } = await supabase.from('resorts').insert([{ 
       owner_id: userId, 
       name, 
+      slug,
       description, 
       location, 
       region_code: provinceInfo?.regionCode ?? null,

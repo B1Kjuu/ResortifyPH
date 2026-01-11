@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
       .from("resorts")
       .select(`
         id,
+        slug,
         name,
         owner_id,
         owner:profiles!resorts_owner_id_fkey(id, email, full_name)
@@ -95,6 +96,7 @@ export async function POST(req: NextRequest) {
     const ownerName = owner.full_name || "Resort Owner";
     const resortName = resort.name;
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://resortifyph.com";
+    const publicResortPath = `/resorts/${(resort as any).slug || resortId}`
 
     // Create in-app notification for the owner
     const notificationData = {
@@ -104,7 +106,7 @@ export async function POST(req: NextRequest) {
       body: title
         ? `"${title}" — Check out your new ${rating}-star review!`
         : `A guest left you a ${rating}-star review for ${resortName}!`,
-      link: `/resorts/${resortId}#reviews`,
+      link: `${publicResortPath}#reviews`,
     };
 
     const { error: notifError } = await supabaseAdmin
@@ -127,11 +129,11 @@ export async function POST(req: NextRequest) {
         ...(title ? [{ label: "Title", value: title }] : []),
         { label: "Review", value: content.substring(0, 200) + (content.length > 200 ? "..." : "") },
       ],
-      cta: { label: "View Review", href: `${siteUrl}/resorts/${resortId}#reviews` },
+      cta: { label: "View Review", href: `${siteUrl}${publicResortPath}#reviews` },
       footer: "Keep up the great work! Positive reviews help attract more guests.",
       type: "booking",
     });
-    const text = `New ${rating}-star review for "${resortName}".\n${title ? `Title: ${title}\n` : ""}Review: ${content}\n\nView: ${siteUrl}/resorts/${resortId}#reviews`;
+    const text = `New ${rating}-star review for "${resortName}".\n${title ? `Title: ${title}\n` : ""}Review: ${content}\n\nView: ${siteUrl}${publicResortPath}#reviews`;
 
     const emailResult = await sendEmail({ to: ownerEmail, subject, html, text });
 

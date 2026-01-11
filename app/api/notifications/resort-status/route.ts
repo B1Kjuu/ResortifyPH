@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
       .from("resorts")
       .select(`
         id,
+        slug,
         name,
         location,
         owner_id,
@@ -71,6 +72,7 @@ export async function POST(req: NextRequest) {
     const ownerName = owner.full_name || "Resort Owner";
     const resortName = resort.name;
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://resortifyph.com";
+    const publicResortPath = `/resorts/${(resort as any).slug || resortId}`
 
     // Create in-app notification for the owner
     const notificationData = {
@@ -83,7 +85,7 @@ export async function POST(req: NextRequest) {
         ? `Congratulations! Your resort is now live and visible to guests. Start receiving bookings today!`
         : `Unfortunately, your resort submission was not approved.${reason ? ` Reason: ${reason}` : ' Please review and resubmit.'}`,
       link: status === "approved" 
-        ? `/resorts/${resortId}`
+        ? publicResortPath
         : `/owner/my-resorts`,
     };
 
@@ -108,11 +110,11 @@ export async function POST(req: NextRequest) {
           { label: "Status", value: "✅ Approved & Live" },
           { label: "Next Steps", value: "Set pricing, add photos, respond to bookings" },
         ],
-        cta: { label: "View Your Resort", href: `${siteUrl}/resorts/${resortId}` },
+        cta: { label: "View Your Resort", href: `${siteUrl}${publicResortPath}` },
         footer: "Keep your availability calendar updated to receive more bookings!",
         type: "booking",
       });
-      const text = `Great news! Your resort "${resortName}" has been approved and is now live on ResortifyPH. View it at: ${siteUrl}/resorts/${resortId}`;
+      const text = `Great news! Your resort "${resortName}" has been approved and is now live on ResortifyPH. View it at: ${siteUrl}${publicResortPath}`;
 
       emailResult = await sendEmail({ to: ownerEmail, subject, html, text });
     } else {

@@ -7,6 +7,7 @@ import { FiEye, FiMapPin, FiUsers, FiCalendar, FiDollarSign, FiStar, FiSearch, F
 
 interface Resort {
   id: string
+  slug?: string | null
   name: string
   location: string
   price: number
@@ -270,7 +271,7 @@ export default function AdminActiveResortsPage(){
                           </div>
                           <div className="flex gap-2 mt-3">
                             <Link 
-                              href={`/resorts/${resort.id}`}
+                              href={`/resorts/${resort.slug || resort.id}`}
                               className="flex-1 text-center px-3 py-2 text-xs bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition font-medium"
                               onClick={(e) => e.stopPropagation()}
                             >

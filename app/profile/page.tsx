@@ -663,7 +663,7 @@ export default function ProfilePage(){
                 ) : (
                   <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
                     {favorites.map((r: any) => (
-                      <Link key={r.id} href={`/resorts/${r.id}`} className="flex items-center gap-3 p-3 sm:p-4 border-2 border-slate-200 rounded-xl bg-white hover:border-resort-300 transition">
+                      <Link key={r.id} href={`/resorts/${r.slug || r.id}`} className="flex items-center gap-3 p-3 sm:p-4 border-2 border-slate-200 rounded-xl bg-white hover:border-resort-300 transition">
                         <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
                           {Array.isArray(r.images) && r.images.length > 0 ? (
                             <img src={r.images[0]} alt={r.name} className="w-full h-full object-cover" />

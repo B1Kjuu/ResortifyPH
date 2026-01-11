@@ -223,7 +223,7 @@ export default function MyResorts(){
                   <Link href={`/owner/edit-resort/${resort.id}`} className="flex-1 px-4 py-3 text-sm font-bold border-2 border-slate-300 rounded-xl hover:bg-slate-50 hover:border-slate-400 transition text-center inline-flex items-center justify-center gap-2">
                     <FiEdit className="w-4 h-4" /> Edit
                   </Link>
-                  <Link href={`/resorts/${resort.id}`} className="flex-1 px-4 py-3 text-sm font-bold bg-gradient-to-r from-resort-500 to-blue-500 text-white rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all border-2 border-resort-400 text-center inline-flex items-center justify-center gap-2">
+                  <Link href={`/resorts/${resort.slug || resort.id}`} className="flex-1 px-4 py-3 text-sm font-bold bg-gradient-to-r from-resort-500 to-blue-500 text-white rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all border-2 border-resort-400 text-center inline-flex items-center justify-center gap-2">
                     <FiEye className="w-4 h-4" /> View
                   </Link>
                   <button

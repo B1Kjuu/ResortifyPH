@@ -51,7 +51,7 @@ export default function TripsPage(){
 
         const { data: bookingsData, error: bookingsError } = await supabase
           .from('bookings')
-          .select('id, resort_id, guest_id, date_from, date_to, guest_count, status, created_at, cancellation_status, cancellation_requested_at, cancellation_reason, resorts:resorts(id,name,location)')
+          .select('id, resort_id, guest_id, date_from, date_to, guest_count, status, created_at, cancellation_status, cancellation_requested_at, cancellation_reason, resorts:resorts(id,slug,name,location)')
           .eq('guest_id', session.user.id)
           .order('created_at', { ascending: false })
 
@@ -200,7 +200,7 @@ export default function TripsPage(){
                             </div>
                             <div className="flex items-center justify-between gap-3">
                               <Link href={`/guest/trips/${booking.id}`} className="inline-flex items-center rounded-md border px-3 py-1 text-sm bg-slate-50 text-slate-700 hover:bg-slate-100">View Details</Link>
-                              <Link href={`/resorts/${booking.resort_id}`} className="inline-flex items-center rounded-md border px-3 py-1 text-sm bg-slate-50 text-slate-700 hover:bg-slate-100">View Resort</Link>
+                              <Link href={`/resorts/${booking.resorts?.slug || booking.resort_id}`} className="inline-flex items-center rounded-md border px-3 py-1 text-sm bg-slate-50 text-slate-700 hover:bg-slate-100">View Resort</Link>
                               {booking.status === 'rejected' && (
                                 <button onClick={() => deleteBooking(booking.id)} className="inline-flex items-center rounded-md border px-3 py-1 text-sm bg-red-50 text-red-700 hover:bg-red-100">Delete</button>
                               )}
@@ -293,7 +293,7 @@ export default function TripsPage(){
                           </div>
                           <div className="flex items-center justify-between gap-3">
                             <Link href={`/guest/trips/${booking.id}`} className="inline-flex items-center rounded-md border px-3 py-1 text-sm bg-slate-50 text-slate-700 hover:bg-slate-100">View Details</Link>
-                            <Link href={`/resorts/${booking.resort_id}`} className="inline-flex items-center rounded-md border px-3 py-1 text-sm bg-slate-50 text-slate-700 hover:bg-slate-100">View Resort</Link>
+                            <Link href={`/resorts/${booking.resorts?.slug || booking.resort_id}`} className="inline-flex items-center rounded-md border px-3 py-1 text-sm bg-slate-50 text-slate-700 hover:bg-slate-100">View Resort</Link>
                             <button onClick={() => deleteBooking(booking.id)} className="inline-flex items-center rounded-md border px-3 py-1 text-sm bg-red-50 text-red-700 hover:bg-red-100">Delete</button>
                           </div>
                         </div>
@@ -324,7 +324,7 @@ export default function TripsPage(){
                           </div>
                           <div className="flex items-center justify-between gap-3">
                             <Link href={`/guest/trips/${booking.id}`} className="inline-flex items-center rounded-md border px-3 py-1 text-sm bg-slate-50 text-slate-700 hover:bg-slate-100">View Details</Link>
-                            <Link href={`/resorts/${booking.resort_id}`} className="inline-flex items-center rounded-md border px-3 py-1 text-sm bg-slate-50 text-slate-700 hover:bg-slate-100">View Resort</Link>
+                            <Link href={`/resorts/${booking.resorts?.slug || booking.resort_id}`} className="inline-flex items-center rounded-md border px-3 py-1 text-sm bg-slate-50 text-slate-700 hover:bg-slate-100">View Resort</Link>
                           </div>
                         </div>
                       ))}

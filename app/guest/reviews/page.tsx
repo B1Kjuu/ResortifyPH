@@ -9,7 +9,7 @@ export default function MyReviewsPage(){
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reviews, setReviews] = useState<any[]>([])
-  const [eligible, setEligible] = useState<Array<{ booking_id: string, resort: { id: string, name: string, location?: string, images?: string[] } }>>([])
+  const [eligible, setEligible] = useState<Array<{ booking_id: string, resort: { id: string, slug?: string | null, name: string, location?: string, images?: string[] } }>>([])
 
   useEffect(() => {
     let mounted = true
@@ -30,7 +30,7 @@ export default function MyReviewsPage(){
 
         const { data, error } = await supabase
           .from('reviews')
-          .select('id, rating, title, content, created_at, resort:resorts(id, name)')
+          .select('id, rating, title, content, created_at, resort:resorts(id, slug, name)')
           .eq('guest_id', uid)
           .order('created_at', { ascending: false })
         if (error) throw error
@@ -42,7 +42,7 @@ export default function MyReviewsPage(){
         const today = new Date().toISOString().slice(0,10)
         const { data: bookings, error: bErr } = await supabase
           .from('bookings')
-          .select('id, resort_id, date_to, resorts:resorts(id, name, location, images)')
+          .select('id, resort_id, date_to, resorts:resorts(id, slug, name, location, images)')
           .eq('guest_id', uid)
           .eq('status', 'confirmed')
           .lte('date_to', today) // Changed to lte (less than or equal)
@@ -161,7 +161,7 @@ export default function MyReviewsPage(){
                   <div className="text-xs text-slate-600">{e.resort?.location || '—'}</div>
                   <div className="mt-2 flex items-center gap-2">
                     {e.resort?.id && (
-                      <Link href={`/resorts/${e.resort.id}`} className="text-xs font-semibold text-resort-600 hover:text-resort-700">Write a review →</Link>
+                      <Link href={`/resorts/${e.resort.slug || e.resort.id}`} className="text-xs font-semibold text-resort-600 hover:text-resort-700">Write a review →</Link>
                     )}
                   </div>
                 </div>
@@ -189,7 +189,7 @@ export default function MyReviewsPage(){
             {r.content && <p className="mt-1 text-sm text-slate-700 leading-relaxed">{r.content}</p>}
             <div className="mt-3 flex items-center gap-2">
               {r.resort?.id && (
-                <Link href={`/resorts/${r.resort.id}`} className="text-xs font-semibold text-resort-600 hover:text-resort-700">Open resort →</Link>
+                <Link href={`/resorts/${r.resort.slug || r.resort.id}`} className="text-xs font-semibold text-resort-600 hover:text-resort-700">Open resort →</Link>
               )}
               <button onClick={() => deleteReview(r.id)} className="text-xs font-semibold text-red-600 hover:text-red-700">Delete</button>
             </div>
@@ -211,7 +211,7 @@ export default function MyReviewsPage(){
                 <div className="text-xs text-slate-600">{e.resort?.location || '—'}</div>
                 <div className="mt-2 flex items-center gap-2">
                   {e.resort?.id && (
-                    <Link href={`/resorts/${e.resort.id}`} className="text-xs font-semibold text-resort-600 hover:text-resort-700">Write a review →</Link>
+                    <Link href={`/resorts/${e.resort.slug || e.resort.id}`} className="text-xs font-semibold text-resort-600 hover:text-resort-700">Write a review →</Link>
                   )}
                 </div>
               </div>

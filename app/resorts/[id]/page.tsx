@@ -16,6 +16,7 @@ import ChatLink from '../../../components/ChatLink'
 import DisclaimerBanner from '../../../components/DisclaimerBanner'
 import { FiArrowLeft, FiMapPin, FiDollarSign, FiUsers, FiUser, FiTag, FiCheck, FiCalendar } from 'react-icons/fi'
 import { FaUmbrellaBeach, FaStar } from 'react-icons/fa'
+import { isUuid } from '../../../lib/slug'
 import { 
   BookingType, 
   getTimeSlotById, 
@@ -70,6 +71,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
   const [slotTypePrices, setSlotTypePrices] = useState<{ daytour: number | null; overnight: number | null; '22hrs': number | null }>({ daytour: null, overnight: null, '22hrs': null })
   const bookingCardRef = useRef<HTMLDivElement | null>(null)
   const router = useRouter()
+  const [resortId, setResortId] = useState<string | null>(null)
 
   // Scroll reveal for in-view sections
   useEffect(() => {
@@ -92,12 +94,13 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
     async function load(){
       try {
-        // Get resort
-        const { data: resortData, error: resortError } = await supabase
-          .from('resorts')
-          .select('*')
-          .eq('id', params.id)
-          .single()
+        const routeParam = params.id
+        const byId = isUuid(routeParam)
+
+        // Get resort (by UUID id or by slug)
+        let resortQuery = supabase.from('resorts').select('*')
+        resortQuery = byId ? resortQuery.eq('id', routeParam) : resortQuery.eq('slug', routeParam)
+        const { data: resortData, error: resortError } = await resortQuery.single()
         
         if (!mounted) return
 
@@ -113,6 +116,15 @@ export default function ResortDetail({ params }: { params: { id: string } }){
         }
 
         setResort(resortData)
+        setResortId(resortData.id)
+
+        // If user landed on the legacy UUID URL, clean it up to the slug URL
+        if (byId && resortData.slug && resortData.slug !== routeParam) {
+          const hash = typeof window !== 'undefined' ? window.location.hash : ''
+          router.replace(`/resorts/${resortData.slug}${hash}`)
+        }
+
+        const realResortId = resortData.id
 
         // Derive slot prices from pricing_config or legacy as a fallback for display
         let derivedPricingConfig: any = resortData.pricing_config
@@ -141,7 +153,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
           const { data: slotPricesData } = await supabase
             .from('resort_time_slots')
             .select('id, slot_type, resort_pricing_matrix(price)')
-            .eq('resort_id', params.id)
+            .eq('resort_id', realResortId)
             .eq('is_active', true)
           
           if (slotPricesData && mounted) {
@@ -168,7 +180,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
         const { data: timeSlotsData } = await supabase
           .from('resort_time_slots')
           .select('id, resort_id, slot_type, label, start_time, end_time, crosses_midnight, hours, is_active, sort_order')
-          .eq('resort_id', params.id)
+          .eq('resort_id', realResortId)
           .eq('is_active', true)
         
         if (timeSlotsData && mounted) {
@@ -194,7 +206,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
         const { data: bookingsData } = await supabase
           .from('bookings')
           .select('date_from, date_to, status, booking_type')
-          .eq('resort_id', params.id)
+          .eq('resort_id', realResortId)
           .in('status', ['pending', 'confirmed'])
 
         if (bookingsData && mounted) {
@@ -211,7 +223,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
           const { data: latestBooking } = await supabase
             .from('bookings')
             .select('id')
-            .eq('resort_id', params.id)
+            .eq('resort_id', realResortId)
             .eq('guest_id', session.user.id)
             .in('status', ['pending', 'confirmed'])
             .order('created_at', { ascending: false })
@@ -223,7 +235,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
           const { data: reviewsData } = await supabase
             .from('reviews')
             .select('id, rating, title, content, created_at, guest_id, booking_id, images, guest:profiles!reviews_guest_id_fkey(full_name, avatar_url)')
-            .eq('resort_id', params.id)
+            .eq('resort_id', realResortId)
             .order('created_at', { ascending: false })
 
           if (mounted) {
@@ -236,7 +248,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
           const { data: completedBooking } = await supabase
             .from('bookings')
             .select('id, date_to')
-            .eq('resort_id', params.id)
+            .eq('resort_id', realResortId)
             .eq('guest_id', session.user.id)
             .eq('status', 'confirmed')
             .lte('date_to', new Date().toISOString().slice(0,10)) // Changed to lte to include same-day
@@ -275,10 +287,11 @@ export default function ResortDetail({ params }: { params: { id: string } }){
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null
     async function refreshBookedDates() {
+      if (!resortId) return
       const { data: bookingsData } = await supabase
         .from('bookings')
         .select('date_from, date_to, status')
-        .eq('resort_id', params.id)
+        .eq('resort_id', resortId)
         .in('status', ['pending', 'confirmed'])
       
       const allBookedDates: string[] = []
@@ -295,15 +308,17 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       setBookedDates(allBookedDates)
     }
 
+    if (!resortId) return
+
     const sub = supabase
-      .channel(`resort_bookings_${params.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings', filter: `resort_id=eq.${params.id}` }, () => {
+      .channel(`resort_bookings_${resortId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings', filter: `resort_id=eq.${resortId}` }, () => {
         if (timer) clearTimeout(timer)
         timer = setTimeout(() => { refreshBookedDates() }, 250)
       })
       .subscribe()
     return () => { sub.unsubscribe(); if (timer) clearTimeout(timer) }
-  }, [params.id])
+  }, [resortId])
 
   // Compute slot-aware booked dates based on selected booking type
   // - Daytour bookings only block other daytour bookings on the same date
@@ -403,6 +418,61 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       toast.error('Please sign in to book this resort')
       setTimeout(() => router.push('/auth/signin'), 2000)
       return
+    }
+
+    // Booking disclaimer acknowledgement (anti-scam reminder)
+    try {
+      const key = 'booking_disclaimer_ack_v1'
+      const alreadyAck = typeof window !== 'undefined' && localStorage.getItem(key) === 'true'
+      if (!alreadyAck) {
+        const acknowledged = await new Promise<boolean>((resolve) => {
+          const toastId = toast.custom((t) => (
+            <div className="w-full max-w-md bg-white border border-slate-200 shadow-xl rounded-2xl p-4">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 h-9 w-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold">!</div>
+                <div className="min-w-0">
+                  <p className="font-bold text-slate-900">Safety reminder</p>
+                  <p className="text-sm text-slate-600 mt-1">
+                    ResortifyPH is not liable for scams. Only communicate and pay through official channels.
+                    Never send deposits to suspicious accounts.
+                  </p>
+                  <div className="mt-3 flex flex-col sm:flex-row gap-2">
+                    <button
+                      className="w-full sm:flex-1 px-3 py-2 rounded-xl bg-resort-600 hover:bg-resort-700 text-white font-semibold"
+                      onClick={() => {
+                        try { localStorage.setItem(key, 'true') } catch {}
+                        toast.dismiss(t)
+                        resolve(true)
+                      }}
+                    >
+                      I Understand
+                    </button>
+                    <button
+                      className="w-full sm:flex-1 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold"
+                      onClick={() => {
+                        toast.dismiss(t)
+                        resolve(false)
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ), { duration: Infinity })
+
+          // If toast is dismissed via other means, treat as cancelled.
+          setTimeout(() => {
+            // If still present, no-op; user will click.
+            void toastId
+          }, 0)
+        })
+
+        if (!acknowledged) return
+      }
+    } catch {
+      // If localStorage/toast fails, do not block booking.
     }
 
     // Prevent owners from booking their own resort
@@ -1020,7 +1090,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                     {latestBookingId ? (
                       <ChatLink bookingId={latestBookingId} as="guest" label="Chat" title={resort.name} variant="primary" />
                     ) : (
-                      <ChatLink resortId={params.id} as="guest" label="Chat" title={resort.name} variant="primary" />
+                      <ChatLink resortId={resort.id} as="guest" label="Chat" title={resort.name} variant="primary" />
                     )}
                   </div>
                 )}
@@ -1068,7 +1138,7 @@ export default function ResortDetail({ params }: { params: { id: string } }){
 
                   {!latestBookingId && (
                     <div className="pt-2">
-                      <ChatLink resortId={params.id} as="guest" label="Message Host (Pre-booking)" title={resort.name} variant="primary" fullWidth />
+                      <ChatLink resortId={resort.id} as="guest" label="Message Host (Pre-booking)" title={resort.name} variant="primary" fullWidth />
                     </div>
                   )}
                   {!latestBookingId && (
@@ -1089,13 +1159,13 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                 {user && eligibleReviewBookingId ? (
                   <div id="review-form">
                     <ReviewForm
-                      resortId={params.id}
+                      resortId={resort.id}
                       bookingId={eligibleReviewBookingId}
                       onSubmitted={async () => {
                         const { data: reviewsData } = await supabase
                           .from('reviews')
                           .select('id, rating, title, content, created_at, guest_id, booking_id, images, guest:profiles!reviews_guest_id_fkey(full_name, avatar_url)')
-                          .eq('resort_id', params.id)
+                          .eq('resort_id', resort.id)
                           .order('created_at', { ascending: false })
                         setReviews(reviewsData || [])
                         setEligibleReviewBookingId(null)
@@ -1110,11 +1180,11 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                               body: JSON.stringify({
                                 to: owner.email,
                                 resortName: resort.name,
-                                resortId: params.id,
+                                resortId: resort.id,
                                 bookingId: eligibleReviewBookingId,
                                 rating: latest.rating,
                                 comment: latest.title ? `${latest.title} — ${latest.content}` : latest.content,
-                                link: `/resorts/${params.id}#reviews`,
+                                link: `/resorts/${(resort.slug || resort.id)}#reviews`,
                                 actorUserId: user.id,
                                 recipientUserId: owner.id,
                               })

@@ -178,6 +178,13 @@ export default function GoogleMapView({
 
     // Function to open info window - defined before loop
     function openInfoWindow(resort: any, position: any) {
+      // Focus the map when a resort is clicked
+      try {
+        mapInstanceRef.current?.panTo(position)
+        const currentZoom = mapInstanceRef.current?.getZoom?.() ?? 0
+        mapInstanceRef.current?.setZoom(Math.max(currentZoom, 14))
+      } catch {}
+
       const image = resort.images?.[0] || '/assets/placeholder.jpg'
       const typeLabel = resort.type ? `<span style="display: inline-block; padding: 4px 12px; background: linear-gradient(135deg, #f1f5f9, #e2e8f0); border-radius: 16px; font-size: 11px; font-weight: 600; color: #475569; text-transform: capitalize;">${resort.type}</span>` : ''
       
@@ -195,7 +202,7 @@ export default function GoogleMapView({
                 <span style="font-size: 16px; font-weight: 700; color: #0891b2;">₱${resort.price.toLocaleString()}</span>
                 <span style="font-size: 11px; color: #6b7280;">/night</span>
               </div>
-              <a href="/resorts/${resort.id}" style="padding: 8px 14px; background: #0891b2; color: white; border-radius: 8px; font-size: 12px; font-weight: 600; text-decoration: none;">View</a>
+              <a href="/resorts/${resort.slug || resort.id}" style="padding: 8px 14px; background: #0891b2; color: white; border-radius: 8px; font-size: 12px; font-weight: 600; text-decoration: none;">View</a>
             </div>
             ${resort.distance != null ? `<p style="margin: 8px 0 0; font-size: 11px; color: #6b7280;">📍 ${resort.distance < 1 ? `${Math.round(resort.distance * 1000)} m away` : `${resort.distance.toFixed(1)} km away`}</p>` : ''}
           </div>
@@ -356,6 +363,20 @@ export default function GoogleMapView({
     }
   }, [isLoaded, resorts, selectedResortId, userPosition, onResortClick])
 
+  // Pan/zoom when a resort is selected externally (e.g., from a list click)
+  useEffect(() => {
+    if (!isLoaded || !mapInstanceRef.current || !selectedResortId) return
+    const selected = resorts.find(r => r.id === selectedResortId)
+    if (!selected?.latitude || !selected?.longitude) return
+
+    const position = { lat: selected.latitude, lng: selected.longitude }
+    try {
+      mapInstanceRef.current.panTo(position)
+      const currentZoom = mapInstanceRef.current.getZoom?.() ?? 0
+      mapInstanceRef.current.setZoom(Math.max(currentZoom, 14))
+    } catch {}
+  }, [isLoaded, selectedResortId, resorts])
+
   if (!GOOGLE_MAPS_API_KEY) {
     return (
       <div className={`bg-slate-100 rounded-xl flex items-center justify-center ${className}`} style={{ minHeight: 300 }}>
@@ -386,44 +407,9 @@ export default function GoogleMapView({
         className="w-full h-full min-h-[400px] rounded-xl"
       />
 
-      {/* Legend and controls - top right */}
-      <div className="absolute top-3 right-3 flex flex-col gap-2">
-        {/* Legend */}
-        <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-lg p-3 border border-slate-200">
-          <div className="text-xs font-semibold text-slate-700 mb-2">Resort Types</div>
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-sky-500 rounded-full"></div>
-              <span className="text-xs text-slate-600">Beach</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-emerald-600 rounded-full"></div>
-              <span className="text-xs text-slate-600">Mountain</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-600 rounded-full"></div>
-              <span className="text-xs text-slate-600">Nature</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-slate-600 rounded-full"></div>
-              <span className="text-xs text-slate-600">City</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
-              <span className="text-xs text-slate-600">Countryside</span>
-            </div>
-            {/* User location - only when active */}
-            {userPosition && (
-              <div className="flex items-center gap-2 pt-1 border-t border-slate-100 mt-1">
-                <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-                <span className="text-xs text-slate-600">You</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Near me button - below legend */}
-        {showNearbyButton && onRequestLocation && (
+      {/* Controls - top right */}
+      {showNearbyButton && onRequestLocation && (
+        <div className="absolute top-3 right-3">
           <button
             onClick={onRequestLocation}
             disabled={geoLoading}
@@ -447,18 +433,8 @@ export default function GoogleMapView({
               {geoLoading ? 'Locating...' : userPosition ? 'My Location' : 'Nearby Me'}
             </span>
           </button>
-        )}
-      </div>
-
-      {/* Resort count indicator */}
-      <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg px-3 py-1.5 border border-slate-200">
-        <div className="flex items-center gap-1.5">
-          <FiMapPin aria-hidden className="text-sm text-resort-500" />
-          <span className="text-xs font-semibold text-slate-700">
-            {resorts.filter(r => r.latitude && r.longitude).length} resorts on map
-          </span>
         </div>
-      </div>
+      )}
     </div>
   )
 }

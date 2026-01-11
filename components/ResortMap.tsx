@@ -42,9 +42,11 @@ const Popup = dynamic(
 
 // Dynamic import MapFlyController - it uses react-leaflet hooks so must be dynamic
 const MapFlyController = dynamic(() => import('./MapFlyController'), { ssr: false })
+const MapFlyToResortController = dynamic(() => import('./MapFlyToResortController'), { ssr: false })
 
 interface Resort {
   id: string
+  slug?: string | null
   name: string
   location: string
   price: number
@@ -158,6 +160,7 @@ function getMarkerIcon(isSelected: boolean = false, isUser: boolean = false, pri
 export default function ResortMap({ resorts, userPosition, onResortClick, selectedResortId, className = '', onRequestLocation, onFlyToUser, showNearbyButton = true, geoLoading = false, flyToUserTrigger = 0 }: ResortMapProps) {
   const [isClient, setIsClient] = useState(false)
   const [mapKey, setMapKey] = useState(0)
+  const [flyToResortTrigger, setFlyToResortTrigger] = useState(0)
   
   useEffect(() => {
     setIsClient(true)
@@ -259,22 +262,6 @@ export default function ResortMap({ resorts, userPosition, onResortClick, select
 
   return (
     <div className={`relative rounded-2xl overflow-hidden shadow-lg border-2 border-slate-200 ${className}`}>
-      {/* Map Legend */}
-      <div className="absolute top-4 right-4 z-[1000] bg-white/95 backdrop-blur-sm rounded-xl shadow-lg p-3 border border-slate-200">
-        <div className="text-xs font-semibold text-slate-700 mb-2">Legend</div>
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-resort-500 rounded-full border-2 border-white shadow"></div>
-            <span className="text-xs text-slate-600">Resort</span>
-          </div>
-          {userPosition && (
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow animate-pulse"></div>
-              <span className="text-xs text-slate-600">Your location</span>
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* Locate Me Button - positioned below zoom controls */}
       {showNearbyButton && (
@@ -311,14 +298,6 @@ export default function ResortMap({ resorts, userPosition, onResortClick, select
         </div>
       )}
 
-      {/* Resort Count Badge - positioned at bottom-left to avoid zoom buttons */}
-      <div className="absolute bottom-4 left-4 z-[1000] bg-white/95 backdrop-blur-sm rounded-xl shadow-lg px-3 py-1.5 border border-slate-200">
-        <div className="flex items-center gap-1.5">
-          <FiMapPin aria-hidden className="text-sm text-resort-500" />
-          <span className="text-xs font-semibold text-slate-700">{resortPositions.length} resorts on map</span>
-        </div>
-      </div>
-
       <MapContainer
         key={mapKey}
         center={center}
@@ -335,6 +314,16 @@ export default function ResortMap({ resorts, userPosition, onResortClick, select
         
         {/* Controller to fly to user location */}
         <MapFlyController userPosition={userPosition} flyToUserTrigger={flyToUserTrigger} />
+
+        {/* Controller to fly to selected resort */}
+        <MapFlyToResortController
+          target={(() => {
+            const r = resortPositions.find(x => x.id === selectedResortId)
+            if (!r) return null
+            return { latitude: r.lat, longitude: r.lng }
+          })()}
+          trigger={flyToResortTrigger}
+        />
         
         {/* User position marker */}
         {userPosition && (
@@ -357,7 +346,10 @@ export default function ResortMap({ resorts, userPosition, onResortClick, select
             position={[resort.lat, resort.lng]}
             icon={getMarkerIcon(selectedResortId === resort.id, false, resort.price)}
             eventHandlers={{
-              click: () => onResortClick?.(resort.id),
+              click: () => {
+                onResortClick?.(resort.id)
+                setFlyToResortTrigger(v => v + 1)
+              },
             }}
           >
             <Popup>
@@ -391,7 +383,7 @@ export default function ResortMap({ resorts, userPosition, onResortClick, select
                 <div className="flex items-center justify-between">
                   <span className="text-lg font-bold text-resort-600">₱{resort.price?.toLocaleString()}<span className="text-sm font-normal text-slate-500">/night</span></span>
                   <a 
-                    href={`/resorts/${resort.id}`}
+                    href={`/resorts/${resort.slug || resort.id}`}
                     className="px-3 py-1.5 bg-resort-500 hover:bg-resort-600 text-white text-sm font-medium rounded-lg transition-colors"
                   >
                     View

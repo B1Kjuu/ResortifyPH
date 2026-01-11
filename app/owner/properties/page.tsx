@@ -114,7 +114,7 @@ export default function Properties(){
 
               <div className="flex gap-2">
                 <button className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded hover:bg-slate-50 transition">Edit</button>
-                <Link href={`/resorts/${resort.id}`} className="flex-1 px-3 py-2 text-sm bg-resort-500 text-white rounded hover:bg-resort-600 transition text-center">
+                <Link href={`/resorts/${resort.slug || resort.id}`} className="flex-1 px-3 py-2 text-sm bg-resort-500 text-white rounded hover:bg-resort-600 transition text-center">
                   View
                 </Link>
               </div>

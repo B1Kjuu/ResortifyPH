@@ -10,6 +10,7 @@ import AuthHashHandler from '../components/AuthHashHandler'
 import FirstTimeRoleCheck from '../components/FirstTimeRoleCheck'
 import GlobalRealtimeManager from '../components/GlobalRealtimeManager'
 import ChunkLoadRecovery from '../components/ChunkLoadRecovery'
+import TermsAcceptanceGate from '../components/TermsAcceptanceGate'
 
 export const metadata = {
   title: {
@@ -114,6 +115,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthHashHandler />
         {/* First-time user role selection modal */}
         <FirstTimeRoleCheck />
+        {/* Require Terms acceptance after signup / first login */}
+        <TermsAcceptanceGate />
         {/* Global real-time presence and connection monitoring */}
         <GlobalRealtimeManager />
         <Toaster position="top-right" richColors />

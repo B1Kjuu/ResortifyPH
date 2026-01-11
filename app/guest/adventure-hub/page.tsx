@@ -500,7 +500,7 @@ export default function AdventureHub(){
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {favorites.slice(0,6).map((r: any) => (
-                  <Link key={r.id} href={`/resorts/${r.id}`} className="flex items-center gap-3 p-3 border border-slate-200 rounded-xl hover:border-resort-300 transition">
+                  <Link key={r.id} href={`/resorts/${r.slug || r.id}`} className="flex items-center gap-3 p-3 border border-slate-200 rounded-xl hover:border-resort-300 transition">
                     <div className="w-10 h-10 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
                       {Array.isArray(r.images) && r.images.length > 0 ? (
                         <img src={r.images[0]} alt={r.name} className="w-full h-full object-cover" />

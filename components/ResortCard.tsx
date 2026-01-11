@@ -100,7 +100,7 @@ export default function ResortCard({ resort, compact = false, nights = 0, showTo
   }
   
   return (
-    <Link href={`/resorts/${resort.id}`}>
+    <Link href={`/resorts/${resort.slug || resort.id}`}>
       <article 
         className="group cursor-pointer h-full"
         onMouseEnter={() => setIsHovered(true)}
