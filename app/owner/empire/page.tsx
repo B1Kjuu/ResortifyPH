@@ -5,7 +5,7 @@ import { supabase } from '../../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import { DayPicker } from 'react-day-picker'
 import 'react-day-picker/dist/style.css'
-import { eachDayOfInterval } from 'date-fns'
+import { eachDayOfInterval, format } from 'date-fns'
 import DisclaimerBanner from '../../../components/DisclaimerBanner'
 import PricingRequiredBanner from '../../../components/PricingRequiredBanner'
 
@@ -15,12 +15,22 @@ export default function Empire(){
   const [loading, setLoading] = useState(true)
   const [bookings, setBookings] = useState<any[]>([])
   const [ownedResortIds, setOwnedResortIds] = useState<string[]>([])
-  const [selectedResortId, setSelectedResortId] = useState<string>('all')
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [selectedDayBookings, setSelectedDayBookings] = useState<any[]>([])
   const [hoverTooltip, setHoverTooltip] = useState<{ x: number, y: number, text: string } | null>(null)
   const calendarRef = React.useRef<HTMLDivElement | null>(null)
   const router = useRouter()
+
+  const parseLocalYmd = (ymd: string): Date | null => {
+    if (!ymd || typeof ymd !== 'string') return null
+    const match = ymd.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+    if (!match) return null
+    const year = Number(match[1])
+    const monthIndex = Number(match[2]) - 1
+    const day = Number(match[3])
+    if (!Number.isFinite(year) || !Number.isFinite(monthIndex) || !Number.isFinite(day)) return null
+    return new Date(year, monthIndex, day)
+  }
 
   useEffect(() => {
     let mounted = true
@@ -193,52 +203,40 @@ export default function Empire(){
   // Avoid early returns before hooks; render loading state inline if needed
 
   const confirmedBookings = bookings.filter(b => b.status === 'confirmed')
-  const resortOptions = useMemo(() => {
-    const map = new Map<string,string>()
-    bookings.forEach(b => {
-      if (b.resort_id) map.set(b.resort_id, b.resort?.name || 'Resort')
-    })
-    return Array.from(map.entries()).map(([id, name]) => ({ id, name }))
-  }, [bookings])
 
   const bookedDatesForCalendar = useMemo(() => {
     const dates: Date[] = []
     const seen = new Set<string>()
     const today = new Date(); today.setHours(0,0,0,0)
-    confirmedBookings
-      .filter(b => selectedResortId === 'all' || b.resort_id === selectedResortId)
-      .forEach(b => {
-        const start = new Date(b.date_from)
-        const end = new Date(b.date_to)
-        eachDayOfInterval({ start, end }).forEach(d => {
-          // Exclude past dates; only mark today and upcoming
-          if (d < today) return
-          const key = d.toISOString().slice(0,10)
-          if (!seen.has(key)) {
-            seen.add(key)
-            dates.push(new Date(d.getFullYear(), d.getMonth(), d.getDate()))
-          }
-        })
+    confirmedBookings.forEach(b => {
+      const start = parseLocalYmd(b.date_from) ?? new Date(b.date_from)
+      const end = parseLocalYmd(b.date_to) ?? new Date(b.date_to)
+      eachDayOfInterval({ start, end }).forEach(d => {
+        if (d < today) return
+        const key = format(d, 'yyyy-MM-dd')
+        if (!seen.has(key)) {
+          seen.add(key)
+          dates.push(new Date(d.getFullYear(), d.getMonth(), d.getDate()))
+        }
       })
+    })
     return dates
-  }, [confirmedBookings, selectedResortId])
+  }, [confirmedBookings])
 
   const dateToBookings = useMemo(() => {
     const map = new Map<string, any[]>()
-    confirmedBookings
-      .filter(b => selectedResortId === 'all' || b.resort_id === selectedResortId)
-      .forEach(b => {
-        const start = new Date(b.date_from)
-        const end = new Date(b.date_to)
-        eachDayOfInterval({ start, end }).forEach(d => {
-          const key = d.toISOString().slice(0,10)
-          const arr = map.get(key) || []
-          arr.push(b)
-          map.set(key, arr)
-        })
+    confirmedBookings.forEach(b => {
+      const start = parseLocalYmd(b.date_from) ?? new Date(b.date_from)
+      const end = parseLocalYmd(b.date_to) ?? new Date(b.date_to)
+      eachDayOfInterval({ start, end }).forEach(d => {
+        const key = format(d, 'yyyy-MM-dd')
+        const arr = map.get(key) || []
+        arr.push(b)
+        map.set(key, arr)
       })
+    })
     return map
-  }, [confirmedBookings, selectedResortId])
+  }, [confirmedBookings])
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -311,19 +309,6 @@ export default function Empire(){
             <div>
               <h2 className="text-3xl font-bold text-slate-900">Bookings Calendar</h2>
             </div>
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-slate-600">Resort:</label>
-              <select
-                value={selectedResortId}
-                onChange={(e) => setSelectedResortId(e.target.value)}
-                className="px-3 py-2 border-2 border-slate-200 rounded-xl bg-white text-slate-900 text-sm appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%236b7280%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_0.5rem_center] bg-no-repeat pr-8 focus:outline-none focus:ring-2 focus:ring-resort-500/20 focus:border-resort-500 transition-all hover:border-slate-300"
-              >
-                <option value="all">All resorts</option>
-                {resortOptions.map(r => (
-                  <option key={r.id} value={r.id}>{r.name}</option>
-                ))}
-              </select>
-            </div>
           </div>
 
           <div className="bg-white border-2 border-slate-200 rounded-2xl p-4">
@@ -335,14 +320,13 @@ export default function Empire(){
                 modifiersClassNames={{ booked: 'day-booked' }}
                 
                 onDayClick={(day, modifiers) => {
-                  const key = day.toISOString().slice(0,10)
+                  const key = format(day, 'yyyy-MM-dd')
                   const bookingsForDay = dateToBookings.get(key) || []
-                  if (!modifiers.booked || bookingsForDay.length === 0) return
                   setSelectedDate(day)
                   setSelectedDayBookings(bookingsForDay)
                 }}
                 onDayMouseEnter={(day, modifiers, e: any) => {
-                  const key = day.toISOString().slice(0,10)
+                  const key = format(day, 'yyyy-MM-dd')
                   const bookingsForDay = dateToBookings.get(key) || []
                   if (!modifiers.booked || bookingsForDay.length === 0) {
                     setHoverTooltip(null)
@@ -366,40 +350,49 @@ export default function Empire(){
               )}
             </div>
             <p className="text-sm text-slate-600 mt-2">Upcoming red-marked dates are already booked.</p>
-            {selectedDate && selectedDayBookings.length > 0 && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center">
+            {selectedDate && (
+              <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
                 <div className="absolute inset-0 bg-black/40" onClick={() => { setSelectedDate(null); setSelectedDayBookings([]) }} />
-                <div className="relative bg-white rounded-2xl border-2 border-slate-200 shadow-xl w-[95%] max-w-2xl p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-2xl font-bold text-slate-900">Bookings on {selectedDate.toLocaleDateString()}</h3>
-                      <p className="text-slate-600">Open detailed requests in Bookings</p>
+                <div className="relative bg-white rounded-t-2xl sm:rounded-2xl border-2 border-slate-200 shadow-xl w-full sm:w-[95%] sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+                  <div className="sticky top-0 z-10 flex items-start justify-between gap-3 p-4 sm:p-6 bg-white border-b border-slate-100">
+                    <div className="min-w-0">
+                      <h3 className="text-lg sm:text-2xl font-bold text-slate-900 truncate">Bookings on {selectedDate.toLocaleDateString()}</h3>
+                      <p className="text-xs sm:text-sm text-slate-600">Open detailed requests in Bookings</p>
                     </div>
                     <button
-                      className="px-3 py-2 rounded-lg border-2 border-slate-200 hover:bg-slate-50"
+                      className="px-3 py-2 rounded-lg border-2 border-slate-200 hover:bg-slate-50 text-sm"
                       onClick={() => { setSelectedDate(null); setSelectedDayBookings([]) }}
-                    >✖ Close</button>
+                    >✖</button>
                   </div>
-                  <div className="space-y-4">
-                    {selectedDayBookings.map((b: any) => (
-                      <div key={b.id} className="border-2 border-slate-200 rounded-xl p-4">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <p className="text-sm text-slate-600">Resort</p>
-                            <p className="text-lg font-bold text-slate-900">{b.resort?.name}</p>
-                            <p className="text-sm text-slate-600 mt-1">👤 {b.guest?.full_name} — 📧 {b.guest?.email}</p>
-                            <p className="text-sm text-slate-700 mt-1">📅 {b.date_from} → {b.date_to}</p>
-                            <p className="text-sm text-slate-700 mt-1">👥 {b.guest_count} {b.guest_count === 1 ? 'guest' : 'guests'}</p>
-                          </div>
-                          <div className="flex flex-col items-end gap-2">
-                            <span className="text-xs px-2 py-1 rounded-lg border-2 ${b.status === 'confirmed' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-yellow-100 text-yellow-800 border-yellow-300'}">{b.status}</span>
-                            <Link href={`/owner/bookings`}
-                              className="px-3 py-2 rounded-lg border-2 border-slate-200 hover:bg-slate-50"
-                            >View Requests</Link>
-                          </div>
-                        </div>
+                  <div className="p-4 sm:p-6">
+                    {selectedDayBookings.length === 0 ? (
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-700">
+                        No bookings for this day.
                       </div>
-                    ))}
+                    ) : (
+                      <div className="space-y-4">
+                        {selectedDayBookings.map((b: any) => (
+                          <div key={b.id} className="border-2 border-slate-200 rounded-xl p-4">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="min-w-0">
+                                <p className="text-xs text-slate-600">Resort</p>
+                                <p className="text-base sm:text-lg font-bold text-slate-900 truncate">{b.resort?.name}</p>
+                                <p className="text-xs sm:text-sm text-slate-600 mt-1 break-all">👤 {b.guest?.full_name} — 📧 {b.guest?.email}</p>
+                                <p className="text-xs sm:text-sm text-slate-700 mt-1">📅 {b.date_from} → {b.date_to}</p>
+                                <p className="text-xs sm:text-sm text-slate-700 mt-1">👥 {b.guest_count} {b.guest_count === 1 ? 'guest' : 'guests'}</p>
+                              </div>
+                              <div className="flex flex-col items-end gap-2">
+                                <span className={"text-[10px] sm:text-xs px-2 py-1 rounded-lg border-2 " + (b.status === 'confirmed' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-yellow-100 text-yellow-800 border-yellow-300')}>{b.status}</span>
+                                <Link
+                                  href={`/owner/bookings`}
+                                  className="px-3 py-2 rounded-lg border-2 border-slate-200 hover:bg-slate-50"
+                                >View Requests</Link>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

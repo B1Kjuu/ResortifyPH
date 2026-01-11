@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react'
+import React from 'react'
 import Link from 'next/link'
 import SkeletonTable from './SkeletonTable'
 import ChatLink from './ChatLink'
@@ -72,8 +72,6 @@ export default function OwnerBookingsContent(props: Props){
 
   // Top-level owner nav tabs - default to 'calendar' for better UX
   const [tab, setTab] = React.useState<'requests' | 'calendar' | 'confirmed' | 'cancellations' | 'history'>(initialTab || 'calendar')
-  const [showOnlyVerified, setShowOnlyVerified] = React.useState(false)
-  const [showOnlyCancellations, setShowOnlyCancellations] = React.useState(false)
   const [bookingTypeFilter, setBookingTypeFilter] = React.useState<'all' | 'daytour' | 'overnight' | '22hrs'>('all')
   const [verificationEdits, setVerificationEdits] = React.useState<Record<string, { method: string; reference: string; notes: string }>>({})
   const [paymentModalBookingId, setPaymentModalBookingId] = React.useState<string | null>(null)
@@ -123,13 +121,34 @@ export default function OwnerBookingsContent(props: Props){
     }
   }
 
-  const now = new Date()
-  const upcomingConfirmed = confirmedBookings.filter(b => new Date(b.date_to) >= now)
-  const pastConfirmed = confirmedBookings.filter(b => new Date(b.date_to) < now)
+  const parseLocalYmd = (ymd: string): Date | null => {
+    if (!ymd || typeof ymd !== 'string') return null
+    const match = ymd.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+    if (!match) return null
+    const year = Number(match[1])
+    const monthIndex = Number(match[2]) - 1
+    const day = Number(match[3])
+    if (!Number.isFinite(year) || !Number.isFinite(monthIndex) || !Number.isFinite(day)) return null
+    return new Date(year, monthIndex, day)
+  }
 
-  const pendingToShow = showOnlyVerified ? pendingBookings.filter(b => !!b.payment_verified_at) : pendingBookings
-  let upcomingToShow = showOnlyVerified ? upcomingConfirmed.filter(b => !!b.payment_verified_at) : upcomingConfirmed
-  let pastToShow = showOnlyVerified ? pastConfirmed.filter(b => !!b.payment_verified_at) : pastConfirmed
+  const toEndOfLocalDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999)
+
+  const now = new Date()
+  const upcomingConfirmed = confirmedBookings.filter(b => {
+    const end = parseLocalYmd(b.date_to)
+    if (!end) return true
+    return toEndOfLocalDay(end).getTime() >= now.getTime()
+  })
+  const pastConfirmed = confirmedBookings.filter(b => {
+    const end = parseLocalYmd(b.date_to)
+    if (!end) return false
+    return toEndOfLocalDay(end).getTime() < now.getTime()
+  })
+
+  const pendingToShow = pendingBookings
+  let upcomingToShow = upcomingConfirmed
+  let pastToShow = pastConfirmed
   
   // Apply booking type filter
   if (bookingTypeFilter !== 'all') {
@@ -147,15 +166,17 @@ export default function OwnerBookingsContent(props: Props){
       return normalizedType === bookingTypeFilter
     })
   }
-  
-  if (showOnlyCancellations) {
-    upcomingToShow = upcomingToShow.filter(b => b.cancellation_status === 'requested')
-    pastToShow = pastToShow.filter(b => b.cancellation_status === 'requested')
+
+  const clearAllSelected = () => {
+    if (selectedBookings.size === 0) return
+    Array.from(selectedBookings).forEach(id => toggleSelect(id))
   }
 
-  const pendingVerifiedCount = pendingBookings.filter(b => !!b.payment_verified_at).length
-  const upcomingVerifiedCount = upcomingConfirmed.filter(b => !!b.payment_verified_at).length
-  const pastVerifiedCount = pastConfirmed.filter(b => !!b.payment_verified_at).length
+  const changeTab = (next: 'requests' | 'calendar' | 'confirmed' | 'cancellations' | 'history') => {
+    if (next === tab) return
+    clearAllSelected()
+    setTab(next)
+  }
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-b from-slate-50 to-white px-3 sm:px-6 lg:px-8 py-6 sm:py-12">
@@ -174,46 +195,41 @@ export default function OwnerBookingsContent(props: Props){
               </DisclaimerBanner>
             </div>
             {/* Owner Sub-Navbar - Scrollable on mobile */}
-            <div className="mt-4 overflow-x-auto scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0">
-              <div className="flex items-center gap-2 min-w-max pb-2 sm:pb-0 sm:flex-wrap">
-              {([
-                { key: 'calendar', label: 'Calendar' },
-                { key: 'requests', label: `Requests (${pendingBookings.length})` },
-                { key: 'confirmed', label: `Confirmed (${upcomingConfirmed.length})` },
-                { key: 'cancellations', label: 'Cancellations' },
-                { key: 'history', label: `History (${pastConfirmed.length + rejectedBookings.length})` },
-              ] as const).map((t) => (
-                <button
-                  key={t.key}
-                  onClick={() => setTab(t.key)}
-                  className={`flex-shrink-0 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all whitespace-nowrap ${tab === t.key ? 'bg-resort-600 text-white border-resort-500' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}
-                  aria-pressed={tab === t.key}
+            <div className="mt-4">
+              <div className="sm:hidden">
+                <label className="block text-xs font-semibold text-slate-600 mb-2">Section</label>
+                <select
+                  value={tab}
+                  onChange={(e) => changeTab(e.target.value as any)}
+                  className="w-full px-3 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-resort-500/20 focus:border-resort-500"
                 >
-                  {t.label}
-                </button>
-              ))}
+                  <option value="calendar">Calendar</option>
+                  <option value="requests">Requests ({pendingBookings.length})</option>
+                  <option value="confirmed">Confirmed ({upcomingConfirmed.length})</option>
+                  <option value="cancellations">Cancellations</option>
+                  <option value="history">History ({pastConfirmed.length + rejectedBookings.length})</option>
+                </select>
               </div>
-            </div>
-            {/* Filter checkboxes - below tabs on mobile */}
-            <div className="mt-3 flex flex-wrap items-center gap-2 sm:gap-4">
-              <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-white border border-slate-200 text-xs text-slate-700">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 rounded border-slate-300"
-                  checked={showOnlyVerified}
-                  onChange={(e) => setShowOnlyVerified(e.target.checked)}
-                />
-                <span className="hidden sm:inline">Show only</span> Payment verified
-              </label>
-              <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-white border border-slate-200 text-xs text-slate-700">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 rounded border-slate-300"
-                  checked={showOnlyCancellations}
-                  onChange={(e) => setShowOnlyCancellations(e.target.checked)}
-                />
-                <span className="hidden sm:inline">Show only</span> Cancellations
-              </label>
+              <div className="hidden sm:block overflow-x-auto scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0">
+                <div className="flex items-center gap-2 min-w-max pb-2 sm:pb-0 sm:flex-wrap">
+                {([
+                  { key: 'calendar', label: 'Calendar' },
+                  { key: 'requests', label: `Requests (${pendingBookings.length})` },
+                  { key: 'confirmed', label: `Confirmed (${upcomingConfirmed.length})` },
+                  { key: 'cancellations', label: 'Cancellations' },
+                  { key: 'history', label: `History (${pastConfirmed.length + rejectedBookings.length})` },
+                ] as const).map((t) => (
+                  <button
+                    key={t.key}
+                    onClick={() => changeTab(t.key)}
+                    className={`flex-shrink-0 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold border-2 transition-all whitespace-nowrap ${tab === t.key ? 'bg-resort-600 text-white border-resort-500' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}
+                    aria-pressed={tab === t.key}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+                </div>
+              </div>
             </div>
           </div>
           {/* Right-side stats removed for cleaner header */}
@@ -233,23 +249,34 @@ export default function OwnerBookingsContent(props: Props){
           </div>
         ) : (
           <>
-            {/* Global Bulk Actions */}
-            <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white border-2 border-slate-200 rounded-xl sm:rounded-2xl p-3 sm:p-4">
-              <div className="text-sm text-slate-600">
-                {selectedBookings.size > 0 ? (
-                  <span><strong>{selectedBookings.size}</strong> selected</span>
-                ) : (
-                  <span>Select bookings to enable bulk actions</span>
-                )}
+            {tab === 'history' && (
+              <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white border-2 border-slate-200 rounded-xl sm:rounded-2xl p-3 sm:p-4">
+                <div className="text-sm text-slate-600">
+                  {selectedBookings.size > 0 ? (
+                    <span><strong>{selectedBookings.size}</strong> selected</span>
+                  ) : (
+                    <span>Select bookings below to delete in bulk</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={clearAllSelected}
+                    disabled={selectedBookings.size === 0}
+                    className={`px-3 py-2 rounded-xl text-sm font-semibold border-2 transition-all ${selectedBookings.size === 0 ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'}`}
+                  >
+                    Clear
+                  </button>
+                  <button
+                    onClick={bulkDeleteBookings}
+                    disabled={selectedBookings.size === 0}
+                    className={`px-4 py-2 rounded-xl font-semibold border-2 transition-all ${selectedBookings.size === 0 ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 text-white border-red-500'}`}
+                  >
+                    Delete Selected
+                  </button>
+                </div>
               </div>
-              <button
-                onClick={bulkDeleteBookings}
-                disabled={selectedBookings.size === 0}
-                className={`px-4 py-2 rounded-xl font-semibold border-2 transition-all ${selectedBookings.size === 0 ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 text-white border-red-500'}`}
-              >
-                Delete Selected
-              </button>
-            </div>
+            )}
             {tab === 'calendar' && (
             <section className="mb-8 sm:mb-12 fade-in-up">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
@@ -429,14 +456,13 @@ export default function OwnerBookingsContent(props: Props){
                     modifiers={{ booked: bookedDatesForCalendar }}
                     modifiersClassNames={{ booked: 'day-booked' }}
                     onDayClick={(day, modifiers: any) => {
-                      const key = day.toISOString().slice(0,10)
+                      const key = format(day, 'yyyy-MM-dd')
                       const bookingsForDay = dateToBookings.get(key) || []
-                      if (!modifiers.booked || bookingsForDay.length === 0) return
                       setSelectedDate(day)
                       setSelectedDayBookings(bookingsForDay)
                     }}
                     onDayMouseEnter={(day: Date, modifiers: any, e: any) => {
-                      const key = day.toISOString().slice(0,10)
+                      const key = format(day, 'yyyy-MM-dd')
                       const bookingsForDay = dateToBookings.get(key) || []
                       if (!modifiers.booked || bookingsForDay.length === 0) {
                         setHoverTooltip(null)
@@ -460,41 +486,49 @@ export default function OwnerBookingsContent(props: Props){
                   )}
                 </div>
                 <p className="text-sm text-slate-600 mt-2">Upcoming red-marked dates are already booked.</p>
-                {selectedDate && selectedDayBookings.length > 0 && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center">
+                {selectedDate && (
+                  <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
                     <div className="absolute inset-0 bg-black/40" onClick={() => { setSelectedDate(null); setSelectedDayBookings([]) }} />
-                    <div className="relative bg-white rounded-2xl border-2 border-slate-200 shadow-xl w-[95%] max-w-2xl p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <h3 className="text-2xl font-bold text-slate-900">Bookings on {selectedDate.toLocaleDateString()}</h3>
-                          <p className="text-slate-600">Click a booking to open chat</p>
+                    <div className="relative bg-white rounded-t-2xl sm:rounded-2xl border-2 border-slate-200 shadow-xl w-full sm:w-[95%] sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+                      <div className="sticky top-0 z-10 flex items-start justify-between gap-3 p-4 sm:p-6 bg-white border-b border-slate-100">
+                        <div className="min-w-0">
+                          <h3 className="text-lg sm:text-2xl font-bold text-slate-900 truncate">Bookings on {selectedDate.toLocaleDateString()}</h3>
+                          <p className="text-xs sm:text-sm text-slate-600">Tap a booking to open chat</p>
                         </div>
                         <button
-                          className="px-3 py-2 rounded-lg border-2 border-slate-200 hover:bg-slate-50"
+                          className="px-3 py-2 rounded-lg border-2 border-slate-200 hover:bg-slate-50 text-sm"
                           onClick={() => { setSelectedDate(null); setSelectedDayBookings([]) }}
-                        >✖ Close</button>
+                        >✖</button>
                       </div>
-                      <div className="space-y-4">
-                        {selectedDayBookings.map((b: any) => (
-                          <div key={b.id} className="border-2 border-slate-200 rounded-xl p-4">
-                            <div className="flex items-start justify-between gap-4">
-                              <div>
-                                <p className="text-sm text-slate-600">Resort</p>
-                                <p className="text-lg font-bold text-slate-900">{b.resort?.name}</p>
-                                <p className="text-sm text-slate-600 mt-1">👤 {b.guest?.full_name} — 📧 {b.guest?.email}</p>
-                                <p className="text-sm text-slate-700 mt-1">📅 {b.date_from} → {b.date_to}</p>
-                                <p className="text-sm text-slate-700 mt-1">👥 {b.guest_count} {b.guest_count === 1 ? 'guest' : 'guests'}{typeof b.children_count === 'number' && b.children_count > 0 ? ` · 👶 ${b.children_count}` : ''}{typeof b.pets_count === 'number' && b.pets_count > 0 ? ` · 🐾 ${b.pets_count}` : ''}</p>
-                              </div>
-                              <div className="flex flex-col items-end gap-2">
-                                  <span className={"text-xs px-2 py-1 rounded-lg border-2 " + (b.status === 'confirmed' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-yellow-100 text-yellow-800 border-yellow-300')}>{b.status}</span>
-                                  {b.cancellation_status === 'requested' && (
-                                    <span className="text-[10px] bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-lg border border-yellow-200">⚠ Cancellation requested</span>
-                                  )}
-                                <ChatLink bookingId={b.id} as="owner" label="Open Chat" title={b.guest?.full_name || b.guest?.email || 'Guest'} />
-                              </div>
-                            </div>
+                      <div className="p-4 sm:p-6">
+                        {selectedDayBookings.length === 0 ? (
+                          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-700">
+                            No bookings for this day.
                           </div>
-                        ))}
+                        ) : (
+                          <div className="space-y-4">
+                            {selectedDayBookings.map((b: any) => (
+                              <div key={b.id} className="border-2 border-slate-200 rounded-xl p-4">
+                                <div className="flex items-start justify-between gap-4">
+                                  <div className="min-w-0">
+                                    <p className="text-xs text-slate-600">Resort</p>
+                                    <p className="text-base sm:text-lg font-bold text-slate-900 truncate">{b.resort?.name}</p>
+                                    <p className="text-xs sm:text-sm text-slate-600 mt-1 break-all">👤 {b.guest?.full_name} — 📧 {b.guest?.email}</p>
+                                    <p className="text-xs sm:text-sm text-slate-700 mt-1">📅 {b.date_from} → {b.date_to}</p>
+                                    <p className="text-xs sm:text-sm text-slate-700 mt-1">👥 {b.guest_count} {b.guest_count === 1 ? 'guest' : 'guests'}{typeof b.children_count === 'number' && b.children_count > 0 ? ` · 👶 ${b.children_count}` : ''}{typeof b.pets_count === 'number' && b.pets_count > 0 ? ` · 🐾 ${b.pets_count}` : ''}</p>
+                                  </div>
+                                  <div className="flex flex-col items-end gap-2">
+                                      <span className={"text-[10px] sm:text-xs px-2 py-1 rounded-lg border-2 " + (b.status === 'confirmed' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-yellow-100 text-yellow-800 border-yellow-300')}>{b.status}</span>
+                                      {b.cancellation_status === 'requested' && (
+                                        <span className="text-[10px] bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-lg border border-yellow-200">⚠ Cancellation requested</span>
+                                      )}
+                                    <ChatLink bookingId={b.id} as="owner" label="Open Chat" title={b.guest?.full_name || b.guest?.email || 'Guest'} />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -508,17 +542,6 @@ export default function OwnerBookingsContent(props: Props){
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 sm:mb-6">
                 <div className="flex items-center gap-3">
                   <h2 className="text-xl sm:text-3xl font-bold text-slate-900">Pending Requests ({pendingToShow.length})</h2>
-                  {pendingBookings.length > 0 && (
-                    <label className="flex items-center gap-2 text-xs sm:text-sm text-slate-600 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={pendingBookings.every(b => selectedBookings.has(b.id))}
-                        onChange={() => toggleSelectAll(pendingBookings)}
-                        className="w-4 h-4 rounded border-slate-300"
-                      />
-                      Select All
-                    </label>
-                  )}
                 </div>
               </div>
 
@@ -532,12 +555,6 @@ export default function OwnerBookingsContent(props: Props){
                   {pendingToShow.map(booking => (
                     <div key={booking.id} className={`bg-white border-2 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm hover:shadow-lg transition-all ${booking.payment_verified_at ? 'border-emerald-300' : 'border-yellow-300'}`}>
                       <div className="flex items-start gap-2 sm:gap-3 mb-4">
-                        <input
-                          type="checkbox"
-                          checked={selectedBookings.has(booking.id)}
-                          onChange={() => toggleSelect(booking.id)}
-                          className="w-5 h-5 mt-1 rounded border-slate-300 cursor-pointer"
-                        />
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-wrap justify-between items-start gap-2 mb-4">
                             <div className="min-w-0">
@@ -609,18 +626,16 @@ export default function OwnerBookingsContent(props: Props){
                           </div>
                           <p className="text-xs text-slate-500 mt-2">Coordinate payment in chat; confirm only after verifying proof.</p>
                           <div className="mt-2 flex flex-wrap items-center gap-2">
-                            <label className="inline-flex items-center gap-2 text-xs text-slate-600">
-                              <input
-                                type="checkbox"
-                                className="w-4 h-4 rounded border-slate-300"
-                                checked={!!booking.payment_verified_at}
-                                onChange={(e) => togglePaymentVerified(booking.id, e.target.checked)}
-                              />
-                              Mark payment verified
+                            <button
+                              type="button"
+                              onClick={() => togglePaymentVerified(booking.id, !booking.payment_verified_at)}
+                              className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-lg border transition-colors ${booking.payment_verified_at ? 'text-emerald-800 bg-emerald-50 border-emerald-200 hover:bg-emerald-100' : 'text-slate-700 bg-white border-slate-200 hover:bg-slate-50'}`}
+                            >
+                              {booking.payment_verified_at ? 'Verified' : 'Mark Verified'}
                               {booking.payment_verified_at && (
-                                <span className="ml-1 text-[10px] text-slate-500">({new Date(booking.payment_verified_at).toLocaleDateString()})</span>
+                                <span className="text-[10px] text-slate-500">({new Date(booking.payment_verified_at).toLocaleDateString()})</span>
                               )}
-                            </label>
+                            </button>
                             <button
                               onClick={() => setPaymentModalBookingId(booking.id)}
                               className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-cyan-700 bg-cyan-50 border border-cyan-200 rounded-lg hover:bg-cyan-100 transition-colors"
@@ -759,18 +774,26 @@ export default function OwnerBookingsContent(props: Props){
                         </p>
                         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                           <ChatLink bookingId={booking.id} as="owner" label="Open Chat" title={booking.guest?.full_name || booking.guest?.email || 'Guest'} />
-                          <label className="inline-flex items-center gap-2 text-xs text-slate-600">
-                            <input
-                              type="checkbox"
-                              className="w-4 h-4 rounded border-slate-300"
-                              checked={!!booking.payment_verified_at}
-                              onChange={(e) => togglePaymentVerified(booking.id, e.target.checked)}
-                            />
-                            Payment verified
-                            {booking.payment_verified_at && (
-                              <span className="ml-1 text-[10px] text-slate-500">({new Date(booking.payment_verified_at).toLocaleDateString()})</span>
-                            )}
-                          </label>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => togglePaymentVerified(booking.id, !booking.payment_verified_at)}
+                              className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-lg border transition-colors ${booking.payment_verified_at ? 'text-emerald-800 bg-emerald-50 border-emerald-200 hover:bg-emerald-100' : 'text-slate-700 bg-white border-slate-200 hover:bg-slate-50'}`}
+                            >
+                              {booking.payment_verified_at ? 'Verified' : 'Mark Verified'}
+                              {booking.payment_verified_at && (
+                                <span className="text-[10px] text-slate-500">({new Date(booking.payment_verified_at).toLocaleDateString()})</span>
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPaymentModalBookingId(booking.id)}
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-cyan-700 bg-cyan-50 border border-cyan-200 rounded-lg hover:bg-cyan-100 transition-colors"
+                            >
+                              <FiCreditCard className="w-3 h-3" />
+                              View Submissions
+                            </button>
+                          </div>
                         </div>
                         {booking.cancellation_status === 'requested' && (
                           <div className="mt-3 flex items-center gap-2">

@@ -160,7 +160,7 @@ export default function GoogleMapView({
 
       // Center map on user and zoom to neighborhood level
       mapInstanceRef.current.panTo({ lat: userPosition.latitude, lng: userPosition.longitude })
-      mapInstanceRef.current.setZoom(14) // Neighborhood level zoom
+      mapInstanceRef.current.setZoom(16) // Neighborhood level zoom
     }
   }, [isLoaded, userPosition])
 
@@ -182,16 +182,16 @@ export default function GoogleMapView({
       try {
         mapInstanceRef.current?.panTo(position)
         const currentZoom = mapInstanceRef.current?.getZoom?.() ?? 0
-        mapInstanceRef.current?.setZoom(Math.max(currentZoom, 14))
+        mapInstanceRef.current?.setZoom(Math.max(currentZoom, 15))
       } catch {}
 
       const image = resort.images?.[0] || '/assets/placeholder.jpg'
       const typeLabel = resort.type ? `<span style="display: inline-block; padding: 4px 12px; background: linear-gradient(135deg, #f1f5f9, #e2e8f0); border-radius: 16px; font-size: 11px; font-weight: 600; color: #475569; text-transform: capitalize;">${resort.type}</span>` : ''
       
       const content = `
-        <div style="width: 260px; font-family: system-ui, -apple-system, sans-serif;">
+        <div style="width: min(260px, 85vw); font-family: system-ui, -apple-system, sans-serif;">
           <div style="position: relative;">
-            <img src="${image}" alt="${resort.name}" style="width: 100%; height: 140px; object-fit: cover; border-radius: 8px 8px 0 0;" onerror="this.src='/assets/placeholder.jpg'" />
+            <img src="${image}" alt="${resort.name}" style="width: 100%; height: 130px; object-fit: cover; border-radius: 10px 10px 0 0;" onerror="this.src='/assets/placeholder.jpg'" />
             <div style="position: absolute; top: 8px; left: 8px;">${typeLabel}</div>
           </div>
           <div style="padding: 12px;">
@@ -411,7 +411,16 @@ export default function GoogleMapView({
       {showNearbyButton && onRequestLocation && (
         <div className="absolute top-3 right-3">
           <button
-            onClick={onRequestLocation}
+            onClick={() => {
+              if (userPosition && mapInstanceRef.current) {
+                try {
+                  mapInstanceRef.current.panTo({ lat: userPosition.latitude, lng: userPosition.longitude })
+                  mapInstanceRef.current.setZoom(16)
+                  return
+                } catch {}
+              }
+              onRequestLocation()
+            }}
             disabled={geoLoading}
             className={`flex items-center justify-center gap-2 px-3 py-2 rounded-xl shadow-lg border transition-all ${
               userPosition 

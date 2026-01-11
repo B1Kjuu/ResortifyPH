@@ -81,6 +81,7 @@ export async function POST(req: NextRequest) {
             .from('chats')
             .select('id')
             .eq('resort_id', resortId)
+            .eq('creator_id', senderUserId)
             .maybeSingle()
           if (existingResortChat?.id) {
             chatId = existingResortChat.id
@@ -155,7 +156,8 @@ export async function POST(req: NextRequest) {
         .single()
       resortName = resort?.name ?? null
       ownerId = resort?.owner_id ?? null
-      link = `/chat/resort/${resortId}?as=owner`
+      // Resort-based chats are per-guest (resort_id + creator_id). Don't link owners into an ambiguous URL.
+      link = `/owner/chats`
       
       // Skip notification if sender is the owner (don't notify yourself)
       if (senderUserId && ownerId && senderUserId === ownerId) {

@@ -640,142 +640,108 @@ export default function ResortDetail({ params }: { params: { id: string } }){
       
       toast.error(friendly)
     } else {
-      // Create chat and send automatic welcome message
+      // Bootstrap booking chat quickly so the owner gets an in-app notification
+      // (chat message triggers notify_chat_message in the DB).
       if (newId) {
         try {
-          // Create chat for this booking
-          const { data: chat, error: chatError } = await supabase
+          let chatId: string | null = null
+
+          const { data: createdChat, error: chatError } = await supabase
             .from('chats')
-            .insert({
-              booking_id: newId,
-              creator_id: user.id,
-            })
+            .insert({ booking_id: newId, creator_id: user.id })
             .select('id')
             .single()
 
-          if (!chatError && chat) {
-            // Add guest as participant
-            await supabase.from('chat_participants').insert({
-              chat_id: chat.id,
-              user_id: user.id,
-              role: 'guest',
-            })
+          if (!chatError && createdChat?.id) {
+            chatId = createdChat.id
+          } else if ((chatError as any)?.code === '23505') {
+            const { data: existingChat } = await supabase
+              .from('chats')
+              .select('id')
+              .eq('booking_id', newId)
+              .limit(1)
+              .maybeSingle()
+            chatId = (existingChat as any)?.id ?? null
+          }
 
-            // Add owner as participant
-            await supabase.from('chat_participants').insert({
-              chat_id: chat.id,
-              user_id: resort.owner_id,
-              role: 'owner',
-            })
+          if (chatId) {
+            // Ensure both parties are participants (single round-trip).
+            await supabase
+              .from('chat_participants')
+              .upsert(
+                [
+                  { chat_id: chatId, user_id: user.id, role: 'guest' },
+                  { chat_id: chatId, user_id: resort.owner_id, role: 'owner' },
+                ] as any,
+                { onConflict: 'chat_id,user_id', ignoreDuplicates: true }
+              )
 
-            // Send automatic welcome message to notify owner
             const dateMessage = bookingType === 'daytour' && selectedSingleDate
               ? `on ${format(selectedSingleDate, 'MMM dd, yyyy')}`
               : selectedRange.from && selectedRange.to
                 ? `from ${format(selectedRange.from, 'MMM dd, yyyy')} to ${format(selectedRange.to, 'MMM dd, yyyy')}`
                 : ''
-            await supabase.from('chat_messages').insert({
-              chat_id: chat.id,
-              sender_id: user.id,
-              content: `Hi! I'd like to book ${resort.name} ${dateMessage} for ${guests} ${guests === 1 ? 'guest' : 'guests'}. Looking forward to hearing from you!`,
-            })
-            // Notify owner for booking-created message
-            try {
-              const { data: { session } } = await supabase.auth.getSession()
-              await fetch('/api/notifications/chat-message', {
-                method: 'POST',
-                headers: { 
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${session?.access_token}`
-                },
-                body: JSON.stringify({ bookingId: newId, resortId: resort.id, senderUserId: user.id, content: 'New booking request message' }),
-              })
-            } catch {}
-            
-            // Create in-app notification for owner about new booking request
-            try {
-              const { notify } = await import('../../../lib/notifications')
-              await notify({
-                userId: resort.owner_id,
-                type: 'booking_request',
-                title: `New booking request for ${resort.name}`,
-                body: `${dateMessage} • ${guests} ${guests === 1 ? 'guest' : 'guests'}`,
-                link: `/chat/${newId}?as=owner`,
-                metadata: { bookingId: newId, resortId: resort.id }
-              })
-            } catch (e) { console.warn('In-app notify owner failed:', e) }
-            
-            // Add system guidance message (acts like a pinned note)
-            await supabase.from('chat_messages').insert({
-              chat_id: chat.id,
-              sender_id: user.id,
-              content: '📌 System: Coordinate payment in chat; share payment details and receipt here.'
-            })
 
-            // Fire owner notification email for new booking request
-            try {
-              if (owner?.email) {
-                const { data: { session } } = await supabase.auth.getSession()
-                await fetch('/api/notifications/booking-status', {
-                  method: 'POST',
-                  headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session?.access_token}`
-                  },
-                  body: JSON.stringify({
-                    to: owner.email,
-                    status: 'created',
-                    resortName: resort.name,
-                    dateFrom: format(bookingDateFrom, 'yyyy-MM-dd'),
-                    dateTo: format(bookingDateTo, 'yyyy-MM-dd'),
-                    link: `/chat/${newId}?as=owner`,
-                    bookingId: newId,
-                    actorUserId: user.id,
-                    recipientUserId: owner.id,
-                  })
-                })
+            // Send a single "booking request" message + system guidance (single insert).
+            await supabase.from('chat_messages').insert([
+              {
+                chat_id: chatId,
+                sender_id: user.id,
+                content: `Hi! I'd like to book ${resort.name} ${dateMessage} for ${guests} ${guests === 1 ? 'guest' : 'guests'}. Looking forward to hearing from you!`,
+              },
+              {
+                chat_id: chatId,
+                sender_id: user.id,
+                content: '📌 System: Coordinate payment in chat; share payment details and receipt here.'
               }
-            } catch (notifyErr) {
-              console.error('❌ Notify owner (created) failed:', notifyErr)
-              // Don't fail the booking if notification fails
-            }
-
-            // Fire guest notification email for booking request confirmation
-            try {
-              if (user?.email) {
-                const { data: { session } } = await supabase.auth.getSession()
-                const notifyRes = await fetch('/api/notifications/booking-confirmed', {
-                  method: 'POST',
-                  headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session?.access_token}`
-                  },
-                  body: JSON.stringify({
-                    to: user.email,
-                    resortName: resort.name,
-                    dateFrom: format(bookingDateFrom, 'yyyy-MM-dd'),
-                    dateTo: format(bookingDateTo, 'yyyy-MM-dd'),
-                    link: `/chat/${newId}?as=guest`,
-                    userId: user.id,
-                    status: 'pending',
-                  })
-                })
-                if (!notifyRes.ok) {
-                  const errorData = await notifyRes.json().catch(() => ({ error: 'Unknown error' }))
-                  console.error('❌ Guest notification failed:', notifyRes.status, errorData)
-                } else {
-                  console.log('✅ Guest notification sent successfully')
-                }
-              }
-            } catch (notifyErr) {
-              console.error('❌ Notify guest (created) failed:', notifyErr)
-              // Don't fail the booking if notification fails
-            }
+            ] as any)
           }
         } catch (chatSetupError) {
-          console.error('Chat setup error:', chatSetupError)
-          // Don't block booking success if chat fails
+          console.warn('Chat bootstrap failed:', chatSetupError)
         }
+
+        // Fire-and-forget emails (do not block UX; allow request to finish during navigation).
+        try {
+          if (owner?.email) {
+            fetch('/api/notifications/booking-status', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              keepalive: true,
+              body: JSON.stringify({
+                to: owner.email,
+                status: 'created',
+                resortName: resort.name,
+                dateFrom: format(bookingDateFrom, 'yyyy-MM-dd'),
+                dateTo: format(bookingDateTo, 'yyyy-MM-dd'),
+                link: `/chat/${newId}?as=owner`,
+                bookingId: newId,
+                actorUserId: user.id,
+                recipientUserId: resort.owner_id,
+              })
+            }).catch(() => {})
+          }
+        } catch {}
+
+        try {
+          if (user?.email) {
+            fetch('/api/notifications/booking-confirmed', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              keepalive: true,
+              body: JSON.stringify({
+                to: user.email,
+                resortName: resort.name,
+                dateFrom: format(bookingDateFrom, 'yyyy-MM-dd'),
+                dateTo: format(bookingDateTo, 'yyyy-MM-dd'),
+                link: `/chat/${newId}?as=guest`,
+                userId: user.id,
+                status: 'pending',
+              })
+            }).catch(() => {})
+          }
+        } catch {}
       }
 
       toast.success('Booking request sent! Opening chat…')
@@ -1238,62 +1204,50 @@ export default function ResortDetail({ params }: { params: { id: string } }){
                 </div>
               </div>
 
-              {owner && (
+              {(resort.website_url || resort.facebook_url || resort.instagram_url) && (
                 <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-resort-100 rounded-full flex items-center justify-center text-lg">
-                      <FiUser aria-hidden />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-resort-900">{owner.full_name}</p>
-                      <p className="text-sm text-slate-600">Contact shared after booking</p>
-                    </div>
+                  <p className="text-sm font-semibold text-slate-800">Official links</p>
+                  <div className="flex flex-wrap gap-2">
+                    {resort.website_url && (
+                      <a 
+                        href={resort.website_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                        </svg>
+                        Website
+                      </a>
+                    )}
+                    {resort.facebook_url && (
+                      <a 
+                        href={resort.facebook_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-sm font-medium transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                        </svg>
+                        Facebook
+                      </a>
+                    )}
+                    {resort.instagram_url && (
+                      <a 
+                        href={resort.instagram_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-pink-50 hover:bg-pink-100 text-pink-700 rounded-lg text-sm font-medium transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+                        </svg>
+                        Instagram
+                      </a>
+                    )}
                   </div>
-                  
-                  {/* Social Media & Website Links */}
-                  {(resort.website_url || resort.facebook_url || resort.instagram_url) && (
-                    <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
-                      {resort.website_url && (
-                        <a 
-                          href={resort.website_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                          </svg>
-                          Website
-                        </a>
-                      )}
-                      {resort.facebook_url && (
-                        <a 
-                          href={resort.facebook_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-sm font-medium transition-colors"
-                        >
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                          </svg>
-                          Facebook
-                        </a>
-                      )}
-                      {resort.instagram_url && (
-                        <a 
-                          href={resort.instagram_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-pink-50 hover:bg-pink-100 text-pink-700 rounded-lg text-sm font-medium transition-colors"
-                        >
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
-                          </svg>
-                          Instagram
-                        </a>
-                      )}
-                    </div>
-                  )}
                 </div>
               )}
 

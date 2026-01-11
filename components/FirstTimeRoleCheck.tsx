@@ -17,10 +17,11 @@ export default function FirstTimeRoleCheck() {
 
   // Don't show on admin pages
   const isAdminPage = pathname?.startsWith('/admin')
+  const isLegalPage = pathname === '/terms' || pathname === '/privacy'
 
   useEffect(() => {
     // Skip entirely on admin pages
-    if (isAdminPage) return
+    if (isAdminPage || isLegalPage) return
 
     let mounted = true
 
@@ -93,9 +94,9 @@ export default function FirstTimeRoleCheck() {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [isAdminPage])
+  }, [isAdminPage, isLegalPage])
 
-  if (!showModal || !userId || isAdminPage) return null
+  if (!showModal || !userId || isAdminPage || isLegalPage) return null
 
   return (
     <RoleSelectionModal
