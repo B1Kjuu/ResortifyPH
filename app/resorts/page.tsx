@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { supabase } from '../../lib/supabaseClient'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import Slider from 'rc-slider'
@@ -26,6 +27,20 @@ export default function ResortsPage(){
   const router = useRouter()
   const typeParam = searchParams.get('type')
   
+  // Auth state for blur overlay
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      setIsAuthenticated(!!session)
+    }
+    checkAuth()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
   // Hydration-safe mounting state
   const [mounted, setMounted] = useState(false)
   useEffect(() => { 
@@ -914,6 +929,33 @@ export default function ResortsPage(){
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
           </svg>
         </button>
+      )}
+
+      {/* Blur overlay for unauthenticated users */}
+      {mounted && isAuthenticated === false && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-white/60 backdrop-blur-md">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 sm:p-10 max-w-md mx-4 text-center border border-slate-200">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-resort-100 flex items-center justify-center">
+              <FiSearch className="w-8 h-8 text-resort-600" />
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3">Discover Amazing Resorts</h2>
+            <p className="text-slate-600 mb-6">Sign in or create an account to explore staycations and private resorts across the Philippines.</p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link
+                href="/auth/signin"
+                className="px-6 py-3 bg-resort-600 hover:bg-resort-700 text-white rounded-xl font-semibold transition-colors"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/auth/signup"
+                className="px-6 py-3 border border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-slate-900 rounded-xl font-semibold transition-colors"
+              >
+                Create Account
+              </Link>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
