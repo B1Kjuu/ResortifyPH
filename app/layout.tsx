@@ -38,16 +38,10 @@ export const metadata = {
     siteName: 'ResortifyPH',
     images: [
       {
-        // Static fallback for maximum compatibility with social scrapers
         url: 'https://www.resortifyph.me/assets/ResortifyPH-LOGO-CLEAN.png',
+        width: 512,
+        height: 512,
         alt: 'ResortifyPH',
-      },
-      {
-        // Dynamic image (nice-looking), kept as a secondary option
-        url: 'https://www.resortifyph.me/opengraph-image',
-        width: 1200,
-        height: 630,
-        alt: 'ResortifyPH - Staycations & Private Resorts in the Philippines',
       },
     ],
   },
