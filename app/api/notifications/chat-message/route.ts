@@ -225,39 +225,52 @@ export async function POST(req: NextRequest) {
     const firstOnlyParam = req.nextUrl.searchParams.get("firstOnly")
     const firstOnly = firstOnlyParam !== '0'
     const windowMs = windowMsParam ? parseInt(windowMsParam, 10) : 0
+
+    // Throttle only the EMAIL send (never skip creating the in-app notification).
+    // IMPORTANT: chats often include an initial system guidance message (e.g. "📌 System: ...").
+    // We must ignore these when deciding if this is the "first" user message.
+    let skipEmailReason: string | null = null
     if (sb && chatId && !dryRun) {
       try {
-        const { count, data: lastMsgs } = await sb
+        const { data: lastUserMsgs } = await sb
           .from('chat_messages')
-          .select('id, created_at', { count: 'exact' })
+          .select('created_at, content')
           .eq('chat_id', chatId)
+          .eq('sender_id', senderUserId)
+          .is('deleted_at', null)
+          // ignore common system guidance formats
+          .not('content', 'ilike', '📌%')
+          .not('content', 'ilike', 'system:%')
           .order('created_at', { ascending: false })
-          .limit(1)
-        if (firstOnly && (count ?? 0) > 0) {
-          return NextResponse.json({ ok: true, skipped: true, reason: 'first-only' })
-        }
-        if (!firstOnly && windowMs > 0 && (lastMsgs || []).length > 0) {
-          const lastCreated = new Date((lastMsgs as any)[0].created_at).getTime()
-          if ((Date.now() - lastCreated) < windowMs) {
-            return NextResponse.json({ ok: true, skipped: true, reason: 'window' })
+          .limit(2)
+
+        // Called after the message insert, so the most recent record is the current message.
+        // If there is a previous *non-system* message from this sender, then this is not the first.
+        if (firstOnly && (lastUserMsgs || []).length > 1) {
+          skipEmailReason = 'first-only'
+        } else if (!firstOnly && windowMs > 0 && (lastUserMsgs || []).length > 1) {
+          const prevCreated = new Date((lastUserMsgs as any)[1].created_at).getTime()
+          if ((Date.now() - prevCreated) < windowMs) {
+            skipEmailReason = 'window'
           }
         }
       } catch (e) {
         console.warn('Throttle check failed:', e)
       }
     }
+
     let res: any = null
     const finalTo = to ?? ownerEmail
-    if (!dryRun && finalTo) {
+    if (!dryRun && finalTo && !skipEmailReason) {
       try {
         res = await sendEmail({ to: finalTo, subject, html })
       } catch (e: any) {
-        // Avoid hard failure; report as skipped
-        return NextResponse.json({ ok: true, skipped: true, reason: 'email-send-error', error: e?.message }, { status: 202 })
+        // Avoid hard failure; still allow in-app notification
+        skipEmailReason = 'email-send-error'
       }
     }
 
-    // Optional: log notification
+    // Always log in-app notification (even if email is throttled/skipped)
     try {
       if (sb) {
         await sb.from('notifications').insert({
@@ -273,14 +286,15 @@ export async function POST(req: NextRequest) {
           email: {
             to: finalTo,
             subject,
-            status: dryRun ? 'dry_run' : 'sent',
+            status: dryRun ? 'dry_run' : (skipEmailReason ? 'skipped' : 'sent'),
+            reason: skipEmailReason,
           },
         },
         })
       }
     } catch {}
 
-    return NextResponse.json({ id: res?.data?.id ?? null, ok: true, dryRun })
+    return NextResponse.json({ id: res?.data?.id ?? null, ok: true, dryRun, email: skipEmailReason ? { skipped: true, reason: skipEmailReason } : { skipped: false } })
   } catch (error: any) {
     return NextResponse.json({ error: error?.message ?? 'Send failed' }, { status: 500 })
   }
